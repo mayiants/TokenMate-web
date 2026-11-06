@@ -35,6 +35,7 @@ const EntAudit = lazy(() => import('./pages/enterprise/Audit'));
 const EntAlerts = lazy(() => import('./pages/enterprise/Alerts'));
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const AdminOverview = lazy(() => import('./pages/admin/Overview'));
+const AdminUsers = lazy(() => import('./pages/admin/Users'));
 
 const lazyFallback = (
   <div style={{ display: 'flex', justifyContent: 'center', padding: 96 }}>
@@ -96,6 +97,7 @@ export default function App() {
           }
         >
           <Route index element={<Suspense fallback={lazyFallback}><AdminOverview /></Suspense>} />
+          <Route path="users" element={<Suspense fallback={lazyFallback}><AdminUsers /></Suspense>} />
         </Route>
         </Route>
       </Route>
