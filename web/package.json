@@ -1,0 +1,40 @@
+{
+  "name": "woodgit-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --outDir dist-preview",
+    "check:i18n": "node e2e/check-i18n.cjs",
+    "check:a11y": "node e2e/scan-a11y-axe.cjs --gate",
+    "check:console": "node e2e/scan-console-errors.cjs --gate",
+    "check:lighthouse": "node e2e/scan-lighthouse.cjs --gate",
+    "check:ui": "npm run check:i18n && npm run check:console && npm run check:a11y && npm run check:responsive",
+    "publish": "npm run build && rsync -a --delete dist/ dist-preview/",
+    "check:responsive": "node e2e/check-responsive.cjs --gate"
+  },
+  "dependencies": {
+    "@douyinfe/semi-icons": "^2.75.0",
+    "@douyinfe/semi-ui": "^2.75.0",
+    "@fontsource-variable/inter": "^5.1.0",
+    "dayjs": "^1.11.13",
+    "echarts": "^5.5.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "@fullhuman/postcss-purgecss": "^8.0.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "chrome-launcher": "^1.2.1",
+    "lighthouse": "^12.8.2",
+    "playwright": "^1.65.0",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}

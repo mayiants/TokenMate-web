@@ -1,0 +1,2861 @@
+/* ============================================================
+   WOODGIT design system — P1.5 neutral palette (2026-11-06)
+   Light theme + #0086ff brand blue, full dark parity.
+   Semi dark mode: body[theme-mode='dark'] (semi.min.css)
+   Our surfaces: body.theme-dark (--wg-* vars)
+   ============================================================ */
+
+:root {
+  /* typography */
+  --wg-font-display: 'Inter Variable', Inter, -apple-system, BlinkMacSystemFont,
+    'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', 'Hiragino Sans GB',
+    'Segoe UI', sans-serif;
+  --wg-font-body: 'Inter Variable', Inter, -apple-system, BlinkMacSystemFont,
+    'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', 'Hiragino Sans GB',
+    'Segoe UI', sans-serif;
+  --wg-font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas,
+    'Liberation Mono', Menlo, monospace;
+
+  /* WOODGIT brand */
+  --wg-primary: #0086ff;
+  /* darker brand blue for small text on white (WCAG AA 4.5:1) */
+  --wg-primary-strong: #0056b3;
+  --wg-primary-hover: #1890ff;
+  --wg-primary-light: #e8f3ff;
+
+  /* Semi primary override — brand blue */
+  --semi-color-primary: var(--wg-primary);
+  --semi-color-primary-hover: var(--wg-primary-hover);
+  --semi-color-primary-active: #006ad6;
+  --semi-color-primary-light-default: rgba(0, 134, 255, 0.12);
+  --semi-color-primary-light-hover: rgba(0, 134, 255, 0.2);
+  --semi-color-primary-light-active: rgba(0, 134, 255, 0.28);
+  --semi-color-link: var(--wg-primary);
+  --semi-color-link-hover: var(--wg-primary-hover);
+  --semi-color-link-active: #006ad6;
+
+  /* WOODGIT surfaces — light */
+  --wg-bg: #f7f8fa;
+  --wg-surface: #ffffff;
+  --wg-surface-2: #f2f3f5;
+  --wg-border: rgba(28, 31, 35, 0.08);
+  --wg-text: #1c1f23;
+  --wg-text-2: #646a73;
+  --wg-text-3: #8f959e;
+  --wg-shadow: 0 1px 2px rgba(28, 31, 35, 0.05);
+  --wg-shadow-hover: 0 8px 24px rgba(28, 31, 35, 0.09);
+  --wg-pill-bg: #eff1f4;
+  --wg-code-bg: #16181d;
+  --wg-aurora-text: #f2f6ff;
+  --wg-aurora-dim: rgba(214, 228, 255, 0.75);
+}
+
+body.theme-dark {
+  /* WOODGIT surfaces — dark (Semi component tokens come from theme-mode) */
+  --wg-bg: #1b1d21;
+  --wg-surface: #232529;
+  --wg-surface-2: #2a2d33;
+  --wg-border: rgba(255, 255, 255, 0.08);
+  --wg-text: #e8eaed;
+  --wg-text-2: #a8adb5;
+  --wg-text-3: #7d8288;
+  --wg-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --wg-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --wg-pill-bg: #2e3138;
+  --wg-code-bg: #121419;
+}
+
+body {
+  font-family: var(--wg-font-body);
+  margin: 0;
+  background: var(--wg-bg);
+  color: var(--wg-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+.wg-font-display {
+  font-family: var(--wg-font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(0, 134, 255, 0.22);
+}
+
+/* ---------- shared ---------- */
+
+.wg-num,
+.wg-price-cur,
+.wg-price-table,
+.wg-copybar-url {
+  font-variant-numeric: tabular-nums;
+}
+
+.wg-num {
+  letter-spacing: -0.01em;
+}
+
+.wg-container {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.wg-section {
+  padding: 72px 0;
+}
+
+.wg-center {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.wg-icon-btn {
+  border: none;
+  background: transparent;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.72;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.wg-icon-btn:hover {
+  background: var(--wg-pill-bg);
+  opacity: 1;
+}
+
+.wg-check {
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid currentColor;
+  border-radius: 4px;
+  display: inline-block;
+  position: relative;
+  opacity: 0.75;
+}
+
+.wg-check-on {
+  background: var(--wg-primary);
+  border-color: var(--wg-primary);
+  color: #fff;
+  opacity: 1;
+}
+
+.wg-check-on::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(40deg);
+}
+
+.wg-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+  flex-shrink: 0;
+}
+
+.wg-fire {
+  display: inline-flex;
+  align-self: center;
+}
+
+.wg-badge-off {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Public header + promo banner
+   ============================================================ */
+
+.wg-public-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--wg-surface);
+  border-bottom: 1px solid var(--wg-border);
+}
+
+.wg-topnav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  height: 60px;
+}
+
+.wg-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--wg-text);
+}
+
+.wg-logo-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, var(--wg-primary), #00c2ff);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.wg-topnav-links {
+  display: flex;
+  gap: 26px;
+  margin: 0 auto;
+}
+
+.wg-topnav-links a {
+  font-size: 14px;
+  color: var(--wg-text-2);
+  transition: color 0.15s ease;
+}
+
+.wg-topnav-links a:hover {
+  color: var(--wg-text);
+}
+
+.wg-topnav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* brand-blue promo banner */
+.wg-promo {
+  position: relative;
+  /* a11y: white text needs a darker brand blue (contrast >= 4.5:1) */
+  background: #0056b3;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 9px 44px;
+  font-size: 13px;
+}
+
+.wg-promo-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.wg-promo-icon {
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.wg-promo-seg + .wg-promo-seg {
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  padding-left: 20px;
+}
+
+.wg-promo-link {
+  color: #fff;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+  padding-bottom: 1px;
+  white-space: nowrap;
+}
+
+.wg-promo-close {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  opacity: 0.85;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.wg-promo-close:hover {
+  background: rgba(255, 255, 255, 0.16);
+  opacity: 1;
+}
+
+/* ============================================================
+   Landing
+   ============================================================ */
+
+.wg-hero {
+  padding: 76px 0 84px;
+}
+
+.wg-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  gap: 64px;
+  align-items: center;
+}
+
+.wg-hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 103, 217, 0.1);
+  color: var(--wg-primary-strong);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 6px 14px;
+  border-radius: 999px;
+  margin: 0 0 20px;
+}
+
+body.theme-dark .wg-hero-pill {
+  background: rgba(0, 134, 255, 0.16);
+}
+
+.wg-hero-title {
+  font-size: 56px;
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin: 0 0 18px;
+  color: var(--wg-text);
+}
+
+.wg-hero-sub {
+  font-size: 17px;
+  color: var(--wg-text-2);
+  margin: 0 0 26px;
+}
+
+/* white pill base-URL copy bar */
+.wg-copybar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--wg-surface);
+  border: 1px solid var(--wg-border);
+  border-radius: 999px;
+  padding: 8px 8px 8px 16px;
+  box-shadow: var(--wg-shadow);
+  max-width: 540px;
+}
+
+.wg-copybar-url {
+  font-family: var(--wg-font-mono);
+  font-size: 14px;
+  color: var(--wg-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.wg-copybar-btn {
+  border: 1px solid var(--wg-border);
+  background: var(--wg-surface);
+  color: var(--wg-text-2);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 5px 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.wg-copybar-btn:hover {
+  color: var(--wg-primary);
+  border-color: rgba(0, 134, 255, 0.5);
+}
+
+.wg-copybar-btn.wg-copied {
+  color: #16a34a;
+  border-color: rgba(22, 163, 74, 0.5);
+}
+
+.wg-hero-policy {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--wg-text-2);
+  margin: 12px 0 22px;
+}
+
+.wg-hero-policy a {
+  color: var(--wg-text-2);
+  border-bottom: 1px dashed var(--wg-border);
+}
+
+.wg-hero-cta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+}
+
+.wg-hero-cta .semi-button {
+  border-radius: 999px;
+  height: 42px;
+  padding: 0 24px;
+  font-weight: 600;
+}
+
+.wg-hero-trust {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.wg-hero-trust li {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--wg-text-2);
+  background: var(--wg-pill-bg);
+  padding: 5px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* right: Unified Model Access card */
+.wg-access-card {
+  background: var(--wg-surface);
+  border: 1px solid var(--wg-border);
+  border-radius: 16px;
+  box-shadow: var(--wg-shadow);
+  overflow: hidden;
+}
+
+.wg-access-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--wg-border);
+}
+
+.wg-access-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--wg-text);
+}
+
+.wg-access-link {
+  font-size: 13px;
+  color: var(--wg-primary-strong);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.wg-access-rows {
+  padding: 6px;
+  min-height: 240px;
+}
+
+.wg-access-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.wg-access-row:hover {
+  background: var(--wg-surface-2);
+}
+
+.wg-access-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--wg-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.wg-access-meta {
+  font-size: 12px;
+  color: var(--wg-text-2);
+  white-space: nowrap;
+}
+
+.wg-access-foot {
+  background: var(--wg-surface-2);
+  padding: 10px 20px;
+  font-size: 12px;
+  color: var(--wg-text-2);
+}
+
+/* features */
+.wg-features-title {
+  font-size: 30px;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 36px;
+  color: var(--wg-text);
+}
+
+.wg-features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.wg-feature-card {
+  background: var(--wg-surface);
+  border: 1px solid var(--wg-border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: var(--wg-shadow);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.wg-feature-card:hover {
+  box-shadow: var(--wg-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.wg-feature-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 4px;
+  background: var(--wg-pill-bg);
+  color: var(--wg-text-2);
+}
+
+.wg-feature-icon.wg-tint-primary {
+  background: var(--wg-primary-light);
+  color: var(--wg-primary);
+}
+
+body.theme-dark .wg-feature-icon.wg-tint-primary {
+  background: rgba(0, 134, 255, 0.16);
+}
+
+.wg-feature-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--wg-text);
+}
+
+.wg-feature-desc {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--wg-text-2);
+}
+
+/* FAQ */
+.wg-faq-wrap {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.wg-faq-wrap .semi-collapse-item {
+  border-bottom: 1px solid var(--wg-border);
+}
+
+/* CTA band */
+.wg-cta {
+  background: var(--wg-surface);
+  border: 1px solid var(--wg-border);
+  border-radius: 24px;
+  padding: 60px 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.wg-cta-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--wg-text);
+}
+
+.wg-cta-sub {
+  font-size: 15px;
+  color: var(--wg-text-2);
+  margin: 0 0 12px;
+}
+
+.wg-cta-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.wg-cta-actions .semi-button {
+  border-radius: 999px;
+  height: 42px;
+  padding: 0 24px;
+  font-weight: 600;
+}
+
+/* footer */
+.wg-footer {
+  border-top: 1px solid var(--wg-border);
+  background: var(--wg-surface);
+  margin-top: 40px;
+}
+
+.wg-footer-grid {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(3, 1fr);
+  gap: 32px;
+  padding: 52px 0 40px;
+}
+
+.wg-footer-desc {
+  font-size: 13px;
+  color: var(--wg-text-2);
+  line-height: 1.7;
+  margin: 12px 0 0;
+  max-width: 280px;
+}
+
+.wg-footer-h {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--wg-text);
+  margin: 0 0 14px;
+}
+
+.wg-footer-col a {
+  display: block;
+  font-size: 13px;
+  color: var(--wg-text-2);
+  padding: 5px 0;
+}
+
+.wg-footer-col a:hover {
+  color: var(--wg-primary);
+}
+
+.wg-footer-bottom {
+  border-top: 1px solid var(--wg-border);
+  padding: 16px 0 22px;
+  font-size: 12px;
+  color: var(--wg-text-2);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   Models gallery
+   ============================================================ */
+
+.wg-gallery {
+  padding: 36px 0 80px;
+}
+
+.wg-gallery-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px;
+}
+
+.wg-gallery-title h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--wg-text);
+}
+
+.wg-count-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--wg-text-2);
+  background: var(--wg-pill-bg);
+  border-radius: 999px;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+.wg-gallery-sub {
+  font-size: 14px;
+  color: var(--wg-text-2);
+  margin: 0 0 22px;
+}
+
+/* filter bar */
+.wg-filterbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 0;
+  margin-bottom: 6px;
+  position: sticky;
+  top: 60px;
+  z-index: 20;
+  background: color-mix(in srgb, var(--wg-bg) 86%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.wg-search {
+  position: relative;
+  flex: 1 1 200px;
+  max-width: 320px;
+  min-width: 170px;
+}
+
+.wg-search-icon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--wg-text-2);
+  pointer-events: none;
+}
+
+.wg-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 14px 9px 36px;
+  border: 1px solid var(--wg-border);
+  border-radius: 999px;
+  background: var(--wg-surface);
+  color: var(--wg-text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wg-search-input::placeholder {
+  color: var(--wg-text-2);
+}
+
+.wg-search-input:focus {
+  border-color: var(--wg-primary);
+  box-shadow: 0 0 0 3px rgba(0, 134, 255, 0.14);
+}
+
+.wg-toolbar-btn {
+  border: 1px solid var(--wg-border);
+  background: var(--wg-surface);
+  color: var(--wg-text-2);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.wg-toolbar-btn:hover:not(:disabled) {
+  color: var(--wg-primary);
+  border-color: rgba(0, 134, 255, 0.5);
+}
+
+.wg-toolbar-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.wg-sort {
+  min-width: 132px;
+}
+
+.wg-sort .semi-select {
+  border-radius: 999px;
+}
+
+.wg-filterbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.wg-types-select {
+  min-width: 136px;
+}
+
+.wg-view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--wg-border);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--wg-surface);
+}
+
+.wg-view-toggle button {
+  border: none;
+  background: transparent;
+  color: var(--wg-text-2);
+  width: 32px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wg-view-toggle button.wg-view-on {
+  background: rgba(0, 134, 255, 0.12);
+  color: var(--wg-primary);
+}
+
+/* active type chips: plain = available, blue = selected with × */
+.wg-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 6px 0 18px;
+  min-height: 4px;
+}
+
+.wg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--wg-surface);
+  color: var(--wg-text-2);
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--wg-border);
+  border-radius: 999px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.wg-chip:hover {
+  border-color: rgba(0, 134, 255, 0.5);
+  color: var(--wg-primary);
+}
+
+.wg-chip-active {
+  background: rgba(0, 134, 255, 0.1);
+  color: var(--wg-primary);
+  font-weight: 600;
+  border-color: transparent;
+}
+
+.wg-chip-active:hover {
+  background: rgba(0, 134, 255, 0.18);
+}
+
+.wg-chip-x {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 134, 255, 0.18);
+}
+
+/* ---------- model cards ---------- */
+
+.wg-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.wg-card {
+  position: relative;
+  border-radius: 16px;
+  padding: 18px 20px 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  border: 1px solid var(--wg-border);
+  background: var(--wg-surface);
+  box-shadow: var(--wg-shadow);
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.wg-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--wg-shadow-hover);
+}
+
+/* aurora promotional card — dark in both themes */
+.wg-card-dark {
+  background:
+    radial-gradient(130% 95% at 88% 112%, rgba(0, 180, 255, 0.32), transparent 58%),
+    radial-gradient(120% 90% at -8% -18%, rgba(0, 134, 255, 0.3), transparent 55%),
+    linear-gradient(160deg, #06122e 0%, #0a1f4d 52%, #071233 100%);
+  border: 1px solid rgba(120, 170, 255, 0.26);
+  color: var(--wg-aurora-text);
+  box-shadow: 0 10px 30px rgba(4, 12, 38, 0.35);
+}
+
+.wg-card-dark:hover {
+  border-color: rgba(120, 170, 255, 0.5);
+  box-shadow: 0 16px 40px rgba(4, 12, 38, 0.5);
+}
+
+.wg-card-selected {
+  border-color: var(--wg-primary) !important;
+  box-shadow: 0 0 0 1.5px var(--wg-primary) !important;
+}
+
+.wg-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.wg-provider-disc {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.wg-provider-disc img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.wg-model-name {
+  font-weight: 700;
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+}
+
+.wg-card-dark .wg-model-name {
+  color: #fff;
+}
+
+.wg-badge-hot {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #fff;
+  background: linear-gradient(120deg, #ff6a3d, #ff2d55);
+  border-radius: 999px;
+  padding: 3px 9px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.wg-card-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.wg-card:hover .wg-card-actions,
+.wg-row:hover .wg-card-actions,
+.wg-card-selected .wg-card-actions {
+  opacity: 1;
+}
+
+.wg-card-dark .wg-icon-btn {
+  color: rgba(230, 240, 255, 0.85);
+}
+
+.wg-card-dark .wg-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.wg-price-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.wg-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.wg-price-label {
+  color: var(--wg-text-2);
+  min-width: 82px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wg-card-dark .wg-price-label {
+  color: var(--wg-aurora-dim);
+}
+
+.wg-price-orig {
+  text-decoration: line-through;
+  color: var(--wg-text-2);
+  font-size: 12px;
+}
+
+.wg-card-dark .wg-price-orig {
+  color: rgba(200, 216, 248, 0.55);
+}
+
+.wg-price-cur {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--wg-primary-strong);
+  font-size: 14px;
+}
+
+.wg-card-dark .wg-price-cur {
+  color: #fff;
+}
+
+.wg-price-unit {
+  color: var(--wg-text-2);
+  font-size: 11px;
+}
+
+.wg-card-dark .wg-price-unit {
+  color: var(--wg-aurora-dim);
+}
+
+.wg-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.wg-billing-pill {
+  font-size: 12px;
+  color: var(--wg-text-2);
+  border: 1px solid var(--wg-border);
+  border-radius: 999px;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+.wg-card-dark .wg-billing-pill {
+  color: rgba(226, 236, 255, 0.88);
+  border-color: rgba(160, 195, 255, 0.4);
+}
+
+.wg-type-tag {
+  font-size: 12px;
+  color: var(--wg-text-2);
+  white-space: nowrap;
+}
+
+.wg-card-dark .wg-type-tag {
+  color: var(--wg-aurora-dim);
+}
+
+/* list view */
+.wg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wg-row {
+  background: var(--wg-surface);
+  border: 1px solid var(--wg-border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  box-shadow: var(--wg-shadow);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.wg-row:hover {
+  box-shadow: var(--wg-shadow-hover);
+}
+
+.wg-row .wg-model-name {
+  flex: 0 1 260px;
+}
+
+.wg-row-provider {
+  font-size: 12px;
+  color: var(--wg-text-2);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wg-row-prices {
+  display: flex;
+  gap: 18px;
+  flex-shrink: 0;
+}
+
+.wg-row-prices .wg-price-cur {
+  font-size: 13px;
+}
+
+/* ============================================================
+   Model detail SideSheet — 520px, single body scroll
+   ============================================================ */
+
+.wg-sheet {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.wg-sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.wg-sheet-head .wg-model-name {
+  font-size: 16px;
+  flex: 0 1 auto;
+}
+
+.wg-sheet-type {
+  font-size: 12px;
+  color: var(--wg-text-2);
+  white-space: nowrap;
+}
+
+/* the ONLY scroll container of the drawer */
+.wg-sheet-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 24px 24px;
+}
+
+.wg-endpoint-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--wg-surface-2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.wg-endpoint-line code {
+  font-family: var(--wg-font-mono);
+  font-size: 12px;
+  color: var(--wg-text);
+  overflow-wrap: anywhere;
+}
+
+.wg-endpoint-method {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--wg-primary);
+  background: var(--wg-primary-light);
+  border-radius: 6px;
+  padding: 3px 8px;
+  flex-shrink: 0;
+}
+
+body.theme-dark .wg-endpoint-method {
+  background: rgba(0, 134, 255, 0.16);
+}
+
+.wg-sheet-note {
+  font-size: 12px;
+  color: var(--wg-text-2);
+  margin: 10px 0 0;
+  line-height: 1.6;
+}
+
+/* quick start code block — the only allowed nested scroll */
+.wg-codeblock {
+  position: relative;
+  background: var(--wg-code-bg);
+  border-radius: 8px;
+  max-height: 360px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.wg-codeblock pre {
+  margin: 0;
+  padding: 14px 16px;
+  font-family: var(--wg-font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: #dbe2ec;
+  white-space: pre;
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.wg-codeblock .wg-code-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.08);
+  color: #b9c4d4;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+}
+
+.wg-codeblock .wg-code-copy:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.wg-codeblock .wg-code-copy.wg-copied {
+  color: #4ade80;
+}
+
+.wg-codeblock .semi-tabs {
+  padding: 8px 10px 0;
+  flex-shrink: 0;
+}
+
+.wg-codeblock .semi-tabs-bar {
+  margin-bottom: 0;
+}
+
+.wg-codeblock .semi-tabs-tab {
+  color: #8b96a8;
+  font-size: 12px;
+  padding: 4px 14px;
+  height: auto;
+  line-height: 1.5;
+  border-radius: 6px;
+  margin-right: 4px;
+}
+
+.wg-codeblock .semi-tabs-tab:hover {
+  color: #dbe2ec;
+}
+
+.wg-codeblock .semi-tabs-tab.semi-tabs-tab-active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  font-weight: 600;
+}
+
+.wg-codeblock .semi-tabs-tab-active .semi-tabs-tab-icon,
+.wg-codeblock .semi-tabs-tab-active::after {
+  display: none;
+}
+
+.wg-codeblock .semi-tabs-content {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* minimal syntax highlighting */
+.tok-k {
+  color: #7dd3fc;
+}
+
+.tok-s {
+  color: #a5d6a7;
+}
+
+.tok-c {
+  color: #64748b;
+  font-style: italic;
+}
+
+.tok-n {
+  color: #fbbf24;
+}
+
+.tok-f {
+  color: #c4b5fd;
+}
+
+/* price table — column widths adapt, price cells never wrap/scroll */
+.wg-price-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  table-layout: auto;
+}
+
+.wg-price-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--wg-text-2);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--wg-border);
+  white-space: nowrap;
+}
+
+.wg-price-table th .wg-th-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wg-price-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--wg-border);
+  color: var(--wg-text);
+  vertical-align: top;
+}
+
+.wg-price-table td.wg-price-col {
+  white-space: nowrap;
+}
+
+.wg-price-table tr:last-child td {
+  border-bottom: none;
+}
+
+.wg-price-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wg-price-cell .wg-price-unit {
+  font-size: 10px;
+}
+
+/* misc */
+.wg-column {
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  padding: 48px 0;
+}
+
+.wg-sheet-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.wg-detail-capline {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--wg-text-2);
+  margin: 0 0 8px;
+}
+
+.wg-info-icon {
+  color: var(--wg-text-2);
+  cursor: help;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* tooltip trigger = whole label text + ⓘ */
+.wg-tip-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: help;
+}
+
+.wg-th-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wg-icon-btn.wg-copied {
+  color: #16a34a;
+  opacity: 1;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+
+@media (max-width: 900px) {
+  .wg-hero-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .wg-hero {
+    padding: 52px 0 60px;
+  }
+
+  .wg-hero-title {
+    font-size: 40px;
+  }
+
+  .wg-features {
+    grid-template-columns: 1fr;
+  }
+
+  .wg-footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .wg-topnav {
+    gap: 8px;
+  }
+
+  .wg-topnav-links {
+    display: none;
+  }
+
+  .wg-topnav-actions .wg-nav-signin {
+    display: none;
+  }
+
+  .wg-promo {
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 40px;
+    text-align: center;
+    font-size: 12px;
+  }
+
+  .wg-promo-seg {
+    white-space: normal;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .wg-promo-seg + .wg-promo-seg {
+    border-left: none;
+    padding-left: 0;
+  }
+
+  .wg-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wg-gallery {
+    padding: 24px 0 56px;
+  }
+
+  .wg-filterbar {
+    position: static;
+  }
+
+  .wg-filterbar-right {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .wg-card-actions {
+    opacity: 1;
+  }
+
+  .wg-row-prices {
+    display: none;
+  }
+
+  .wg-hero-cta .semi-button,
+  .wg-cta-actions .semi-button {
+    width: 100%;
+  }
+
+  .wg-copybar {
+    max-width: none;
+  }
+
+  .wg-section {
+    padding: 48px 0;
+  }
+
+  .wg-cta {
+    padding: 40px 24px;
+  }
+
+  .wg-cta-title {
+    font-size: 24px;
+  }
+}
+
+/* ============================================================
+   P2 — Auth pages (login / register)
+   ============================================================ */
+
+.wg-auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  background: var(--wg-bg);
+  box-sizing: border-box;
+}
+
+.wg-auth-card {
+  width: 400px;
+  max-width: 100%;
+  background: var(--wg-surface);
+  border: 1px solid var(--wg-border);
+  border-radius: 16px;
+  box-shadow: var(--wg-shadow);
+  padding: 36px 36px 24px;
+}
+
+.wg-auth-brand {
+  margin-bottom: 24px;
+}
+
+.wg-auth-brand .wg-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  margin-bottom: 20px;
+}
+
+.wg-auth-title {
+  font-size: 24px;
+  margin: 0 0 6px;
+}
+
+.wg-auth-subtitle {
+  margin: 0;
+  color: var(--wg-text-2);
+  font-size: 13px;
+}
+
+.wg-auth-form .semi-form-field {
+  margin-bottom: 18px;
+}
+
+.wg-auth-submit {
+  margin-top: 6px;
+  border-radius: 999px;
+  height: 40px;
+  font-weight: 600;
+}
+
+.wg-auth-switch {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--wg-text-2);
+}
+
+.wg-auth-switch a {
+  color: var(--wg-primary-strong);
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.wg-auth-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--wg-text-2);
+}
+
+.wg-auth-back:hover {
+  color: var(--wg-primary);
+}
+
+/* ============================================================
+   P2 — Console layout (sidebar + header)
+   ============================================================ */
+
+.wg-console {
+  display: flex;
+  min-height: 100vh;
+  background: var(--wg-bg);
+}
+
+.wg-console-sider {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--wg-surface);
+  border-right: 1px solid var(--wg-border);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  transition: width 0.2s ease;
+  overflow-x: hidden;
+}
+
+.wg-console-collapsed .wg-console-sider {
+  width: 64px;
+}
+
+.wg-console-sider-logo {
+  padding: 14px 12px 6px;
+}
+
+.wg-console-sider-logo .semi-navigation-item {
+  padding: 0;
+}
+
+.wg-console-sider-logo .wg-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  padding: 6px 10px;
+}
+
+.wg-console-nav {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border-right: none !important;
+  padding: 4px 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.wg-console-sider-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  padding: 10px 20px;
+  border-top: 1px solid var(--wg-border);
+}
+.wg-console-collapsed .wg-console-sider-bottom {
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0;
+}
+
+.wg-console-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.wg-console-header {
+  height: 60px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 0 24px;
+  background: var(--wg-surface);
+  border-bottom: 1px solid var(--wg-border);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+
+.wg-console-page-title {
+  font-size: 17px;
+  margin: 0;
+}
+
+.wg-console-content {
+  flex: 1;
+  padding: 24px;
+  min-width: 0;
+}
+
+.wg-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: var(--wg-text);
+  font-size: 13px;
+  max-width: 260px;
+  transition: background 0.15s ease;
+}
+
+.wg-user-chip:hover {
+  background: var(--wg-pill-bg);
+}
+
+.wg-user-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .wg-console-sider {
+    width: 64px;
+  }
+  .wg-console-sider-bottom {
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 0;
+  }
+  .wg-build-tag {
+    display: none;
+  }
+
+  .wg-console-sider .wg-logo-text,
+  .wg-console-sider .semi-navigation-item-text {
+    display: none;
+  }
+
+  .wg-console-content {
+    padding: 16px;
+  }
+}
+
+/* ============================================================
+   P2 — Console shared cards + Dashboard
+   ============================================================ */
+
+.wg-card {
+  background: var(--wg-surface);
+  border: 1px solid var(--wg-border);
+  border-radius: 14px;
+  box-shadow: var(--wg-shadow);
+  padding: 20px;
+  min-width: 0;
+}
+
+.wg-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.wg-card-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.wg-card-link {
+  color: var(--wg-primary-strong);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.wg-card-link:hover {
+  text-decoration: underline;
+}
+
+.wg-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--wg-text-2);
+  font-size: 12px;
+  cursor: help;
+}
+
+/* ============================================================
+   P2.5 — Semi Design Pro console language
+   page head → stat cards → filter card → table card
+   ============================================================ */
+
+.wg-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wg-page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.wg-page-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--wg-text);
+}
+
+.wg-page-sub {
+  font-size: 13px;
+  color: var(--wg-text-2);
+  margin: 4px 0 0;
+}
+
+.wg-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* pro card: white, 12px radius, 1px border — no shadow layering */
+.wg-pro-card {
+  background: var(--wg-surface);
+  border: 1px solid var(--wg-border);
+  border-radius: 12px;
+  min-width: 0;
+}
+
+.wg-pro-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  flex-wrap: wrap;
+}
+
+.wg-pro-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--wg-text);
+}
+
+.wg-pro-card-extra {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.wg-pro-card-body {
+  padding: 20px 24px;
+}
+
+/* section row between card groups */
+.wg-sec-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.wg-sec-row-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--wg-text);
+}
+
+/* stat cards (Semi Pro overview) */
+.wg-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.wg-stat {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 18px 20px;
+}
+
+.wg-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 22px;
+}
+
+.wg-stat-body {
+  min-width: 0;
+}
+
+.wg-stat-label {
+  font-size: 13px;
+  color: var(--wg-text-2);
+  white-space: nowrap;
+}
+
+.wg-stat-value {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  color: var(--wg-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wg-stat-cap {
+  font-size: 12px;
+  color: var(--wg-text-2);
+}
+
+/* unified light tints: primary / success / warning at ~10% alpha */
+.wg-tint-blue {
+  background: rgba(0, 134, 255, 0.1);
+  color: #0086ff;
+}
+
+.wg-tint-green {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+}
+
+.wg-tint-amber {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+}
+
+body.theme-dark .wg-tint-blue {
+  background: rgba(0, 134, 255, 0.18);
+  color: #4dabff;
+}
+
+body.theme-dark .wg-tint-green {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+}
+
+body.theme-dark .wg-tint-amber {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+}
+
+/* filter card: horizontal form items, query/reset on the right */
+.wg-filter-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+}
+
+.wg-filter-actions {
+  display: flex;
+  gap: 10px;
+  /* Design system: condition controls (search/reset/filters) stay LEFT with
+     the filter inputs; only CRUD actions (create/delete/export) go right. */
+  margin-left: 0;
+}
+
+/* table card: toolbar on top, table, pagination at the bottom */
+.wg-table-card {
+  overflow: hidden;
+}
+
+.wg-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--wg-border);
+  flex-wrap: wrap;
+}
+
+.wg-table-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.wg-table-card .semi-table-container {
+  border-radius: 0;
+}
+
+.wg-table-card .semi-table-tbody .semi-table-row-cell {
+  white-space: nowrap;
+}
+
+.wg-table-card .semi-table-tbody .semi-table-row:hover > .semi-table-row-cell {
+  background: var(--wg-surface-2);
+}
+
+.wg-table-card .semi-tabs-bar {
+  padding: 0 20px;
+  border-bottom: 1px solid var(--wg-border);
+  margin-bottom: 0;
+}
+
+/* expandable row detail grid */
+.wg-expand-detail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 8px 24px;
+  font-size: 12px;
+  padding: 2px 0;
+}
+
+.wg-expand-item {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.wg-expand-k {
+  color: var(--wg-text-2);
+  flex-shrink: 0;
+}
+
+.wg-expand-v {
+  color: var(--wg-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wg-range-pill {
+  border: none;
+  background: var(--wg-pill-bg);
+  color: var(--wg-text-2);
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.wg-range-pill:hover {
+  color: var(--wg-text);
+}
+
+.wg-range-pill.active {
+  background: var(--wg-primary-strong); color: #fff; }
+
+.wg-chart-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--wg-text-2);
+}
+
+.wg-chart-total {
+  margin-left: 12px;
+  color: var(--wg-text);
+  font-weight: 600;
+}
+
+.wg-chart-partial {
+  margin-left: 12px;
+  color: var(--wg-text-2);
+  font-weight: 400;
+  font-size: 11px;
+}
+
+.wg-chart-tabs .semi-tabs-bar {
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.wg-chart-empty {
+  height: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 1200px) {
+  .wg-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .wg-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wg-filter-actions {
+    margin-left: 0;
+  }
+}
+
+/* ============================================================
+   P2 — Console table cells (shared)
+   ============================================================ */
+
+.wg-cell-key {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.wg-mono-sm {
+  font-family: var(--wg-font-mono);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wg-cell-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wg-cell-strong {
+  font-weight: 600;
+}
+
+.wg-cell-dim {
+  color: var(--wg-text-2);
+  font-size: 12px;
+}
+
+.wg-cell-models {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.wg-cell-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.wg-table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--wg-border);
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.wg-table-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wg-table-pager {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wg-spin {
+  animation: wg-rotate 1s linear infinite;
+}
+
+@keyframes wg-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* drawer 字段：label 在上、input 在下 */
+.wg-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wg-form-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--wg-text-2);
+  font-weight: 500;
+}
+
+.wg-form-required {
+  color: #f5222d;
+  margin-left: 2px;
+}
+
+.wg-form-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 底部固定操作条：左 Cancel 右 Submit，不随内容滚动 */
+.wg-drawer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -24px;
+  padding: 16px 24px;
+  background: var(--wg-surface);
+  border-top: 1px solid var(--wg-border);
+}
+
+.wg-drawer-footer-single {
+  justify-content: flex-end;
+}
+
+.wg-key-created {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.wg-key-created-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--wg-surface-2);
+  border: 1px solid var(--wg-border);
+  border-radius: 10px;
+  padding: 12px;
+  min-width: 0;
+}
+
+.wg-key-created-value {
+  flex: 1;
+  font-family: var(--wg-font-mono);
+  font-size: 12px;
+  word-break: break-all;
+  color: var(--wg-text);
+}
+
+.wg-key-created-tip {
+  margin: 0;
+  font-size: 12px;
+  color: var(--wg-text-2);
+}
+
+.wg-code-block {
+  background: var(--wg-code-bg);
+  color: #e6edf3;
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-family: var(--wg-font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-x: auto;
+  margin: 0;
+}
+
+/* P2.5 console pages use wg-page / wg-filter-card / wg-table-card above */
+
+/* ============================================================
+   P2.6 — drawer / modal density
+   Folded sections: title 15/600 + one-liner 12 gray + right arrow
+   ============================================================ */
+
+.wg-sections.semi-collapse {
+  border: none;
+  background: transparent;
+}
+
+.wg-sections .semi-collapse-item {
+  border-bottom: 1px solid var(--wg-border);
+}
+
+.wg-sections .semi-collapse-item:last-child {
+  border-bottom: none;
+}
+
+.wg-sections .semi-collapse-header {
+  margin: 0;
+  padding: 12px 0;
+  border-radius: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--wg-text);
+}
+
+.wg-sections .semi-collapse-header:hover,
+.wg-sections .semi-collapse-header:active {
+  background: transparent;
+}
+
+.wg-sections .semi-collapse-header:focus-visible {
+  outline: 2px solid var(--wg-primary);
+  outline-offset: -2px;
+}
+
+.wg-sections .semi-collapse-header-right span {
+  padding-right: 0;
+}
+
+.wg-sections .semi-collapse-content {
+  padding: 4px 0 12px;
+}
+
+.wg-section-head {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.wg-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+  color: var(--wg-text);
+}
+
+.wg-section-desc {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  color: var(--wg-text-2);
+}
+
+.wg-section-desc-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: help;
+}
+
+/* 每区字段：间距 16px，标签上置 */
+.wg-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ≤2 sections — flat blocks, nothing to fold */
+.wg-sections-plain {
+  display: flex;
+  flex-direction: column;
+}
+
+.wg-section-plain {
+  padding: 8px 0 16px;
+  border-bottom: 1px solid var(--wg-border);
+}
+
+.wg-section-plain:last-child {
+  border-bottom: none;
+}
+
+.wg-section-plain .wg-section-head {
+  margin-bottom: 16px;
+}
+
+/* modals — 480px, ≤2 blocks, tight rhythm */
+.wg-modal.semi-modal .semi-modal-header {
+  margin: 20px 0 8px;
+  font-size: 15px;
+}
+
+.wg-modal.semi-modal .semi-modal-body-wrapper {
+  margin: 0 0 20px;
+}
+
+.wg-modal.semi-modal .semi-modal-body {
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--wg-text-2);
+}
+
+.wg-modal.semi-modal .semi-modal-footer {
+  margin: 0 0 20px;
+}
+
+@media (max-width: 640px) {
+  .wg-sections .semi-collapse-header {
+    padding: 10px 0;
+  }
+}
+
+/* ============================================================
+   P2.7 — Key creation domain flow (type / routing / group)
+   ============================================================ */
+
+.wg-key-main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-bottom: 8px;
+}
+
+.wg-keytype-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.wg-keytype-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--wg-border);
+  border-radius: 10px;
+  background: var(--wg-surface);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  min-width: 0;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.wg-keytype-card:hover:not(.is-disabled) {
+  border-color: rgba(0, 134, 255, 0.45);
+}
+
+.wg-keytype-card.active {
+  border-color: var(--wg-primary);
+  background: rgba(0, 134, 255, 0.06);
+  box-shadow: inset 0 0 0 1px var(--wg-primary);
+}
+
+.wg-keytype-card:focus-visible {
+  outline: 2px solid var(--wg-primary);
+  outline-offset: 2px;
+}
+
+.wg-keytype-card.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wg-keytype-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  margin-bottom: 2px;
+  font-size: 14px;
+}
+
+.wg-keytype-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--wg-text);
+}
+
+.wg-keytype-card.active .wg-keytype-title {
+  color: var(--wg-primary);
+}
+
+.wg-keytype-desc {
+  font-size: 11px;
+  line-height: 15px;
+  color: var(--wg-text-2);
+}
+
+.wg-tint-violet {
+  background: rgba(139, 92, 246, 0.12);
+  color: #7c3aed;
+}
+
+body.theme-dark .wg-tint-violet {
+  background: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+}
+
+/* 分组继承摘要条：选中分组后立刻显示限额/计费/模型耦合关系 */
+.wg-inherit-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--wg-surface-2);
+  color: var(--wg-text-2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.wg-inherit-bar svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--wg-text-2);
+}
+
+/* 路由模式等轻量单选 */
+.wg-radio-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.wg-chip {
+  border: 1px solid var(--wg-border);
+  background: var(--wg-surface);
+  color: var(--wg-text-2);
+  font-size: 12px;
+  line-height: 18px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.wg-chip:hover {
+  color: var(--wg-text);
+  border-color: rgba(0, 134, 255, 0.35);
+}
+
+.wg-chip.active {
+  border-color: var(--wg-primary);
+  color: var(--wg-primary);
+  background: rgba(0, 134, 255, 0.08);
+}
+
+.wg-chip:focus-visible {
+  outline: 2px solid var(--wg-primary);
+  outline-offset: 2px;
+}
+
+.wg-field-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--wg-text-2);
+}
+
+.wg-field-warn {
+  color: #d97706;
+}
+
+/* 编辑态只读配置摘要 */
+.wg-key-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--wg-border);
+  border-radius: 10px;
+  background: var(--wg-surface-2);
+}
+
+.wg-key-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.wg-key-meta-k {
+  font-size: 11px;
+  color: var(--wg-text-2);
+}
+
+.wg-key-meta-v {
+  font-size: 13px;
+  color: var(--wg-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wg-key-folded {
+  margin-top: 8px;
+  border-top: 1px solid var(--wg-border);
+}
+
+@media (max-width: 560px) {
+  .wg-keytype-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wg-key-meta-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* enterprise console additions */
+.wg-console-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.wg-page-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+}
+.wg-chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 1080px) {
+  .wg-chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wg-field-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+button.wg-model-name-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+button.wg-model-name-btn:hover {
+  color: var(--wg-primary-strong);
+}
+
+/* a11y: Semi light/danger text tones miss WCAG AA on white — darken in our scope */
+.wg-hero-cta .semi-button-light {
+  color: var(--wg-primary-strong) !important;
+}
+.semi-button-danger {
+  color: #cf1322 !important;
+}
+
+/* a11y: gallery select placeholder contrast */
+.wg-gallery .semi-select-selection-placeholder {
+  color: var(--wg-text-2);
+}
+
+/* nav consistency: top-level and nested enterprise items share one type style */
+.wg-console-nav .semi-navigation-item,
+.wg-console-nav .semi-navigation-sub-title {
+  font-size: 14px;
+  font-weight: 500;
+}
+.wg-console-nav .semi-navigation-item-selected {
+  font-weight: 600;
+}
+
+button.wg-user-chip {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+/* nav type: Semi defaults top-level to 600 — unify via text node too */
+.wg-console-nav .semi-navigation-item-text,
+.wg-console-nav .semi-navigation-item {
+  font-weight: 500 !important;
+  font-size: 14px;
+}
+.wg-console-nav .semi-navigation-item-selected .semi-navigation-item-text {
+  font-weight: 600 !important;
+}
+
+/* dark-mode parity for the P2.5 console components (k3-era classes had none) */
+body.theme-dark .wg-pro-card,
+body.theme-dark .wg-stat,
+body.theme-dark .wg-filter-card,
+body.theme-dark .wg-table-card,
+body.theme-dark .wg-chart-card {
+  background: var(--wg-card, #232529) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+body.theme-dark .wg-stat-cap,
+body.theme-dark .wg-cell-dim,
+body.theme-dark .wg-chart-sub {
+  color: var(--wg-text-2) !important;
+}
+body.theme-dark .wg-cell-strong,
+body.theme-dark .wg-num {
+  color: var(--wg-text-1, #e8eaed) !important;
+}
+
+/* Semi design-token overrides must live on `body` — semi.min.css defines its
+   --semi-* vars on body, and a body's own declaration beats :root inheritance.
+   Rounded corners per our design system. */
+body {
+  /* pill style everywhere, matching the range-pill buttons */
+  --semi-border-radius-extra-small: 6px;
+  --semi-border-radius-small: 999px;
+  --semi-border-radius-medium: 12px;
+  --semi-border-radius-large: 16px;
+}
+/* dark mode: Semi's own body[theme-mode=dark] block re-declares the radius
+   vars (beating our plain body rule) — match its specificity so pills stay
+   pills in dark mode too. */
+body[theme-mode='dark'] {
+  --semi-border-radius-extra-small: 6px;
+  --semi-border-radius-small: 999px;
+  --semi-border-radius-medium: 12px;
+  --semi-border-radius-large: 16px;
+}
+/* dark-mode surface unification: Semi surfaces follow our card token */
+body.theme-dark {
+  --semi-color-bg-0: #232529;
+  --semi-color-bg-1: #1b1d21;
+  --semi-color-fill-0: rgba(255, 255, 255, 0.04);
+  --semi-color-border: rgba(255, 255, 255, 0.08);
+  --semi-color-text-0: #e8eaed;
+  --semi-color-text-1: #c9cdd3;
+  --semi-color-text-2: #a8adb5;
+}
+
+.wg-build-tag {
+  font-size: 10px;
+  color: var(--wg-text-3, #8f959e);
+  font-family: var(--wg-font-mono, monospace);
+  user-select: none;
+}
+
+/* The sider is one chrome column: Semi Nav paints its own --semi-color-bg-1
+   background, which split the column into a darker stripe between lighter
+   logo/topbar/bottom — read as "topbar intrudes" and "bottom bar narrower".
+   Make the nav transparent so the whole column is --wg-surface. */
+.wg-console-nav,
+.wg-console-nav .semi-navigation {
+  background: transparent !important;
+}
+
+.wg-copybar-url {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* RangePicker is a compound control: the global 999px pill radius leaves the
+   right-hand input square. Give datepickers a uniform 8px instead. */
+.semi-datepicker,
+.semi-datepicker-range,
+.semi-datepicker-range-input-wrapper-start,
+.semi-datepicker-range-input-wrapper-end,
+.semi-datepicker-range-input,
+.semi-datepicker input {
+  border-radius: 8px !important;
+}
