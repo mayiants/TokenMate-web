@@ -21,7 +21,20 @@ const VIEWPORTS = [
   { name: 'mobile', width: 390, height: 844 }, // iPhone 14
 ];
 const PUBLIC_PAGES = ['/', '/models', '/login'];
-const CONSOLE_PAGES = ['/console', '/console/keys', '/console/logs', '/console/balance', '/console/enterprise'];
+const CONSOLE_PAGES = [
+  '/console',
+  '/console/keys',
+  '/console/logs',
+  '/console/balance',
+  '/console/profile',
+  '/console/notifications',
+  '/console/support',
+  '/console/billing',
+  '/console/subscriptions',
+  '/console/groups',
+  '/console/status',
+  '/console/enterprise',
+];
 
 (async () => {
   fs.mkdirSync(SHOTS, { recursive: true });
