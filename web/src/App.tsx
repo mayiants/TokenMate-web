@@ -38,6 +38,7 @@ const AdminOverview = lazy(() => import('./pages/admin/Overview'));
 const AdminUsers = lazy(() => import('./pages/admin/Users'));
 const AdminEnterprises = lazy(() => import('./pages/admin/Enterprises'));
 const AdminGroups = lazy(() => import('./pages/admin/Groups'));
+const AdminModelsAdmin = lazy(() => import('./pages/admin/ModelsAdmin'));
 
 const lazyFallback = (
   <div style={{ display: 'flex', justifyContent: 'center', padding: 96 }}>
@@ -102,6 +103,7 @@ export default function App() {
           <Route path="users" element={<Suspense fallback={lazyFallback}><AdminUsers /></Suspense>} />
           <Route path="enterprises" element={<Suspense fallback={lazyFallback}><AdminEnterprises /></Suspense>} />
           <Route path="groups" element={<Suspense fallback={lazyFallback}><AdminGroups /></Suspense>} />
+          <Route path="models" element={<Suspense fallback={lazyFallback}><AdminModelsAdmin /></Suspense>} />
         </Route>
       </Route>
       <Route element={<PublicLayout />}>

@@ -24,6 +24,7 @@ import {
   IconLanguage,
   IconMailStroked,
   IconHelpCircleStroked,
+  IconComponent,
 } from '@douyinfe/semi-icons';
 import { useAuth } from '../auth/AuthContext';
 import { useI18n } from '../i18n';
@@ -69,6 +70,7 @@ const ADMIN_ITEMS = [
   { itemKey: 'admin-users', textKey: 'admin.nav.users', path: '/console/admin/users', icon: <IconUserGroup /> },
   { itemKey: 'admin-enterprises', textKey: 'admin.nav.enterprises', path: '/console/admin/enterprises', icon: <IconBriefcaseStroked /> },
   { itemKey: 'admin-groups', textKey: 'admin.nav.groups', path: '/console/admin/groups', icon: <IconFolderStroked /> },
+  { itemKey: 'admin-models', textKey: 'admin.nav.models', path: '/console/admin/models', icon: <IconComponent /> },
 ];
 
 export default function ConsoleLayout() {
