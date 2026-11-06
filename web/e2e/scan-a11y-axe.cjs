@@ -34,6 +34,8 @@ const CONSOLE_PAGES = [
   '/console/enterprise/settings',
   '/console/enterprise/audit',
   '/console/enterprise/alerts',
+  '/console/enterprise/audit',
+  '/console/enterprise/alerts',
 ];
 
 (async () => {
