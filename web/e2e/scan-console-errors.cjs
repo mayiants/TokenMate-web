@@ -16,6 +16,9 @@ const ADMIN_PAGES = [
   '/console/admin',
   '/console/admin/users',
   '/console/admin/enterprises',
+  '/console/admin/groups',
+  '/console/admin/models',
+  '/console/admin/upstream',
 ];
 const USER_PAGES = [
   '/console',

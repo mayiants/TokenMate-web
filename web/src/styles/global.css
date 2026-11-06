@@ -2045,6 +2045,23 @@ body.theme-dark .wg-tint-amber {
   color: #fbbf24;
 }
 
+.wg-tint-red {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+
+body.theme-dark .wg-tint-red {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+
+.wg-stat-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
 /* filter card: horizontal form items, query/reset on the right */
 .wg-filter-card {
   display: flex;
