@@ -1,0 +1,25 @@
+-- 0001_baseline.sql
+-- Baseline marker. No schema changes here.
+--
+-- As of this version the schema is owned by internal/db/schema.go (InitSchema),
+-- which runs idempotently on every startup and is the single source of truth for
+-- fresh databases and for the static checker (scripts/check_schema_vs_code.sh).
+--
+-- This file only records version "0001" in schema_migrations so that all
+-- subsequent schema changes are delivered as ordered migrations:
+--
+--     migrations/0002_<change>.sql
+--     migrations/0003_<change>.sql
+--     ...
+--
+-- Rules going forward (post-production):
+--   * Do NOT add new CREATE/ALTER statements to schema.go to evolve a
+--     production database. Add a new migration file instead.
+--   * Each migration MUST be idempotent where possible and MUST include any
+--     required data backfill (e.g. INSERT ... SELECT) so that `migrate up`
+--     carries existing data forward.
+--   * Keep schema.go in sync for fresh-database initialization and for the
+--     static checker, but treat it as documentation of the final state, not as
+--     the migration mechanism.
+
+SELECT 1 AS baseline;

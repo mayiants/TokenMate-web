@@ -1,0 +1,125 @@
+{{define "content"}}
+{{$d := .Data}}
+
+<div class="card">
+  <div class="card-header">
+    <h1 class="card-title">{{t "My Group"}}</h1>
+  </div>
+  {{if $d.UserGroupName}}
+  <p class="text-muted">{{t "Current affiliation:"}}<span class="text-primary font-medium">{{$d.UserGroupName}}</span></p>
+  {{end}}
+</div>
+
+<!-- Personal Groups -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Individual available groups"}}</h2>
+  </div>
+  {{if $d.Groups}}
+  <div class="data-table-wrapper mt-4">
+    <table class="data-table du-table du-table-zebra">
+      <thead>
+        <tr>
+          <th>{{t "Name"}}</th>
+          <th>{{t "Type"}}</th>
+          <th>{{t "Multiplier"}}</th>
+          <th>RPM</th>
+          <th>TPM</th>
+          <th>{{t "Model"}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range $d.Groups}}
+        <tr style="{{if eq .ID $d.UserGroupID}}background:var(--primary-light);{{end}}">
+          <td class="font-medium">
+            {{.Name}}
+            {{if eq .ID $d.UserGroupID}}<span class="badge badge-info" style="margin-left:6px">{{t "Current"}}</span>{{end}}
+          </td>
+          <td>
+            {{if eq .GroupType "economy"}}{{t "Economy"}}{{else if eq .GroupType "subscription"}}{{t "Subscription"}}{{else}}{{t "General"}}{{end}}
+          </td>
+          <td>
+            {{if lt .PricingRatio 1.0}}<span class="text-success">{{.PricingRatio}}x</span>
+            {{else if gt .PricingRatio 1.0}}<span class="text-error">{{.PricingRatio}}x</span>
+            {{else}}{{.PricingRatio}}x{{end}}
+          </td>
+          <td>{{if .RPM}}{{.RPM}}{{else}}<span class="text-muted">—</span>{{end}}</td>
+          <td>{{if .TPM}}{{.TPM}}{{else}}<span class="text-muted">—</span>{{end}}</td>
+          <td>
+            {{if .Models}}
+            <div class="flex flex-wrap gap-1">
+              {{range $idx, $m := .Models}}
+              {{if lt $idx 3}}<code class="font-mono text-xs" style="background:var(--bg-hover); padding:2px 6px; border-radius:4px;">{{$m}}</code>{{end}}
+              {{end}}
+              {{if gt (len .Models) 3}}<span class="text-xs text-muted">+{{sub (len .Models) 3}}</span>{{end}}
+            </div>
+            {{else}}<span class="text-muted text-sm">{{t "All Models"}} ({{.TotalModels}})</span>{{end}}
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <div class="empty-state-sm">
+    <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <p class="empty-state-title">{{t "No data"}}</p>
+  </div>
+  {{end}}
+</div>
+
+<!-- Enterprise Groups -->
+{{if $d.HasEnterprise}}
+<div class="card mt-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Enterprise Group"}}</h2>
+  </div>
+  {{if $d.EnterpriseGroups}}
+  <div class="data-table-wrapper mt-4">
+    <table class="data-table du-table du-table-zebra">
+      <thead>
+        <tr>
+          <th>{{t "Name"}}</th>
+          <th>RPM</th>
+          <th>TPM</th>
+          <th>{{t "Model"}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range $d.EnterpriseGroups}}
+        <tr>
+          <td class="font-medium">{{.Name}}</td>
+          <td>{{if .RPM}}{{.RPM}}{{else}}<span class="text-muted">—</span>{{end}}</td>
+          <td>{{if .TPM}}{{.TPM}}{{else}}<span class="text-muted">—</span>{{end}}</td>
+          <td>
+            {{if .Models}}
+            <div class="flex flex-wrap gap-1">
+              {{range $m := .Models}}<code class="font-mono text-xs" style="background:var(--bg-hover); padding:2px 6px; border-radius:4px;">{{$m}}</code>{{end}}
+            </div>
+            {{else}}<span class="text-muted text-sm">{{t "All Models"}} ({{.TotalModels}})</span>{{end}}
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <div class="empty-state-sm">
+    <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <p class="empty-state-title">{{t "No data"}}</p>
+  </div>
+  {{end}}
+</div>
+{{end}}
+
+<div class="card mt-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Description"}}</h2>
+  </div>
+  <div class="mt-2 text-sm text-muted">
+    <p><strong>{{t "Personal Grouping"}}</strong>{{t ": A public group provided by the platform, which determines the billing method and discount."}}</p>
+    <p><strong>{{t "Enterprise Groups"}}</strong>{{t "Enterprise-managed groups are configured by the enterprise admin to control available models and usage limits. Enterprise groups do not use pricing multipliers and use enterprise pricing uniformly."}}</p>
+    <p>{{t "If you need to adjust the grouping, please contact the administrator."}}</p>
+  </div>
+</div>
+{{end}}

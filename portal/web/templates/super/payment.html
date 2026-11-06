@@ -1,0 +1,316 @@
+{{define "content"}}
+{{$config := .Data.Config}}
+<div class="page-header">
+  <h1 class="page-title">{{t "Payment Configuration"}}</h1>
+  <p class="text-muted">{{t "Configure payment gateway settings"}}</p>
+</div>
+
+<div class="key-search-bar">
+  <button class="btn btn-secondary btn-sm" onclick="exportPaymentConfig()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>{{t "Export"}}</button>
+  <div class="flex-1"></div>
+</div>
+
+<!-- Payment Mode Toggle -->
+<div class="card mt-4">
+  <h2 class="card-title">{{t "Payment Mode"}}</h2>
+  <div style="display:flex;align-items:center;gap:16px;padding:8px 0">
+    <div style="flex:1">
+      <div class="font-medium" id="payment-mode-label">{{t "Current mode: real payment"}}</div>
+      <p class="text-xs text-muted mt-1">{{t "In simulated recharge mode, user recharges succeed directly without a payment gateway. Suitable for test environments."}}</p>
+    </div>
+    <label style="position:relative;display:inline-block;width:52px;height:28px;cursor:pointer">
+      <input type="checkbox" id="simulation-toggle" style="display:none" onchange="toggleSimulation()" aria-label="Simulation Toggle">
+      <span id="simulation-slider" style="position:absolute;top:0;left:0;right:0;bottom:0;background:var(--border);border-radius:14px;transition:0.3s">
+        <span id="simulation-knob" style="position:absolute;top:2px;left:2px;width:24px;height:24px;background:var(--text-inverse);border-radius:50%;transition:0.3s"></span>
+      </span>
+    </label>
+  </div>
+  <div id="simulation-status" class="hidden" style="margin-top:8px;padding:8px 12px;border-radius:var(--radius);font-size:0.875rem"></div>
+  {{if not .Data.GatewayEnabled}}
+  <div class="bg-warning-light flex items-center" style="margin-top:12px;padding:12px 16px;border-radius:var(--radius);border-left:4px solid var(--warning-text);gap:12px">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning-text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span style="font-size:0.9375rem">{{t "The payment gateway is not configured. Please contact the administrator."}}</span>
+  </div>
+  {{end}}
+</div>
+
+<script>
+var simulationEnabled = false;
+
+// Load current simulation mode
+fetch('/api/admin/settings')
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var paymentGroup = (data.settings || {}).payment || {};
+    var settings = paymentGroup.settings || {};
+    simulationEnabled = settings.payment_simulation_mode && settings.payment_simulation_mode.value === 'true';
+    updateToggleUI();
+  })
+  .catch(function() {});
+
+function updateToggleUI() {
+  var toggle = document.getElementById('simulation-toggle');
+  var slider = document.getElementById('simulation-slider');
+  var knob = document.getElementById('simulation-knob');
+  var label = document.getElementById('payment-mode-label');
+
+  toggle.checked = simulationEnabled;
+  if (simulationEnabled) {
+    slider.style.background = 'var(--color-warning)';
+    knob.style.transform = 'translateX(24px)';
+    label.textContent = _t('Current mode: simulated recharge (test)');
+  } else {
+    slider.style.background = 'var(--border)';
+    knob.style.transform = 'translateX(0)';
+    label.textContent = _t('Current mode: real payment');
+  }
+}
+
+function toggleSimulation() {
+  var toggle = document.getElementById('simulation-toggle');
+  var newValue = toggle.checked ? 'true' : 'false';
+
+  fetch('/api/admin/settings/payment_simulation_mode', {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({value: newValue})
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) {
+      simulationEnabled = toggle.checked;
+      updateToggleUI();
+      var status = document.getElementById('simulation-status');
+      status.style.display = 'block';
+      if (simulationEnabled) {
+        status.style.background = 'var(--color-warning-light)';
+        status.style.color = 'var(--color-warning)';
+        status.textContent = _t('⚠ Switched to simulated recharge mode. User recharges will succeed directly.');
+      } else {
+        status.style.background = 'var(--color-success-light)';
+        status.style.color = 'var(--color-success)';
+        status.textContent = _t('✓ Switched to real payment mode. User recharges require a payment gateway.');
+      }
+      setTimeout(function() { status.style.display = 'none'; }, 5000);
+    }
+  })
+  .catch(function() {
+    toggle.checked = !toggle.checked;
+    showToast('error', _t('Settings save failed'));
+  });
+}
+</script>
+
+<div class="payment-grid">
+<div class="card mt-4">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <h2 class="card-title">{{t "Stripe Configuration"}}</h2>
+    <label style="display:flex;align-items:center;gap:8px;font-size:0.875rem;cursor:pointer">
+      <input type="checkbox" id="stripe-enabled" onchange="toggleGateway('stripe', this)" {{if index $config.GatewayEnabled "stripe"}}checked{{end}}>
+      {{t "Enabled"}}
+    </label>
+  </div>
+  <form onsubmit="saveGateway('stripe'); return false">
+    <div class="form-group">
+      <label class="form-label">{{t "Secret Key"}}</label>
+      <input type="password" id="stripe-secret_key" class="form-input du-input du-input-bordered" value="{{if $config}}{{$config.StripeSecretKey}}{{end}}" placeholder="sk_live_..." autocomplete="new-password">
+      <p class="text-xs text-muted mt-1">{{t "Leave empty to keep current value"}}</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Webhook Secret"}}</label>
+      <input type="password" id="stripe-webhook_secret" class="form-input du-input du-input-bordered" value="{{if $config}}{{$config.StripeWebhookSecret}}{{end}}" placeholder="whsec_..." autocomplete="new-password">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button type="submit" class="btn btn-primary">{{t "Save"}}</button>
+      <button type="button" class="btn btn-secondary" onclick="testGateway('stripe')">{{t "Test Connection"}}</button>
+    </div>
+  </form>
+</div>
+
+<div class="card mt-4">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <h2 class="card-title">{{t "PayPal Configuration"}}</h2>
+    <label style="display:flex;align-items:center;gap:8px;font-size:0.875rem;cursor:pointer">
+      <input type="checkbox" id="paypal-enabled" onchange="toggleGateway('paypal', this)" {{if index $config.GatewayEnabled "paypal"}}checked{{end}}>
+      {{t "Enabled"}}
+    </label>
+  </div>
+  <form onsubmit="saveGateway('paypal'); return false">
+    <div class="form-group">
+      <label class="form-label">{{t "Client ID"}}</label>
+      <input type="text" id="paypal-client_id" class="form-input du-input du-input-bordered" value="{{if $config}}{{$config.PayPalClientID}}{{end}}" placeholder="AX...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Secret"}}</label>
+      <input type="password" id="paypal-secret" class="form-input du-input du-input-bordered" value="{{if $config}}{{$config.PayPalSecret}}{{end}}" placeholder="EK..." autocomplete="new-password">
+      <p class="text-xs text-muted mt-1">{{t "Leave empty to keep current value"}}</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Mode"}}</label>
+      <select id="paypal-mode" class="form-select du-select du-select-bordered" aria-label="Paypal Mode">
+        <option value="sandbox" {{if and $config (eq $config.PayPalMode "sandbox")}}selected{{end}}>Sandbox</option>
+        <option value="live" {{if and $config (eq $config.PayPalMode "live")}}selected{{end}}>Live</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Webhook ID"}}</label>
+      <input type="text" id="paypal-webhook_id" class="form-input du-input du-input-bordered" value="{{if $config}}{{$config.PayPalWebhookID}}{{end}}" placeholder="WH-...">
+      <p class="text-xs text-muted mt-1">{{t "Required for webhook signature verification. Found in PayPal Developer Dashboard → Webhooks."}}</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button type="submit" class="btn btn-primary">{{t "Save"}}</button>
+      <button type="button" class="btn btn-secondary" onclick="testGateway('paypal')">{{t "Test Connection"}}</button>
+    </div>
+  </form>
+</div>
+
+<div class="card mt-4">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <h2 class="card-title">{{t "Alipay Configuration"}}</h2>
+    <label style="display:flex;align-items:center;gap:8px;font-size:0.875rem;cursor:pointer">
+      <input type="checkbox" id="alipay-enabled" onchange="toggleGateway('alipay', this)" {{if index $config.GatewayEnabled "alipay"}}checked{{end}}>
+      {{t "Enabled"}}
+    </label>
+  </div>
+  <form onsubmit="saveGateway('alipay'); return false">
+    <div class="form-group">
+      <label class="form-label">{{t "Client ID"}}</label>
+      <input type="text" id="alipay-client_id" class="form-input du-input du-input-bordered" value="{{if $config}}{{$config.AlipayClientID}}{{end}}" placeholder="SANDBOX_5Y...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Merchant Private Key"}}</label>
+      <textarea id="alipay-merchant_private_key" class="form-textarea" rows="4" placeholder="-----BEGIN RSA PRIVATE KEY-----">{{if $config}}{{$config.AlipayPrivateKey}}{{end}}</textarea>
+      <p class="text-xs text-muted mt-1">{{t "Leave empty to keep current value"}}</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Alipay Public Key"}}</label>
+      <textarea id="alipay-alipay_public_key" class="form-textarea" rows="4" placeholder="-----BEGIN PUBLIC KEY-----">{{if $config}}{{$config.AlipayPublicKey}}{{end}}</textarea>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button type="submit" class="btn btn-primary">{{t "Save"}}</button>
+      <button type="button" class="btn btn-secondary" onclick="testGateway('alipay')">{{t "Test Connection"}}</button>
+    </div>
+  </form>
+</div>
+
+<div class="card mt-4">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <h2 class="card-title">{{t "WeChat Pay Configuration"}}</h2>
+    <label style="display:flex;align-items:center;gap:8px;font-size:0.875rem;cursor:pointer">
+      <input type="checkbox" id="wechat-enabled" onchange="toggleGateway('wechat', this)" {{if index $config.GatewayEnabled "wechat"}}checked{{end}}>
+      {{t "Enabled"}}
+    </label>
+  </div>
+  <form onsubmit="saveGateway('wechat'); return false">
+    <div class="form-group">
+      <label class="form-label">{{t "App ID"}}</label>
+      <input type="text" id="wechat-app_id" class="form-input du-input du-input-bordered" value="{{if $config}}{{$config.WeChatAppID}}{{end}}" placeholder="wx...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Merchant ID"}}</label>
+      <input type="text" id="wechat-mch_id" class="form-input du-input du-input-bordered" value="{{if $config}}{{$config.WeChatMchID}}{{end}}" placeholder="16...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Merchant Serial No"}}</label>
+      <input type="text" id="wechat-mch_serial_no" class="form-input du-input du-input-bordered" value="{{if $config}}{{$config.WeChatMchSerialNo}}{{end}}" placeholder="Certificate serial number">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Merchant Private Key"}}</label>
+      <textarea id="wechat-mch_private_key" class="form-textarea" rows="4" placeholder="-----BEGIN PRIVATE KEY-----">{{if $config}}{{$config.WeChatPrivateKey}}{{end}}</textarea>
+      <p class="text-xs text-muted mt-1">{{t "Leave empty to keep current value"}}</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "APIv3 Key"}}</label>
+      <input type="password" id="wechat-apiv3_key" class="form-input du-input du-input-bordered" value="{{if $config}}{{$config.WeChatAPIV3Key}}{{end}}" placeholder="32-character APIv3 key" autocomplete="new-password">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button type="submit" class="btn btn-primary">{{t "Save"}}</button>
+      <button type="button" class="btn btn-secondary" onclick="testGateway('wechat')">{{t "Test Connection"}}</button>
+    </div>
+  </form>
+</div>
+</div>
+
+<style>
+.page-header { margin-bottom: 24px; }
+.payment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+@media (max-width: 900px) {
+  .payment-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
+<script>
+// Config fields submitted for each gateway (aligned with pkg/payment config structs).
+var gatewayFields = {
+  stripe: ['secret_key', 'webhook_secret'],
+  paypal: ['client_id', 'secret', 'mode', 'webhook_id'],
+  alipay: ['client_id', 'merchant_private_key', 'alipay_public_key'],
+  wechat: ['app_id', 'mch_id', 'mch_serial_no', 'mch_private_key', 'apiv3_key']
+};
+
+function gatewayRequest(gateway, method, body, onDone) {
+  fetch('/api/admin/payment/gateways/' + gateway, {
+    method: method,
+    headers: {'Content-Type': 'application/json'},
+    body: body ? JSON.stringify(body) : undefined
+  })
+  .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
+  .then(onDone)
+  .catch(function() { showToast('error', _t('Settings save failed')); });
+}
+
+function saveGateway(gateway) {
+  var config = {};
+  gatewayFields[gateway].forEach(function(field) {
+    var el = document.getElementById(gateway + '-' + field);
+    if (el) config[field] = el.value;
+  });
+  var enabled = document.getElementById(gateway + '-enabled').checked;
+  gatewayRequest(gateway, 'PUT', {config: config, enabled: enabled}, function(res) {
+    if (res.ok && res.data.success) {
+      showToast('success', _t('Gateway configuration saved'));
+    } else {
+      showToast('error', (res.data.error && res.data.error.message) || _t('Settings save failed'));
+    }
+  });
+}
+
+function toggleGateway(gateway, checkbox) {
+  gatewayRequest(gateway, 'PUT', {enabled: checkbox.checked}, function(res) {
+    if (res.ok && res.data.success) {
+      showToast('success', _t('Gateway configuration saved'));
+    } else {
+      checkbox.checked = !checkbox.checked;
+      showToast('error', (res.data.error && res.data.error.message) || _t('Settings save failed'));
+    }
+  });
+}
+
+function testGateway(gateway) {
+  fetch('/api/admin/payment/gateways/' + gateway + '/test', {method: 'POST'})
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      showToast(data.success ? 'success' : 'error', data.message || _t('Gateway configuration error'));
+    })
+    .catch(function() { showToast('error', _t('Gateway configuration error')); });
+}
+
+function exportPaymentConfig() {
+  var config = {};
+  {{if $config}}
+  config.paypal = { client_id: {{$config.PayPalClientID | json}}, mode: {{$config.PayPalMode | json}} };
+  config.alipay = { client_id: {{$config.AlipayClientID | json}}, alipay_public_key: {{$config.AlipayPublicKey | json}} };
+  config.wechat = { app_id: {{$config.WeChatAppID | json}}, mch_id: {{$config.WeChatMchID | json}}, mch_serial_no: {{$config.WeChatMchSerialNo | json}} };
+  {{end}}
+  var blob = new Blob([JSON.stringify(config, null, 2)], {type: 'application/json'});
+  saveBlobAs(blob, 'payment-config.json');
+}
+</script>
+{{end}}

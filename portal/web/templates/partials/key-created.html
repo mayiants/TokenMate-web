@@ -1,0 +1,32 @@
+{{define "key-created"}}
+<div class="key-warning">{{t "⚠️ Please save this key carefully"}}</div>
+<div class="form-group">
+  <label class="form-label">API Key</label>
+  <div class="key-display">
+    <input type="text" id="new-api-key" value="{{.Key}}" class="form-input" readonly style="font-family:var(--font-mono);flex:1;" aria-label="New Api Key">
+    <button class="btn btn-sm btn-primary" onclick="copyToClipboard('new-api-key', this)">{{t "Copy"}}</button>
+  </div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-secondary" onclick="window.location.reload()">{{t "Close"}}</button>
+</div>
+<script>
+function copyToClipboard(inputId, btn) {
+  var input = document.getElementById(inputId);
+  input.select();
+  input.setSelectionRange(0, 99999);
+  try {
+    document.execCommand('copy');
+    btn.textContent = _t('Copied');
+    setTimeout(function() { btn.textContent = _t('Copy'); }, 2000);
+  } catch(e) {
+    navigator.clipboard.writeText(input.value).then(function() {
+      btn.textContent = _t('Copied');
+      setTimeout(function() { btn.textContent = _t('Copy'); }, 2000);
+    }).catch(function() {
+      showMessage(_t('Copy failed'), _t('Copy manually: ') + input.value);
+    });
+  }
+}
+</script>
+{{end}}

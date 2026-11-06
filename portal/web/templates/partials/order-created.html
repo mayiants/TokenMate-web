@@ -1,0 +1,44 @@
+{{define "order-created"}}
+<div class="text-center mb-4">
+  <div class="text-lg font-bold text-success mb-2">{{t "✓ Order Created"}}</div>
+  <p class="text-muted">{{t "Please save the order ID for future reference"}}</p>
+</div>
+<div class="form-group">
+  <label class="form-label">{{t "Order Number"}}</label>
+  <div class="key-display">
+    <input type="text" id="new-order-id" value="{{.OrderID}}" class="form-input" readonly style="font-family:var(--font-mono);flex:1;" aria-label="New Order Id">
+    <button class="btn btn-sm btn-primary" onclick="copyToClipboard('new-order-id', this)">{{t "Copy"}}</button>
+  </div>
+</div>
+<div class="form-group">
+  <label class="form-label">{{t "Amount ($)"}}</label>
+  <div class="stat-value text-primary">{{.Amount}}</div>
+</div>
+<div class="form-group">
+  <label class="form-label">{{t "Status"}}</label>
+  <span class="badge badge-warning">{{.Status}}</span>
+</div>
+<div class="modal-footer">
+  <a href="/orders" class="btn btn-primary">{{t "View Orders"}}</a>
+  <button class="btn btn-secondary" onclick="window.location.reload()">{{t "Close"}}</button>
+</div>
+<script>
+function copyToClipboard(inputId, btn) {
+  var input = document.getElementById(inputId);
+  input.select();
+  input.setSelectionRange(0, 99999);
+  try {
+    document.execCommand('copy');
+    btn.textContent = _t('Copied');
+    setTimeout(function() { btn.textContent = _t('Copy'); }, 2000);
+  } catch(e) {
+    navigator.clipboard.writeText(input.value).then(function() {
+      btn.textContent = _t('Copied');
+      setTimeout(function() { btn.textContent = _t('Copy'); }, 2000);
+    }).catch(function() {
+      showMessage(_t('Copy failed'), _t('Copy manually: ') + input.value);
+    });
+  }
+}
+</script>
+{{end}}

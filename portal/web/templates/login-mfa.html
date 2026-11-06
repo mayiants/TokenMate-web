@@ -1,0 +1,24 @@
+{{define "content"}}
+<div class="auth-page">
+  <div class="auth-card">
+    <h1>{{t "Two-factor authentication"}}</h1>
+    <p class="subtitle">{{t "Enter the 6-digit code from your authenticator app, or one of your recovery codes."}}</p>
+    <form action="/login/mfa" method="POST">
+      <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+      <div class="flash-container" role="alert">
+        {{if .Toast}}<div class="flash flash-{{.Toast.Type}}">{{.Toast.Message}}</div>{{end}}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mfa-code">{{t "Authentication code"}}</label>
+        <input type="text" id="mfa-code" name="code" class="form-input" required autofocus
+               autocomplete="one-time-code" inputmode="text" maxlength="32" spellcheck="false"
+               placeholder="123456">
+      </div>
+      <button type="submit" class="btn btn-primary w-full">{{t "Verify"}}</button>
+    </form>
+    <p class="text-center mt-4 text-sm text-muted">
+      {{t "This verification expires after 5 minutes."}} <a href="/login" class="text-primary">{{t "Back to sign in"}}</a>
+    </p>
+  </div>
+</div>
+{{end}}

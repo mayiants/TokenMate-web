@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "Bash": {
+      "allow": [
+        "go build*",
+        "go test*",
+        "go vet*",
+        "gofmt*",
+        "go mod tidy",
+        "git add*",
+        "git commit*",
+        "git push*",
+        "git status*",
+        "git diff*",
+        "git log*",
+        "git checkout*",
+        "grep*",
+        "find*",
+        "ls*",
+        "wc*",
+        "head*",
+        "tail*",
+        "cat*",
+        "sed*",
+        "python3*",
+        "docker ps*",
+        "docker exec*",
+        "curl*",
+        "mkdir*",
+        "cp*",
+        "mv*",
+        "rm*",
+        "echo*",
+        "sort*",
+        "cut*",
+        "uniq*",
+        "bash*"
+      ]
+    }
+  }
+}

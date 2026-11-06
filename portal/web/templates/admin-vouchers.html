@@ -1,0 +1,849 @@
+{{define "content"}}
+<div class="admin-vouchers-page">
+  <div class="page-header">
+    <h1 class="page-title">{{t "Voucher Management"}}</h1>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-icon stat-icon-primary">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value" id="stat-total">-</div>
+        <div class="stat-label">{{t "Total Vouchers"}}</div>
+      </div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon stat-icon-success">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value text-success" id="stat-active">-</div>
+        <div class="stat-label">{{t "Active"}}</div>
+      </div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon stat-icon-warning">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value text-warning" id="stat-exhausted">-</div>
+        <div class="stat-label">{{t "Exhausted"}}</div>
+      </div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icon stat-icon-error">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value text-danger" id="stat-disabled">-</div>
+        <div class="stat-label">{{t "Disabled"}}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Welcome Settings Card -->
+  <div class="card mt-4">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+      <h2 class="card-title">{{t "Welcome Settings"}}</h2>
+      <button class="btn btn-primary btn-sm" onclick="editWelcome()">{{t "Edit"}}</button>
+    </div>
+    <div class="mt-4" id="welcome-display">
+      <p class="text-muted" id="welcome-empty" style="display:none">{{t "Welcome code not configured"}}</p>
+      <div class="stats-bar" id="welcome-stats" style="display:none">
+        <div class="stat-item">
+          <div class="stat-icon stat-icon-primary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value"><code id="welcome-code">-</code></div>
+            <div class="stat-label">{{t "Welcome Code"}}</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon stat-icon-success">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value" id="welcome-amount">-</div>
+            <div class="stat-label">{{t "Amount (USD)"}}</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon stat-icon-warning">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value"><span class="badge badge-secondary" id="welcome-status-badge">-</span></div>
+            <div class="stat-label">{{t "Status"}}</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon stat-icon-info">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value" id="welcome-expires">-</div>
+            <div class="stat-label">{{t "Expires At"}}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-4" id="welcome-form" style="display:none">
+      <div class="form-row" style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="form-group" style="flex:1;min-width:140px">
+          <label class="form-label">{{t "Amount (USD)"}}</label>
+          <input type="number" id="welcome-amount-input" class="form-input du-input du-input-bordered" step="0.01" min="0.01" placeholder="5.00">
+        </div>
+        <div class="form-group" style="flex:1;min-width:140px">
+          <label class="form-label">{{t "Status"}}</label>
+          <select id="welcome-status" class="form-select du-select du-select-bordered" aria-label="{{t "Status"}}">
+            <option value="active">{{t "Active"}}</option>
+            <option value="disabled">{{t "Disabled"}}</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;min-width:140px">
+          <label class="form-label">{{t "Expires At"}}</label>
+          <input type="text" id="welcome-expires-input" class="form-input fp-date du-input du-input-bordered" aria-label="Welcome Expires">
+        </div>
+      </div>
+      <div class="flex gap-2 mt-2">
+        <button class="btn btn-primary" onclick="saveWelcome()">{{t "Save"}}</button>
+        <button class="btn btn-secondary" onclick="closeWelcomeEdit()">{{t "Cancel"}}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Referral Settings Card -->
+  <div class="card mt-4">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+      <h2 class="card-title">{{t "Referral Settings"}}</h2>
+      <button class="btn btn-primary btn-sm" onclick="openSettingsEdit()">{{t "Edit"}}</button>
+    </div>
+    <div class="mt-4" id="settings-display">
+      <div class="stats-bar">
+        <div class="stat-item">
+          <div class="stat-icon stat-icon-primary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value" id="settings-max-codes">-</div>
+            <div class="stat-label">{{t "Max codes per user"}}</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon stat-icon-success">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value" id="settings-inviter">-</div>
+            <div class="stat-label">{{t "Inviter Reward"}}</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon stat-icon-warning">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value" id="settings-invitee">-</div>
+            <div class="stat-label">{{t "Invitee Reward"}}</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon stat-icon-error">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value" id="settings-max-uses">-</div>
+            <div class="stat-label">{{t "Default Max Uses"}}</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon stat-icon-info">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value" id="settings-expire-days">-</div>
+            <div class="stat-label">{{t "Default Validity"}}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-4" id="settings-form" style="display:none">
+      <div class="form-row" style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="form-group" style="flex:1;min-width:140px">
+          <label class="form-label">{{t "Max Codes Per User"}}</label>
+          <input type="number" id="settings-max-codes-input" class="form-input du-input du-input-bordered" min="1" max="100" aria-label="Settings Max Codes">
+        </div>
+        <div class="form-group" style="flex:1;min-width:140px">
+          <label class="form-label">{{t "Inviter Reward (USD)"}}</label>
+          <input type="number" id="settings-inviter-input" class="form-input du-input du-input-bordered" step="0.01" min="0" aria-label="Settings Inviter">
+        </div>
+        <div class="form-group" style="flex:1;min-width:140px">
+          <label class="form-label">{{t "Invitee Reward (USD)"}}</label>
+          <input type="number" id="settings-invitee-input" class="form-input du-input du-input-bordered" step="0.01" min="0" aria-label="Settings Invitee">
+        </div>
+        <div class="form-group" style="flex:1;min-width:140px">
+          <label class="form-label">{{t "Default Max Uses"}}</label>
+          <input type="number" id="settings-max-uses-input" class="form-input du-input du-input-bordered" min="1" aria-label="Settings Max Uses">
+        </div>
+        <div class="form-group" style="flex:1;min-width:140px">
+          <label class="form-label">{{t "Default Expiry (Days)"}}</label>
+          <input type="number" id="settings-expire-days-input" class="form-input du-input du-input-bordered" min="1" max="365" aria-label="Settings Expire Days">
+        </div>
+      </div>
+      <div class="flex gap-2 mt-2">
+        <button class="btn btn-primary" onclick="saveSettings()">{{t "Save"}}</button>
+        <button class="btn btn-secondary" onclick="closeSettingsEdit()">{{t "Cancel"}}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Voucher Code List -->
+  <div class="card mt-4">
+    <div class="card-header">
+      <div class="flex gap-2" style="align-items:center;justify-content:space-between;width:100%">
+        <div class="flex gap-2" style="align-items:center">
+        <h2 class="card-title" style="margin:0">{{t "Voucher Code List"}}</h2>
+        <select id="type-filter" class="form-select du-select du-select-bordered" style="width:140px" onchange="codesPage=1;loadCodes()" aria-label="{{t "Filter by type"}}">
+          <option value="all">{{t "All Types"}}</option>
+          <option value="gift">{{t "Gift"}}</option>
+          <option value="promo">{{t "Promo"}}</option>
+          <option value="referral">{{t "Referral"}}</option>
+          <option value="welcome">{{t "Welcome"}}</option>
+          <option value="plan_token">{{t "Token Plan"}}</option>
+          <option value="plan_code">{{t "Code Plan"}}</option>
+        </select>
+        <select id="status-filter" class="form-select du-select du-select-bordered" style="width:120px" onchange="codesPage=1;loadCodes()" aria-label="{{t "Filter by status"}}">
+          <option value="all">{{t "All Status"}}</option>
+          <option value="active">{{t "Active"}}</option>
+          <option value="disabled">{{t "Disabled"}}</option>
+          <option value="expired">{{t "Expired"}}</option>
+          <option value="exhausted">{{t "Exhausted"}}</option>
+        </select>
+        <select id="codes-limit" class="form-select du-select du-select-bordered" style="width:80px" onchange="codesPage=1;loadCodes()" aria-label="{{t "Page Size"}}">
+          <option value="20">20</option>
+          <option value="50">50</option>
+        </select>
+        </div>
+        <button class="btn btn-primary" onclick="openCreateDrawer()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{{t "New"}}</button>
+      </div>
+    </div>
+    <div class="data-table-wrapper mt-4">
+      <table class="data-table du-table du-table-zebra" id="codes-table">
+        <thead>
+          <tr>
+            <th>{{t "Name"}}</th>
+            <th>{{t "Code"}}</th>
+            <th>{{t "Type"}}</th>
+            <th>{{t "Owner"}}</th>
+            <th>{{t "Amount"}}</th>
+            <th>{{t "Uses"}}</th>
+            <th>{{t "Status"}}</th>
+            <th>{{t "Expiry"}}</th>
+            <th>{{t "Actions"}}</th>
+          </tr>
+        </thead>
+        <tbody id="codes-list">
+          <tr><td colspan="9" class="text-center text-muted py-4">{{t "Loading..."}}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="codes-pagination" style="display:none">
+      <button class="btn btn-sm btn-secondary" data-page="prev"></button>
+      <span class="pagination-info"></span>
+      <button class="btn btn-sm btn-secondary" data-page="next"></button>
+    </div>
+  </div>
+
+  <!-- Records -->
+  <div class="card mt-4">
+    <div class="card-header">
+      <h2 class="card-title">{{t "Usage Records"}}</h2>
+    </div>
+    <div class="data-table-wrapper mt-4">
+      <table class="data-table du-table du-table-zebra">
+        <thead>
+          <tr>
+            <th>{{t "Code"}}</th>
+            <th>{{t "Type"}}</th>
+            <th>{{t "User"}}</th>
+            <th>{{t "Amount"}}</th>
+            <th>{{t "Consumer"}}</th>
+            <th>{{t "Time"}}</th>
+          </tr>
+        </thead>
+        <tbody id="records-list">
+          <tr><td colspan="6" class="text-center text-muted py-4">{{t "Loading..."}}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="records-pagination" style="display:none">
+      <button class="btn btn-sm btn-secondary" data-page="prev"></button>
+      <span class="pagination-info"></span>
+      <button class="btn btn-sm btn-secondary" data-page="next"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Drawer -->
+<div id="create-drawer-backdrop" class="drawer-backdrop" onclick="onDrawerOverlayClick(event)"></div>
+<div id="create-drawer-panel" class="drawer">
+  <div class="drawer-header">
+    <span class="drawer-title">{{t "Create Voucher"}}</span>
+    <button class="drawer-close" onclick="closeCreateDrawer()">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-group">
+      <label class="form-label">{{t "Name"}}</label>
+      <input type="text" id="create-name" class="form-input du-input du-input-bordered" placeholder="{{t "e.g. New User Discount"}}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Type"}}</label>
+      <select id="create-type" class="form-select du-select du-select-bordered" onchange="onCreateTypeChange()" aria-label="{{t "Type"}}">
+        <option value="gift">{{t "Gift"}}</option>
+        <option value="promo">{{t "Promo"}}</option>
+        <option value="plan_token">{{t "Token Plan"}}</option>
+        <option value="plan_code">{{t "Code Plan"}}</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Amount (USD)"}}</label>
+      <input type="number" id="create-amount" class="form-input du-input du-input-bordered" step="0.01" min="0.01" placeholder="5.00">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Quantity"}}</label>
+      <input type="number" id="create-count" class="form-input du-input du-input-bordered" value="1" min="1" max="100" aria-label="{{t "Count"}}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Max Uses"}}</label>
+      <input type="number" id="create-max-uses" class="form-input du-input du-input-bordered" value="1" min="1" aria-label="{{t "Max Uses"}}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Description"}}</label>
+      <textarea id="create-description" class="form-input du-input du-input-bordered" rows="2" placeholder="{{t "Usage description"}}"></textarea>
+    </div>
+    <div class="form-group" id="create-plan-group" style="display:none">
+      <label class="form-label">{{t "Plan"}}</label>
+      <select id="create-plan" class="form-select du-select du-select-bordered" aria-label="Create Plan"><option value="">{{t "-- Select Plan --"}}</option></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Expires At"}}</label>
+      <input type="text" id="create-expires" class="form-input fp-date du-input du-input-bordered" aria-label="{{t "Expires"}}">
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-secondary" onclick="closeCreateDrawer()">{{t "Cancel"}}</button>
+    <button class="btn btn-primary" onclick="submitCreate()">{{t "Create"}}</button>
+  </div>
+</div>
+
+<!-- Edit Drawer -->
+<div id="edit-drawer-backdrop" class="drawer-backdrop" onclick="closeEditDrawer()"></div>
+<div id="edit-drawer" class="drawer">
+  <div class="drawer-header">
+    <span class="drawer-title">{{t "Edit Voucher"}}</span>
+    <button class="drawer-close" onclick="closeEditDrawer()">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <input type="hidden" id="edit-id">
+    <div class="form-group">
+      <label class="form-label">{{t "Name"}}</label>
+      <input type="text" id="edit-name" class="form-input du-input du-input-bordered" aria-label="{{t "Name"}}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Status"}}</label>
+      <select id="edit-status" class="form-select du-select du-select-bordered" aria-label="{{t "Status"}}">
+        <option value="active">{{t "Active"}}</option>
+        <option value="disabled">{{t "Disabled"}}</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Description"}}</label>
+      <textarea id="edit-description" class="form-input du-input du-input-bordered" rows="2" aria-label="{{t "Description"}}"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Expires At"}}</label>
+      <input type="text" id="edit-expires" class="form-input fp-date du-input du-input-bordered" aria-label="{{t "Expires"}}">
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-secondary" onclick="closeEditDrawer()">{{t "Cancel"}}</button>
+    <button class="btn btn-primary" onclick="submitEdit()">{{t "Save"}}</button>
+  </div>
+</div>
+
+<script>
+if (typeof formatQuota === 'undefined') {
+  window.formatQuota = function(quota) {
+    if (quota === undefined || quota === null || quota === 0) return '0';
+    var n = Number(quota);
+    if (isNaN(n)) return String(quota);
+    return '$' + (n / 1000000).toFixed(2);
+  };
+}
+if (typeof formatDateTime === 'undefined') {
+  window.formatDateTime = function(s) { return s ? new Date(s).toLocaleString() : '-'; };
+}
+if (typeof formatDate === 'undefined') {
+  window.formatDate = function(s) { return s ? new Date(s).toLocaleDateString() : '-'; };
+}
+let codesPage = 1;
+let recordsPage = 1;
+let csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+function api(url, opts) {
+  opts = opts || {};
+  opts.credentials = 'same-origin';
+  opts.headers = opts.headers || {};
+  opts.headers['X-CSRF-Token'] = csrfToken;
+  if (opts.body && typeof opts.body === 'object' && !(opts.body instanceof FormData)) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(opts.body);
+  }
+  return fetch(url, opts).then(function(r) {
+    if (!r.ok) {
+      return r.text().then(function(t) {
+        throw new Error('HTTP ' + r.status + ': ' + t);
+      });
+    }
+    return r.json();
+  });
+}
+
+function loadStats() {
+  api('/api/admin/vouchers/stats').then(function(data) {
+    var v = data.vouchers || {};
+    document.getElementById('stat-total').textContent = v.total || 0;
+    document.getElementById('stat-active').textContent = v.active || 0;
+    document.getElementById('stat-exhausted').textContent = v.exhausted || 0;
+    document.getElementById('stat-disabled').textContent = v.disabled || 0;
+  });
+}
+
+function loadCodes() {
+  var typeFilter = document.getElementById('type-filter').value;
+  var statusFilter = document.getElementById('status-filter').value;
+  var limit = document.getElementById('codes-limit').value;
+  api('/api/admin/vouchers?page=' + codesPage + '&type=' + typeFilter + '&status=' + statusFilter + '&limit=' + limit).then(function(data) {
+    var tbody = document.getElementById('codes-list');
+    tbody.innerHTML = '';
+    var items = data.vouchers || [];
+    if (items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">' + _t('No data') + '</td></tr>';
+      document.getElementById('codes-pagination').style.display = 'none';
+      return;
+    }
+    var typeMap = { 'gift': _t('Gift'), 'promo': _t('Promotion'), 'referral': _t('Invite'), 'welcome': _t('Welcome'), 'plan_token': _t('Token Plan'), 'plan_code': _t('Code Plan') };
+    items.forEach(function(v) {
+      var row = document.createElement('tr');
+      var actions = '';
+      actions += '<button class="btn btn-sm btn-secondary" onclick=\'openEditVoucher(' + JSON.stringify(v.id) + ',' + JSON.stringify(v.name || '') + ',' + JSON.stringify(v.status) + ',' + JSON.stringify(v.description || '') + ',' + JSON.stringify(v.expires_at || '') + ')\'>' + _t('Edit') + '</button> ';
+      if (v.status !== 'exhausted') {
+        actions += '<button class="btn btn-sm btn-secondary" onclick=\'toggleVoucher(' + JSON.stringify(v.id) + ')\'>' + (v.status === 'active' ? _t('Disable') : _t('Activate')) + '</button> ';
+      }
+      actions += '<button class="btn btn-sm btn-danger" onclick=\'deleteVoucher(' + JSON.stringify(v.id) + ')\'>' + _t('Delete') + '</button>';
+      row.innerHTML =
+        '<td>' + escapeHtml(v.name || '-') + '</td>' +
+        '<td><code>' + escapeHtml(v.code) + '</code></td>' +
+        '<td>' + (typeMap[v.type] || v.type) + '</td>' +
+        '<td>' + escapeHtml(v.creator_name || v.creator_email || '-') + '</td>' +
+        '<td>' + formatQuota(v.amount) + '</td>' +
+        '<td>' + v.used_count + '/' + v.max_uses + '</td>' +
+        '<td><span class="badge badge-' + (v.status === 'active' ? 'success' : (v.status === 'exhausted' ? 'warning' : 'secondary')) + '">' + (v.status === 'active' ? _t('Active') : (v.status === 'exhausted' ? _t('Exhausted') : _t('Invalid'))) + '</span></td>' +
+        '<td>' + (v.expires_at ? formatDate(v.expires_at) : '-') + '</td>' +
+        '<td>' + actions + '</td>';
+      tbody.appendChild(row);
+    });
+    var totalPages = data.total_pages || 1;
+    renderPagination({
+      wrapId: 'codes-pagination',
+      page: data.page,
+      totalPages: totalPages,
+      total: data.total || 0,
+      onPage: function(p) { codesPage = p; loadCodes(); }
+    });
+  }).catch(function(err) {
+    document.getElementById('codes-list').innerHTML = '<tr><td colspan="9" class="text-center text-danger py-4">' + _t('Load failed') + (err && err.message ? ': ' + err.message : '') + '</td></tr>';
+    document.getElementById('codes-pagination').style.display = 'none';
+  });
+}
+
+function loadRecords() {
+  api('/api/admin/vouchers/records?page=' + recordsPage).then(function(data) {
+    var tbody = document.getElementById('records-list');
+    tbody.innerHTML = '';
+    var items = data.records || [];
+    if (items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">' + _t('No data') + '</td></tr>';
+      document.getElementById('records-pagination').style.display = 'none';
+      return;
+    }
+    var typeMap = { 'gift': _t('Gift'), 'promo': _t('Promotion'), 'referral': _t('Invite'), 'welcome': _t('Welcome'), 'plan_token': _t('Token Plan'), 'plan_code': _t('Code Plan') };
+    var consumerMap = { 'redeemer': _t('Redeem'), 'inviter': _t('Inviter'), 'invitee': _t('Invitee') };
+    items.forEach(function(r) {
+      var row = document.createElement('tr');
+      row.innerHTML =
+        '<td><code>' + escapeHtml(r.code) + '</code></td>' +
+        '<td>' + (typeMap[r.type] || r.type) + '</td>' +
+        '<td>' + escapeHtml(r.user_name || r.user_email || '-') + '</td>' +
+        '<td>' + formatQuota(r.amount) + '</td>' +
+        '<td>' + (consumerMap[r.consumer_type] || r.consumer_type) + '</td>' +
+        '<td>' + formatDateTime(r.created_at) + '</td>';
+      tbody.appendChild(row);
+    });
+    var totalPages = data.total_pages || 1;
+    renderPagination({
+      wrapId: 'records-pagination',
+      page: data.page,
+      totalPages: totalPages,
+      total: data.total || 0,
+      onPage: function(p) { recordsPage = p; loadRecords(); }
+    });
+  });
+}
+
+let currentWelcome = null;
+
+function loadWelcome() {
+  api('/api/admin/vouchers/welcome').then(function(data) {
+    var w = data.welcome;
+    currentWelcome = w;
+    var empty = document.getElementById('welcome-empty');
+    var stats = document.getElementById('welcome-stats');
+    var form = document.getElementById('welcome-form');
+    if (w) {
+      document.getElementById('welcome-code').textContent = w.code || '-';
+      document.getElementById('welcome-amount').textContent = formatQuota(w.amount);
+      var statusBadge = document.getElementById('welcome-status-badge');
+      statusBadge.className = 'badge badge-' + (w.status === 'active' ? 'success' : 'secondary');
+      statusBadge.textContent = w.status === 'active' ? _t('Active') : _t('Invalid');
+      document.getElementById('welcome-expires').textContent = w.expires_at ? formatDate(w.expires_at) : _t('Permanent');
+      empty.style.display = 'none';
+      stats.style.display = '';
+      form.style.display = 'none';
+    } else {
+      empty.style.display = '';
+      stats.style.display = 'none';
+      form.style.display = 'none';
+    }
+  });
+}
+
+function editWelcome() {
+  document.getElementById('welcome-display').style.display = 'none';
+  document.getElementById('welcome-form').style.display = 'block';
+  if (currentWelcome) {
+    document.getElementById('welcome-amount-input').value = (currentWelcome.amount / 1000000).toFixed(2);
+    document.getElementById('welcome-status').value = currentWelcome.status || 'active';
+    var welcomeExpires = document.getElementById('welcome-expires-input');
+    var welcomeDate = currentWelcome.expires_at ? currentWelcome.expires_at.split('T')[0] : '';
+    welcomeExpires.value = welcomeDate;
+    if (welcomeExpires._flatpickr) welcomeExpires._flatpickr.setDate(welcomeDate, false);
+  } else {
+    document.getElementById('welcome-amount-input').value = '';
+    document.getElementById('welcome-status').value = 'active';
+    var welcomeExpires = document.getElementById('welcome-expires-input');
+    welcomeExpires.value = '';
+    if (welcomeExpires._flatpickr) welcomeExpires._flatpickr.clear();
+  }
+}
+
+function closeWelcomeEdit() {
+  document.getElementById('welcome-display').style.display = 'block';
+  document.getElementById('welcome-form').style.display = 'none';
+}
+
+function saveWelcome() {
+  var amount = parseFloat(document.getElementById('welcome-amount-input').value);
+  if (!amount || amount <= 0) {
+    showToast('error', _t('Enter a valid amount'));
+    return;
+  }
+  var status = document.getElementById('welcome-status').value;
+  var expires = document.getElementById('welcome-expires-input').value || null;
+  api('/api/admin/vouchers/welcome', {
+    method: 'POST',
+    body: { amount: amount, status: status, expires_at: expires, csrf_token: csrfToken }
+  }).then(function(data) {
+    if (data.success) {
+      showToast('success', data.message || _t('Saved'));
+      document.getElementById('welcome-amount-input').value = '';
+      var welcomeExpires = document.getElementById('welcome-expires-input');
+      welcomeExpires.value = '';
+      if (welcomeExpires._flatpickr) welcomeExpires._flatpickr.clear();
+      loadWelcome();
+      loadStats();
+      loadCodes();
+    } else if (data.error) {
+      showToast('error', data.error.message || _t('Save failed'));
+    }
+  }).catch(function() {
+    showToast('error', _t('Request failed'));
+  });
+}
+
+let plansCache = [];
+
+function loadPlans() {
+  api('/api/admin/vouchers/plans').then(function(data) {
+    plansCache = data.plans || [];
+    onCreateTypeChange();
+  }).catch(function() {});
+}
+
+function renderPlanOptions(filterType) {
+  var sel = document.getElementById('create-plan');
+  sel.innerHTML = '<option value="">' + _t('-- Select Plan --') + '</option>';
+  plansCache.forEach(function(p) {
+    if (filterType && p.plan_type !== filterType) return;
+    var opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name + ' (' + (p.plan_type || '') + ')';
+    sel.appendChild(opt);
+  });
+}
+
+function onCreateTypeChange() {
+  var type = document.getElementById('create-type').value;
+  var planGroup = document.getElementById('create-plan-group');
+  if (type === 'plan_token' || type === 'plan_code') {
+    planGroup.style.display = 'block';
+    var filter = type === 'plan_token' ? 'token' : 'code';
+    if (plansCache.length === 0) {
+      loadPlans();
+    } else {
+      renderPlanOptions(filter);
+    }
+  } else {
+    planGroup.style.display = 'none';
+    document.getElementById('create-plan').value = '';
+  }
+}
+
+function openCreateDrawer() {
+  document.getElementById('create-drawer-backdrop').classList.add('open');
+  document.getElementById('create-drawer-panel').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  if (plansCache.length === 0) loadPlans();
+  var createExpires = document.getElementById('create-expires');
+  createExpires.value = '';
+  if (createExpires._flatpickr) createExpires._flatpickr.clear();
+  document.addEventListener('keydown', drawerEscHandler);
+}
+
+function closeCreateDrawer() {
+  document.getElementById('create-drawer-backdrop').classList.remove('open');
+  document.getElementById('create-drawer-panel').classList.remove('open');
+  document.body.style.overflow = '';
+  document.removeEventListener('keydown', drawerEscHandler);
+}
+
+function drawerEscHandler(e) {
+  if (e.key === 'Escape') closeCreateDrawer();
+}
+
+function onDrawerOverlayClick(e) {
+  if (e.target === e.currentTarget) closeCreateDrawer();
+}
+
+function submitCreate() {
+  var name = document.getElementById('create-name').value.trim();
+  var amount = parseFloat(document.getElementById('create-amount').value);
+  var count = parseInt(document.getElementById('create-count').value);
+  if (!name || !amount || amount <= 0) {
+    showToast('error', _t('Please enter name and amount'));
+    return;
+  }
+  var type = document.getElementById('create-type').value;
+  var body = {
+    name: name,
+    type: type,
+    amount: amount,
+    count: count,
+    max_uses: parseInt(document.getElementById('create-max-uses').value),
+    description: document.getElementById('create-description').value || null,
+    expires_at: document.getElementById('create-expires').value || null,
+    csrf_token: csrfToken
+  };
+  if ((type === 'plan_token' || type === 'plan_code')) {
+    var planId = document.getElementById('create-plan').value;
+    if (planId) body.plan_id = planId;
+  }
+  api('/api/admin/vouchers', {
+    method: 'POST',
+    body: body
+  }).then(function(data) {
+    if (data.success) {
+      showToast('success', data.message || _t('Created'));
+      closeCreateDrawer();
+      document.getElementById('create-name').value = '';
+      document.getElementById('create-amount').value = '';
+      document.getElementById('create-description').value = '';
+      document.getElementById('create-plan').value = '';
+      var createExpires = document.getElementById('create-expires');
+      createExpires.value = '';
+      if (createExpires._flatpickr) createExpires._flatpickr.clear();
+      loadStats();
+      loadCodes();
+    } else if (data.error) {
+      showToast('error', data.error.message || _t('Create failed'));
+    }
+  }).catch(function(err) {
+    showToast('error', _t('Request failed') + (err && err.message ? ': ' + err.message : ''));
+  });
+}
+
+function toggleVoucher(id) {
+  api('/api/admin/vouchers/' + id + '/toggle', {
+    method: 'POST',
+    body: { csrf_token: csrfToken }
+  }).then(function(data) {
+    if (data.success) {
+      showToast('success', _t('Done'));
+      loadCodes();
+      loadStats();
+    } else {
+      showToast('error', data.error?.message || _t('Operation failed'));
+    }
+  });
+}
+
+function deleteVoucher(id) {
+  showConfirm(_t('Delete'), _t('Confirm deletion?'), function() {
+    api('/api/admin/vouchers/' + id, {
+      method: 'DELETE',
+      body: { csrf_token: csrfToken }
+    }).then(function(data) {
+      if (data.success) {
+        showToast('success', _t('Deleted'));
+        loadCodes();
+        loadStats();
+      } else {
+        showToast('error', data.error?.message || _t('Delete failed'));
+      }
+    });
+  });
+}
+
+function openEditVoucher(id, name, status, description, expiresAt) {
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-name').value = name;
+  document.getElementById('edit-status').value = status;
+  document.getElementById('edit-description').value = description;
+  var editExpires = document.getElementById('edit-expires');
+  var editDate = expiresAt ? expiresAt.split('T')[0] : '';
+  editExpires.value = editDate;
+  if (editExpires._flatpickr) editExpires._flatpickr.setDate(editDate, false);
+  document.getElementById('edit-drawer').classList.add('open');
+  document.getElementById('edit-drawer-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeEditDrawer() {
+  document.getElementById('edit-drawer').classList.remove('open');
+  document.getElementById('edit-drawer-backdrop').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function submitEdit() {
+  var id = document.getElementById('edit-id').value;
+  api('/api/admin/vouchers/' + id, {
+    method: 'PATCH',
+    body: {
+      name: document.getElementById('edit-name').value,
+      status: document.getElementById('edit-status').value,
+      description: document.getElementById('edit-description').value,
+      expires_at: document.getElementById('edit-expires').value || null,
+      csrf_token: csrfToken
+    }
+  }).then(function(data) {
+    if (data.success) {
+      showToast('success', _t('Saved'));
+      closeEditDrawer();
+      loadCodes();
+      loadStats();
+    } else {
+      showToast('error', data.error?.message || _t('Save failed'));
+    }
+  });
+}
+
+function loadSettings() {
+  api('/api/admin/vouchers/settings').then(function(data) {
+    var s = data.settings || {};
+    var maxCodes = parseInt(s.invitation_max_codes_per_user || '10');
+    var inviter = parseInt(s.invitation_inviter_reward || '5000000');
+    var invitee = parseInt(s.invitation_invitee_reward || '2000000');
+    var maxUses = parseInt(s.invitation_default_max_uses || '10');
+    var expireDays = parseInt(s.invitation_default_expire_days || '365');
+    document.getElementById('settings-max-codes').textContent = maxCodes;
+    document.getElementById('settings-inviter').textContent = formatQuota(inviter);
+    document.getElementById('settings-invitee').textContent = formatQuota(invitee);
+    document.getElementById('settings-max-uses').textContent = maxUses;
+    document.getElementById('settings-expire-days').textContent = expireDays + _t('Days');
+  });
+}
+
+function openSettingsEdit() {
+  api('/api/admin/vouchers/settings').then(function(data) {
+    var s = data.settings || {};
+    document.getElementById('settings-max-codes-input').value = s.invitation_max_codes_per_user || '10';
+    document.getElementById('settings-inviter-input').value = (parseInt(s.invitation_inviter_reward || '5000000') / 1000000).toFixed(2);
+    document.getElementById('settings-invitee-input').value = (parseInt(s.invitation_invitee_reward || '2000000') / 1000000).toFixed(2);
+    document.getElementById('settings-max-uses-input').value = s.invitation_default_max_uses || '10';
+    document.getElementById('settings-expire-days-input').value = s.invitation_default_expire_days || '365';
+    document.getElementById('settings-display').style.display = 'none';
+    document.getElementById('settings-form').style.display = 'block';
+  });
+}
+
+function closeSettingsEdit() {
+  document.getElementById('settings-display').style.display = 'block';
+  document.getElementById('settings-form').style.display = 'none';
+}
+
+function saveSettings() {
+  var maxCodes = parseInt(document.getElementById('settings-max-codes-input').value);
+  var inviterUSD = parseFloat(document.getElementById('settings-inviter-input').value);
+  var inviteeUSD = parseFloat(document.getElementById('settings-invitee-input').value);
+  var maxUses = parseInt(document.getElementById('settings-max-uses-input').value);
+  var expireDays = parseInt(document.getElementById('settings-expire-days-input').value);
+  api('/api/admin/vouchers/settings', {
+    method: 'POST',
+    body: {
+      invitation_max_codes_per_user: String(maxCodes),
+      invitation_inviter_reward: String(Math.round(inviterUSD * 1000000)),
+      invitation_invitee_reward: String(Math.round(inviteeUSD * 1000000)),
+      invitation_default_max_uses: String(maxUses),
+      invitation_default_expire_days: String(expireDays),
+      csrf_token: csrfToken
+    }
+  }).then(function(data) {
+    if (data.success) {
+      showToast('success', data.message || _t('Saved'));
+      closeSettingsEdit();
+      loadSettings();
+    } else {
+      showToast('error', data.error?.message || _t('Save failed'));
+    }
+  });
+}
+
+function escapeHtml(t) {
+  var d = document.createElement('div');
+  d.textContent = t;
+  return d.innerHTML;
+}
+
+// Init
+loadStats();
+loadCodes();
+loadRecords();
+loadWelcome();
+loadSettings();
+</script>
+{{end}}

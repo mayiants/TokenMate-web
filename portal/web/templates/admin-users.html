@@ -1,0 +1,647 @@
+{{define "content"}}
+{{$d := .Data}}{{$users := $d.Items}}
+<style>
+  /* Keep the users table within the wrapper so the Actions column (Edit /
+     Disable / Delete) is never clipped: cap the Enterprise column (col 3) and
+     keep long company names on one wrapped, bounded cell; keep Actions on a
+     single non-wrapping row. Scoped to #users-table only. */
+  #users-table td:nth-child(3), #users-table th:nth-child(3) {
+    max-width: 120px;
+  }
+  #users-table td:nth-child(3) .badge {
+    max-width: 110px;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+  #users-table td:last-child, #users-table th:last-child { white-space: nowrap; }
+</style>
+<div class="page-header">
+  <h1 class="page-title">{{t "User Management"}}</h1>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-primary">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{$d.Total}}</div>
+      <div class="stat-label">{{t "Total Users"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-success">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{$d.ActiveCount}}</div>
+      <div class="stat-label">{{t "Active"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-warning">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{$d.SuspendedCount}}</div>
+      <div class="stat-label">{{t "Suspended"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-info">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{$d.EnterpriseAdminCount}}</div>
+      <div class="stat-label">{{t "Enterprise Admin"}}</div>
+    </div>
+  </div>
+</div>
+
+<div class="key-search-bar">
+  <label for="user-search" class="visually-hidden">{{t "Search users"}}</label>
+  <input type="text" id="user-search" class="form-input form-input-sm du-input du-input-bordered" placeholder="{{t "Search"}}" style="width:220px" oninput="userSearchDebounced()" aria-label="{{t "Search users"}}">
+  <label for="role-filter" class="visually-hidden">{{t "Filter by role"}}</label>
+  <select id="role-filter" class="form-select form-select-sm du-select du-select-bordered" style="width: 130px" onchange="filterUsers()" aria-label="{{t "Filter by role"}}">
+    <option value="">{{t "All roles"}}</option>
+    <option value="user">{{t "role.user"}}</option>
+    <option value="enterprise_admin">{{t "role.enterprise_admin"}}</option>
+    <option value="system_admin">{{t "role.system_admin"}}</option>
+    <option value="super_admin">{{t "role.super_admin"}}</option>
+  </select>
+  <div style="flex:1"></div>
+  <button class="btn btn-primary btn-sm" onclick="openAddUserDrawer()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{{t "New"}}</button>
+</div>
+
+{{if $users}}
+<div class="card">
+  <div class="data-table-wrapper">
+    <table class="data-table du-table du-table-zebra du-table-sm" id="users-table">
+      <thead>
+        <tr>
+          <th>{{t "User"}}</th>
+          <th>{{t "Role"}}</th>
+          <th>{{t "Enterprise"}}</th>
+          <th>{{t "Balance"}}</th>
+          <th>{{t "Gift Balance"}}</th>
+          <th>{{t "Status"}}</th>
+          <th>{{t "Created At"}}</th>
+          <th>{{t "Actions"}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range $users}}
+        <tr data-role="{{.Role}}" data-email="{{.Email}}" data-id="{{.ID}}" data-name="{{if .Name}}{{.Name}}{{end}}" data-balance="{{.Balance}}" data-group-id="{{if .GroupID}}{{.GroupID}}{{end}}" data-status="{{if .Status}}{{.Status}}{{else}}active{{end}}" data-enterprise-id="{{.EnterpriseID}}" data-enterprise-name="{{.EnterpriseName}}">
+          <td>
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center text-primary font-bold text-sm">
+                {{if .Name}}{{slice .Name 0 1}}{{else}}?{{end}}
+              </div>
+              <div>
+                <div class="font-medium">{{if .Name}}{{.Name}}{{else}}{{t "Not set"}}{{end}}</div>
+                <div class="text-sm text-muted font-mono">{{.Email}}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            {{role .Role}}
+          </td>
+          <td>
+            {{if .EnterpriseName}}<span class="badge badge-info" title="{{.EnterpriseName}}">{{.EnterpriseName}}</span>{{else}}<span class="text-muted">—</span>{{end}}
+          </td>
+          <td>{{formatMoney .Balance "USD" 1.0}}</td>
+          <td>{{if gt .GiftBalance 0}}{{formatMoney .GiftBalance "USD" 1.0}}{{else}}<span class="text-muted">—</span>{{end}}</td>
+          <td>
+            {{if eq .Status "suspended"}}
+            <span class="badge badge-danger">{{t "Suspended"}}</span>
+            {{else}}
+            <span class="badge badge-success">{{t "Active"}}</span>
+            {{end}}
+          </td>
+          <td class="text-sm">{{formatDate .CreatedAt $.Timezone}}</td>
+          <td>
+            <div class="flex gap-1">
+              <button class="btn btn-sm btn-secondary" onclick="openEditUserDrawer('{{.ID}}')">{{t "Edit"}}</button>
+              <button class="btn btn-sm {{if eq .Status "suspended"}}btn-success{{else}}btn-warning{{end}}" onclick="toggleUserStatus('{{.ID}}')">{{if eq .Status "suspended"}}{{t "Enable"}}{{else}}{{t "Disable"}}{{end}}</button>
+              <button class="btn btn-sm btn-danger" onclick="showDeleteModal('{{.ID}}')">{{t "Delete"}}</button>
+            </div>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{if gt $d.TotalPages 1}}
+  <div class="pagination">
+    {{if gt $d.Page 1}}
+    <a class="btn btn-sm btn-secondary" href="/admin/users?page={{int (sub $d.Page 1)}}">{{t "Previous"}}</a>
+    {{end}}
+      <span class="pagination-info">{{t "page_info" (dict "Total" $d.Total "Page" $d.Page "TotalPages" $d.TotalPages)}}</span>
+      {{if lt $d.Page $d.TotalPages}}
+    <a class="btn btn-sm btn-secondary" href="/admin/users?page={{int (add $d.Page 1)}}">{{t "Next"}}</a>
+    {{end}}
+    </div>
+  {{end}}
+</div>
+{{else}}
+<div class="card">
+  <p class="text-muted text-center mt-4">{{t "No data"}}</p>
+</div>
+{{end}}
+
+<!-- Add User Drawer -->
+<div id="add-user-drawer" class="drawer">
+  <div class="drawer-header">
+    <span class="drawer-title">{{t "Add User"}}</span>
+    <button class="drawer-close" onclick="closeAddUserDrawer()">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <form id="add-user-form">
+      <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+      <div class="form-group">
+        <label class="form-label" for="add-name">{{t "Name *"}}</label>
+        <input type="text" id="add-name" name="name" class="form-input du-input du-input-bordered" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="add-email">{{t "Email"}}</label>
+        <input type="email" id="add-email" name="email" class="form-input du-input du-input-bordered" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="add-password">{{t "Password"}}</label>
+        <input type="password" id="add-password" name="password" class="form-input du-input du-input-bordered" required minlength="8">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="add-role">{{t "Role"}}</label>
+        <select id="add-role" name="role" class="form-select du-select du-select-bordered">
+          <option value="user">{{t "role.user"}}</option>
+          <option value="enterprise_admin">{{t "role.enterprise_admin"}}</option>
+          {{if eq .Role "super_admin"}}
+          <option value="system_admin">{{t "role.system_admin"}}</option>
+          <option value="super_admin">{{t "role.super_admin"}}</option>
+          {{end}}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="add-balance">{{t "Balance"}}</label>
+        <input type="number" id="add-balance" name="balance" class="form-input du-input du-input-bordered" value="0" min="0">
+      </div>
+    </form>
+  </div>
+  <div class="drawer-footer">
+    <button type="button" class="btn btn-secondary" onclick="closeAddUserDrawer()">{{t "Cancel"}}</button>
+    <button type="button" class="btn btn-primary" onclick="submitAddUser()">{{t "Add User"}}</button>
+  </div>
+</div>
+<div id="add-user-backdrop" class="drawer-backdrop" onclick="closeAddUserDrawer()"></div>
+
+<!-- Edit User Drawer -->
+<div id="edit-user-drawer" class="drawer">
+  <div class="drawer-header">
+    <span class="drawer-title">{{t "User details"}}</span>
+    <button class="drawer-close" onclick="closeEditUserDrawer()">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <form id="edit-user-form">
+      <input type="hidden" id="edit-user-id">
+      <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+      <div class="form-group">
+        <label class="form-label" for="edit-name">{{t "Name *"}}</label>
+        <input type="text" id="edit-name" class="form-input du-input du-input-bordered">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="edit-email">{{t "Email"}}</label>
+        <input type="text" id="edit-email" class="form-input du-input du-input-bordered" disabled>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="edit-group-id">{{t "User Group"}}</label>
+        <select id="edit-group-id" class="form-select du-select du-select-bordered">
+          <option value="">{{t "(No Group)"}}</option>
+        </select>
+        <span class="form-hint">{{t "User group controls available models, pricing ratio and routing priority"}}</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="edit-role">{{t "Role"}}</label>
+        <select id="edit-role" class="form-select du-select du-select-bordered" data-current-role="">
+          <option value="user">{{t "role.user"}}</option>
+          <option value="enterprise_admin">{{t "role.enterprise_admin"}}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="edit-current-enterprise">{{t "Current Enterprise"}}</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="edit-current-enterprise" class="form-input du-input du-input-bordered" disabled style="flex:1" aria-label="{{t "Current Enterprise"}}">
+          <button type="button" class="btn btn-warning btn-sm" onclick="openReassignEnterprise()">{{t "Reassign Enterprise"}}</button>
+        </div>
+        <span class="form-hint">{{t "Force-move this user to another enterprise, or detach them entirely. This bypasses the normal invitation flow."}}</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="edit-balance">{{t "Balance"}} (USD)</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="number" id="edit-balance" class="form-input du-input du-input-bordered" min="0" step="0.01" disabled style="flex:1">
+          <button type="button" class="btn btn-warning btn-sm" id="edit-balance-toggle" onclick="toggleBalanceEdit()">{{t "Modify Balance"}}</button>
+        </div>
+        <div id="edit-balance-kind-group" style="display:none;margin-top:8px">
+          <label class="form-label" for="edit-balance-kind">{{t "Adjustment Nature"}}</label>
+          <select id="edit-balance-kind" class="form-select du-select du-select-bordered">
+            <option value="balance">{{t "Funds (invoiceable when consumed)"}}</option>
+            <option value="gift">{{t "Compensation / Promo (never invoiceable)"}}</option>
+          </select>
+          <span class="form-hint">{{t "Funds count toward the personal invoiceable consumption; compensation lands in the gift wallet whose consumption cannot be invoiced."}}</span>
+        </div>
+        <span class="form-hint" id="edit-balance-hint" style="color:var(--color-error);display:none">⚠ {{t "Modifying balance is a dangerous operation and cannot be undone after saving."}}</span>
+      </div>
+    </form>
+  </div>
+  <div class="drawer-footer">
+    <button type="button" class="btn btn-secondary" onclick="closeEditUserDrawer()">{{t "Cancel"}}</button>
+    <button type="button" class="btn btn-primary" onclick="submitEditUser()">{{t "Save"}}</button>
+  </div>
+</div>
+<div id="edit-user-backdrop" class="drawer-backdrop" onclick="closeEditUserDrawer()"></div>
+
+<!-- Role Change Confirmation Modal -->
+<div id="role-confirm-modal" class="modal-overlay" style="display:none;z-index:2000">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <span class="modal-title">{{t "Change Role"}}</span>
+    </div>
+    <div class="modal-body">
+      <p id="role-confirm-msg">{{t "Are you sure you want to change this user role?"}}</p>
+      <div class="modal-footer" style="margin-top:16px">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('role-confirm-modal').style.display='none'">{{t "Cancel"}}</button>
+        <button type="button" class="btn btn-primary" id="role-confirm-btn" onclick="confirmRoleChange()">{{t "Confirm"}}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reassign Enterprise Modal -->
+<div id="reassign-enterprise-modal" class="modal-overlay" style="display:none;z-index:2000">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <span class="modal-title">{{t "Reassign Enterprise"}}</span>
+      <button class="modal-close" onclick="document.getElementById('reassign-enterprise-modal').style.display='none'">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="reassign-user-id">
+      <p class="text-sm text-muted" id="reassign-current-hint" style="margin-bottom:12px"></p>
+      <div class="form-group">
+        <label class="form-label" for="reassign-target">{{t "Target Enterprise"}}</label>
+        <select id="reassign-target" class="form-select du-select du-select-bordered" aria-label="{{t "Target Enterprise"}}">
+          <option value="">{{t "(Detach — no enterprise)"}}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="reassign-role">{{t "Role in Target Enterprise"}}</label>
+        <select id="reassign-role" class="form-select du-select du-select-bordered" aria-label="{{t "Role in Target Enterprise"}}">
+          <option value="member">{{t "Member"}}</option>
+          <option value="admin">{{t "Admin"}}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="reassign-reason">{{t "Reason"}}</label>
+        <input type="text" id="reassign-reason" class="form-input du-input du-input-bordered" placeholder="{{t "Optional reason for the audit log"}}" aria-label="{{t "Reason"}}">
+      </div>
+      <p class="form-hint" style="color:var(--color-error)">⚠ {{t "This bypasses the normal invitation flow and is recorded in the audit log."}}</p>
+      <div class="modal-footer" style="margin-top:16px">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('reassign-enterprise-modal').style.display='none'">{{t "Cancel"}}</button>
+        <button type="button" class="btn btn-primary" id="reassign-confirm-btn" onclick="confirmReassignEnterprise()">{{t "Confirm"}}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-user-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">{{t "Confirm Delete"}}</span>
+      <button class="modal-close" onclick="document.getElementById('delete-user-modal').style.display='none'">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-muted">{{t "This action cannot be undone."}}</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('delete-user-modal').style.display='none'">{{t "Cancel"}}</button>
+      <button class="btn btn-danger" id="delete-user-confirm-btn">{{t "Delete"}}</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Drawer helpers (must be first) ──
+function openAddUserDrawer(){
+  var d=document.getElementById('add-user-drawer'),b=document.getElementById('add-user-backdrop');
+  if(d)d.classList.add('open');if(b)b.classList.add('open');
+  var f=document.getElementById('add-user-form');if(f)f.reset();
+}
+function closeAddUserDrawer(){
+  var d=document.getElementById('add-user-drawer'),b=document.getElementById('add-user-backdrop');
+  if(d)d.classList.remove('open');if(b)b.classList.remove('open');
+  var f=document.getElementById('add-user-form');if(f)f.reset();
+}
+var _availableGroups = [];
+var _pendingEditPayload = null;
+
+function loadAvailableGroups() {
+  fetch('/api/groups')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      _availableGroups = data.groups || [];
+    })
+    .catch(function(e) { console.error('load groups failed', e); });
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadAvailableGroups);
+} else {
+  loadAvailableGroups();
+}
+
+function populateGroupSelect(selectedGroupId) {
+  var select = document.getElementById('edit-group-id');
+  if (!select) return;
+  var allowedTypes = ['general', 'economy', 'subscription', 'enterprise'];
+  select.innerHTML = '<option value="">' + _t('(No Group)') + '</option>';
+  var typeLabels = { general: _t('General'), economy: _t('Economy'), subscription: _t('Subscription'), enterprise: _t('Enterprise') };
+  allowedTypes.forEach(function(gt) {
+    var opts = _availableGroups.filter(function(g) { return g.group_type === gt; });
+    if (opts.length === 0) return;
+    var og = document.createElement('optgroup');
+    og.label = typeLabels[gt] || gt;
+    opts.forEach(function(g) {
+      var opt = document.createElement('option');
+      opt.value = g.id;
+      opt.textContent = g.name;
+      if (g.id === selectedGroupId) opt.selected = true;
+      og.appendChild(opt);
+    });
+    select.appendChild(og);
+  });
+}
+
+function openEditUserDrawer(userId){
+  var row=document.querySelector('#users-table tr[data-id="'+userId+'"]');
+  if(!row)return;
+  document.getElementById('edit-user-id').value=userId;
+  document.getElementById('edit-name').value=row.getAttribute('data-name')||'';
+  document.getElementById('edit-email').value=row.getAttribute('data-email')||'';
+  var currentRole=row.getAttribute('data-role')||'';
+  document.getElementById('edit-role').value=currentRole;
+  document.getElementById('edit-role').setAttribute('data-current-role',currentRole);
+  // The drawer edits in USD; users.balance stores micro-USD.
+  document.getElementById('edit-balance').value=((parseInt(row.getAttribute('data-balance'),10)||0)/1000000).toFixed(2);
+  document.getElementById('edit-balance').disabled = true;
+  document.getElementById('edit-balance-hint').style.display = 'none';
+  var kindGroup = document.getElementById('edit-balance-kind-group');
+  if (kindGroup) kindGroup.style.display = 'none';
+  var kindSel = document.getElementById('edit-balance-kind');
+  if (kindSel) kindSel.value = 'balance';
+  var entName = row.getAttribute('data-enterprise-name') || '';
+  document.getElementById('edit-current-enterprise').value = entName || _t('(No Enterprise)');
+  populateGroupSelect(row.getAttribute('data-group-id') || '');
+  var d=document.getElementById('edit-user-drawer'),b=document.getElementById('edit-user-backdrop');
+  if(d)d.classList.add('open');if(b)b.classList.add('open');
+}
+function closeEditUserDrawer(){
+  var d=document.getElementById('edit-user-drawer'),b=document.getElementById('edit-user-backdrop');
+  if(d)d.classList.remove('open');if(b)b.classList.remove('open');
+  _pendingEditPayload = null;
+}
+function toggleBalanceEdit() {
+  var input = document.getElementById('edit-balance');
+  var hint = document.getElementById('edit-balance-hint');
+  if (input) input.disabled = !input.disabled;
+  if (hint) hint.style.display = (input && !input.disabled) ? 'block' : 'none';
+  var kindGroup = document.getElementById('edit-balance-kind-group');
+  if (kindGroup) kindGroup.style.display = (input && !input.disabled) ? '' : 'none';
+}
+
+// ── Page logic ──
+var userSearchDebounced = debounceInput(filterUsers, 300);
+function filterUsers(){var s=document.getElementById('user-search').value.toLowerCase(),r=document.getElementById('role-filter').value;document.querySelectorAll('#users-table tbody tr').forEach(function(t){var e=t.getAttribute('data-email')||'',o=t.getAttribute('data-role')||'';t.style.display=e.indexOf(s)>=0&&(!r||o===r)?'':'none';});}
+var _deleteUserId='';
+
+function submitAddUser() {
+  var form = document.getElementById('add-user-form');
+  var fd = new FormData(form);
+  var payload = {};
+  fd.forEach(function(v, k) {
+    if (k === 'csrf_token') return;
+    if (k === 'balance') { payload[k] = parseInt(v, 10) || 0; return; }
+    if (v) payload[k] = v;
+  });
+  var csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  fetch('/api/admin/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+    body: JSON.stringify(payload)
+  })
+  .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+  .then(function(result) {
+    if (result.ok || result.data.success) {
+      closeAddUserDrawer();
+      window.location.reload();
+    } else {
+      showMessage('{{t "Add User"}}', result.data.error?.message || 'Create user failed');
+    }
+  })
+  .catch(function() {
+    showMessage('{{t "Cancel"}}', 'Network error');
+  });
+}
+
+function submitEditUser() {
+  var userId = document.getElementById('edit-user-id').value;
+  if (!userId) return;
+
+  var name = document.getElementById('edit-name').value;
+  var role = document.getElementById('edit-role').value;
+  var groupId = document.getElementById('edit-group-id').value;
+  var currentRole = document.getElementById('edit-role').getAttribute('data-current-role') || '';
+
+  var payload = {};
+  if (name) payload.name = name;
+  // Only send balance when the admin explicitly unlocked the field, tagged
+  // with the adjustment nature (funds vs compensation) chosen in the drawer.
+  var balanceInput = document.getElementById('edit-balance');
+  if (balanceInput && !balanceInput.disabled) {
+    // USD input → micro-USD storage (1 USD = 1,000,000 micro).
+    payload.balance = Math.round((parseFloat(balanceInput.value) || 0) * 1000000);
+    var kindSel = document.getElementById('edit-balance-kind');
+    payload.balance_kind = kindSel ? kindSel.value : 'balance';
+  }
+
+  // Role change requires confirmation
+  if (role !== currentRole) {
+    _pendingEditPayload = payload;
+    _pendingEditPayload.role = role;
+    _pendingEditPayload.group_id = groupId;
+    document.getElementById('role-confirm-msg').textContent = _t('Are you sure you want to change this user role?') + ' (' + currentRole + ' → ' + role + ')';
+    document.getElementById('role-confirm-modal').style.display = 'flex';
+    return;
+  }
+
+  payload.group_id = groupId;
+
+  doSubmitEditUser(userId, payload);
+}
+
+function confirmRoleChange() {
+  var userId = document.getElementById('edit-user-id').value;
+  if (!userId || !_pendingEditPayload) return;
+  _pendingEditPayload.confirm_role = true;
+  doSubmitEditUser(userId, _pendingEditPayload);
+  document.getElementById('role-confirm-modal').style.display = 'none';
+}
+
+function doSubmitEditUser(userId, payload) {
+  var csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  fetch('/api/admin/users/' + userId, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+    body: JSON.stringify(payload)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) {
+      closeEditUserDrawer();
+      window.location.reload();
+    } else {
+      showMessage(_t('Save failed'), data.error?.message || _t('Save failed'));
+    }
+  })
+  .catch(function() {
+    showMessage(_t('Save failed'), _t('Network error'));
+  });
+}
+
+function toggleUserStatus(userId) {
+  var row = document.querySelector('#users-table tr[data-id="'+userId+'"]');
+  var currentStatus = row ? (row.getAttribute('data-status') || 'active') : 'active';
+  var newStatus = currentStatus === 'suspended' ? 'active' : 'suspended';
+  var action = newStatus === 'active' ? _t('Enable') : _t('Disable');
+  var userName = row ? (row.getAttribute('data-name') || row.getAttribute('data-email')) : userId;
+  showConfirm(action + ' ' + _t('User'), _t('Are you sure you want to ') + action.toLowerCase() + ' ' + userName + '?', function() {
+    var csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    fetch('/api/admin/users/' + userId + '/toggle-status', {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': csrf }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        showMessage(_t('Done'), _t('User status updated'));
+        setTimeout(function() { window.location.reload(); }, 1000);
+      } else {
+        showMessage(_t('Error'), data.error?.message || _t('Failed'));
+      }
+    })
+    .catch(function() { showMessage(_t('Error'), _t('Network error')); });
+  });
+}
+
+// ── Reassign Enterprise (SA force-move) ──
+var _enterpriseListCache = null;
+
+function loadEnterpriseOptions(cb) {
+  if (_enterpriseListCache) { cb(_enterpriseListCache); return; }
+  fetch('/api/admin/enterprise')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      _enterpriseListCache = (data.enterprises || data.items || []);
+      cb(_enterpriseListCache);
+    })
+    .catch(function() { cb([]); });
+}
+
+function openReassignEnterprise() {
+  var userId = document.getElementById('edit-user-id').value;
+  if (!userId) return;
+  var row = document.querySelector('#users-table tr[data-id="'+userId+'"]');
+  var currentEntId = row ? (row.getAttribute('data-enterprise-id') || '') : '';
+  var currentEntName = row ? (row.getAttribute('data-enterprise-name') || '') : '';
+
+  document.getElementById('reassign-user-id').value = userId;
+  document.getElementById('reassign-reason').value = '';
+  document.getElementById('reassign-role').value = 'member';
+  document.getElementById('reassign-current-hint').textContent =
+    _t('Current Enterprise') + ': ' + (currentEntName || _t('(No Enterprise)'));
+
+  var sel = document.getElementById('reassign-target');
+  sel.innerHTML = '<option value="">' + _t('(Detach — no enterprise)') + '</option>';
+  loadEnterpriseOptions(function(list) {
+    list.forEach(function(e) {
+      // Skip the enterprise the user already belongs to.
+      if (e.id === currentEntId) return;
+      var opt = document.createElement('option');
+      opt.value = e.id;
+      opt.textContent = e.name;
+      sel.appendChild(opt);
+    });
+  });
+  document.getElementById('reassign-enterprise-modal').style.display = 'flex';
+}
+
+function confirmReassignEnterprise() {
+  var userId = document.getElementById('reassign-user-id').value;
+  if (!userId) return;
+  var targetId = document.getElementById('reassign-target').value;
+  var role = document.getElementById('reassign-role').value;
+  var reason = document.getElementById('reassign-reason').value;
+  var csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+  var btn = document.getElementById('reassign-confirm-btn');
+  btn.disabled = true;
+  fetch('/api/admin/enterprise/reassign-user', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+    body: JSON.stringify({ user_id: userId, target_enterprise_id: targetId, role: role, reason: reason })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    btn.disabled = false;
+    if (data.success) {
+      document.getElementById('reassign-enterprise-modal').style.display = 'none';
+      showMessage(_t('Done'), _t('User enterprise updated'));
+      setTimeout(function() { window.location.reload(); }, 800);
+    } else {
+      showMessage(_t('Reassign failed'), (data.error && data.error.message) || _t('Unknown error'));
+    }
+  })
+  .catch(function(e) { btn.disabled = false; showMessage(_t('Reassign failed'), e.message); });
+}
+
+function showDeleteModal(userId) {
+  _deleteUserId = userId;
+  var btn = document.getElementById('delete-user-confirm-btn');
+  btn.onclick = function() {
+    fetch('/api/admin/users/' + _deleteUserId, { method: 'DELETE' })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+      if (result.success) {
+        showMessage(_t('Deleted'), _t('User deleted'));
+        setTimeout(function() { window.location.reload(); }, 1000);
+      } else {
+        showMessage(_t('Delete failed'), result.error ? result.error.message : _t('Unknown error'));
+      }
+    })
+    .catch(function(e) { showMessage(_t('Request failed'), e.message); });
+    document.getElementById('delete-user-modal').style.display = 'none';
+  };
+  document.getElementById('delete-user-modal').style.display = 'flex';
+}
+
+// Override external page-admin-users.js viewUser to use drawer
+if (typeof viewUser === 'function') {
+  viewUser = function(userId) { openEditUserDrawer(userId); };
+}
+// Override external page-admin-users.js deleteUser to use modal
+if (typeof deleteUser === 'function') {
+  deleteUser = function(userId) { showDeleteModal(userId); };
+}
+</script>
+{{end}}

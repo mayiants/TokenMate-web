@@ -1,0 +1,203 @@
+{{define "content"}}
+{{$m := .Data}}
+
+<div class="page-header">
+  <a href="/enterprise/users" class="back-link">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    {{t "Back to Members"}}
+  </a>
+  <h1 class="page-title">{{if $m.Name}}{{$m.Name}}{{else}}{{$m.Email}}{{end}}</h1>
+  <p class="text-muted text-sm mt-1">{{$m.Email}} · {{t "Member since"}} {{formatDate $m.JoinedAt $.Timezone}}</p>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-primary">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M12 2v20M2 12h20"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value stat-value-sm">{{formatTokens $m.QuotaUsed}} / {{if gt $m.QuotaLimit 0}}{{formatTokens $m.QuotaLimit}}{{else}}{{t "Unlimited"}}{{end}}</div>
+      <div class="stat-label">{{t "Quota Used / Limit"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-success">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value stat-value-sm">{{formatCurrency $m.CreditUsed "USD"}} / {{if gt $m.CreditLimit 0}}{{formatCurrency $m.CreditLimit "USD"}}{{else}}{{t "Unlimited"}}{{end}}</div>
+      <div class="stat-label">{{t "Credit Used / Limit"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-warning">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{$m.MonthRequests}}</div>
+      <div class="stat-label">{{t "Monthly Requests"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-info">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{formatCurrency $m.MonthCost "USD"}}</div>
+      <div class="stat-label">{{t "Monthly Cost"}}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Assigned Keys -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Assigned Keys"}}</h2>
+  </div>
+  <div class="card-body">
+    {{if $m.Keys}}
+    <div class="data-table-wrapper">
+      <table class="data-table du-table du-table-zebra">
+        <thead>
+          <tr>
+            <th>{{t "Name"}}</th>
+            <th>{{t "Key Prefix"}}</th>
+            <th>{{t "Status"}}</th>
+            <th>{{t "Created"}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range $m.Keys}}
+          <tr>
+            <td class="font-medium">{{.name}}</td>
+            <td><code class="text-sm">{{.key_prefix}}</code></td>
+            <td><span class="badge badge-{{if eq .status "active"}}success{{else if eq .status "revoked"}}danger{{else}}warning{{end}}">{{.status}}</span></td>
+            <td class="text-sm">{{formatDate .created_at $.Timezone}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <div class="empty-state-sm">
+      <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <p class="empty-state-title">{{t "No keys"}}</p>
+    </div>
+    {{end}}
+  </div>
+</div>
+
+<!-- Audit Events -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Audit Events"}}</h2>
+  </div>
+  {{if $m.AuditEvents}}
+  <div class="data-table-wrapper">
+    <table class="data-table du-table du-table-zebra">
+      <thead>
+        <tr>
+          <th>{{t "Time"}}</th>
+          <th>{{t "Category"}}</th>
+          <th>{{t "Type"}}</th>
+          <th>{{t "Field"}}</th>
+          <th>{{t "Change"}}</th>
+          <th>{{t "Operator"}}</th>
+          <th>{{t "Reason"}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range $m.AuditEvents}}
+        <tr>
+          <td class="text-sm">{{formatDateTime .created_at $.Timezone}}</td>
+          <td>
+            <span class="badge badge-{{if eq .category "billing"}}info{{else if eq .category "member"}}primary{{else if eq .category "key"}}warning{{else if eq .category "group"}}success{{else if eq .category "settings"}}secondary{{else if eq .category "alert"}}danger{{else}}muted{{end}}">
+              {{t (printf "audit.category.%s" .category)}}
+            </span>
+          </td>
+          <td class="text-sm">{{.change_type}}</td>
+          <td class="text-sm font-mono">{{.field_name}}</td>
+          <td>
+            {{if gt .delta 0}}<span class="text-success">+{{fmtNum .delta}}</span>
+            {{else if lt .delta 0}}<span class="text-error">{{fmtNum .delta}}</span>
+            {{else}}<span class="text-muted">{{fmtNum .delta}}</span>{{end}}
+          </td>
+          <td class="text-sm">{{.changed_by}}</td>
+          <td class="text-sm text-muted">{{if .reason}}{{.reason}}{{else}}-{{end}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <div class="empty-state-sm">
+    <p class="empty-state-title">{{t "No audit events"}}</p>
+  </div>
+  {{end}}
+</div>
+
+<!-- Recent API Logs -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Recent API Logs"}}</h2>
+  </div>
+  <div class="px-4 pt-3">
+    <form method="get" class="filter-bar">
+      <div class="filter-group">
+        <label for="logs-range" class="filter-label">{{t "Time Range"}}</label>
+        <input type="text" id="logs-range" class="form-input form-input-sm fp-range du-input du-input-bordered" data-from="logs-from" data-to="logs-to" placeholder="{{t "Start Date ~ End Date"}}" readonly>
+        <input type="hidden" id="logs-from" name="from" value="{{$m.LogFrom}}">
+        <input type="hidden" id="logs-to" name="to" value="{{$m.LogTo}}">
+      </div>
+      <div class="filter-group">
+        <label for="logs-limit" class="filter-label">{{t "Per page"}}</label>
+        <select id="logs-limit" name="limit" class="form-select form-select-sm du-select du-select-bordered" aria-label="{{t "Per page"}}">
+          <option value="50" {{if eq $m.LogLimit 50}}selected{{end}}>50</option>
+          <option value="100" {{if eq $m.LogLimit 100}}selected{{end}}>100</option>
+          <option value="200" {{if eq $m.LogLimit 200}}selected{{end}}>200</option>
+        </select>
+      </div>
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-primary btn-sm">{{t "Filter"}}</button>
+      </div>
+    </form>
+  </div>
+  {{if $m.RecentLogs}}
+  <div class="data-table-wrapper">
+    <table class="data-table du-table du-table-zebra" id="member-detail-logs-table">
+      <thead>
+        <tr>
+          <th>{{t "Time"}}</th>
+          <th>{{t "Model"}}</th>
+          <th>{{t "Endpoint"}}</th>
+          <th>{{t "Tokens"}}</th>
+          <th>{{t "Cost"}}</th>
+          <th>{{t "Status"}}</th>
+          <th>{{t "Latency"}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range $m.RecentLogs}}
+        <tr>
+          <td class="text-sm">{{formatDateTime .CreatedAt $.Timezone}}</td>
+          <td class="font-medium">{{.Model}}</td>
+          <td class="text-sm font-mono">{{.Endpoint}}</td>
+          <td class="text-sm">{{fmtNum .InputTokens}} / {{fmtNum .OutputTokens}}</td>
+          <td class="text-sm">{{formatCurrency .Cost "USD"}}</td>
+          <td><span class="badge badge-{{if eq .Status "success"}}success{{else}}danger{{end}}">{{.Status}}</span></td>
+          <td class="text-sm">{{.LatencyMs}}ms</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <div class="empty-state-sm">
+    <p class="empty-state-title">{{t "No API logs"}}</p>
+  </div>
+  {{end}}
+</div>
+<script>
+initTablePagination('#member-detail-logs-table');
+</script>
+{{end}}

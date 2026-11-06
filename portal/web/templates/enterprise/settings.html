@@ -1,0 +1,762 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="page-header">
+  <h1 class="page-title">{{t "Enterprise Settings"}}</h1>
+  {{if $d.VerifiedAt}}<span class="badge badge-success">{{t "Verified"}}</span>{{else}}<span class="badge badge-warning">{{t "Pending Verification"}}</span>{{end}}
+</div>
+
+<!-- Company Information -->
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Company Information"}}</h2>
+    <button class="btn btn-secondary btn-sm" onclick="openChangeDrawer()">{{t "Request Change"}}</button>
+  </div>
+  <div class="mt-4" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px">
+    <div>
+      <div class="text-xs text-muted">{{t "Legal Name"}}</div>
+      <div class="font-medium mt-1">{{if $d.LegalName}}{{$d.LegalName}}{{else}}{{$d.Name}}{{end}}</div>
+    </div>
+    <div>
+      <div class="text-xs text-muted">{{t "Enterprise Name"}}</div>
+      <div class="font-medium mt-1">{{$d.Name}}</div>
+    </div>
+    <div>
+      <div class="text-xs text-muted">{{t "Country / Region"}}</div>
+      <div class="font-medium mt-1">{{if $d.Country}}{{$d.Country}}{{else}}-{{end}}</div>
+    </div>
+    <div>
+      <div class="text-xs text-muted">{{t "Taxpayer identification number"}}</div>
+      <div class="font-medium mt-1 font-mono">{{if $d.TaxNumber}}{{$d.TaxNumber}}{{else}}-{{end}}</div>
+    </div>
+    <div>
+      <div class="text-xs text-muted">{{t "Registered Address"}}</div>
+      <div class="font-medium mt-1">{{if $d.RegisteredAddress}}{{$d.RegisteredAddress}}{{else}}-{{end}}</div>
+    </div>
+    <div>
+      <div class="text-xs text-muted">{{t "Bank of deposit"}}</div>
+      <div class="font-medium mt-1">{{if $d.BankName}}{{$d.BankName}}{{else}}-{{end}}</div>
+    </div>
+    <div>
+      <div class="text-xs text-muted">{{t "Bank account number"}}</div>
+      <div class="font-medium mt-1 font-mono">{{if $d.BankAccount}}{{$d.BankAccount}}{{else}}-{{end}}</div>
+    </div>
+    <div>
+      <div class="text-xs text-muted">{{t "Contact Email"}}</div>
+      <div class="font-medium mt-1">{{if $d.ContactEmail}}{{$d.ContactEmail}}{{else}}-{{end}}</div>
+    </div>
+    <div>
+      <div class="text-xs text-muted">{{t "Contact Name"}}</div>
+      <div class="font-medium mt-1">{{if $d.ContactName}}{{$d.ContactName}}{{else}}-{{end}}</div>
+    </div>
+    <div>
+      <div class="text-xs text-muted">{{t "Contact Phone"}}</div>
+      <div class="font-medium mt-1">{{if $d.ContactPhone}}{{$d.ContactPhone}}{{else}}-{{end}}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Platform Configuration (read-only) -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Configuration"}}</h2>
+    <span class="text-xs text-muted">{{t "Managed by platform administrator"}}</span>
+  </div>
+  <div class="mt-4" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px">
+    <div>
+      <div class="text-xs text-muted">{{t "Pricing Ratio"}}</div>
+      <div class="font-medium mt-1">{{printf "%.2f" $d.PricingRatio}}x</div>
+    </div>
+    <div>
+      <div class="text-xs text-muted">{{t "Billing Cycle"}}</div>
+      <div class="font-medium mt-1">{{$d.BillingCycle}}</div>
+    </div>
+    <div>
+      <div class="text-xs text-muted">{{t "Max Members"}}</div>
+      <div class="font-medium mt-1">{{$d.MaxMembers}}</div>
+    </div>
+    <div>
+      <div class="text-xs text-muted">{{t "Verified At"}}</div>
+      <div class="font-medium mt-1">{{if $d.VerifiedAt}}{{formatDateTime $d.VerifiedAt $.Timezone}}{{else}}-{{end}}</div>
+    </div>
+  </div>
+</div>
+
+<p class="text-sm text-muted mt-4">{{t "To update enterprise information or configuration, please contact the platform administrator."}}</p>
+
+<!-- Pending Change Requests -->
+<div class="card mt-4" id="pending-changes-card" style="display:none">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Pending Changes"}}</h2>
+  </div>
+  <div id="pending-changes-content" class="mt-2 text-sm"></div>
+</div>
+
+<!-- Change Request History -->
+<div class="card mt-4" id="change-history-card" style="display:none">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Change Request History"}}</h2>
+  </div>
+  <div id="change-history-content" class="mt-2 text-sm"></div>
+</div>
+
+{{if or (eq .Role "enterprise_admin") (eq .Role "system_admin") (eq .Role "super_admin")}}
+<!-- Management Tokens (enterprise admin only) -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Management Tokens"}}</h2>
+    <button class="btn btn-primary btn-sm" onclick="openMgmtTokenDrawer()">{{t "Create Token"}}</button>
+  </div>
+  <p class="text-sm text-muted mt-2">{{t "Long-lived, revocable tokens for programmatic account management (usage, pricing). Not for inference — use API keys for that."}}</p>
+  <div class="data-table-wrapper mt-3">
+    <table class="data-table du-table du-table-zebra">
+      <thead>
+        <tr>
+          <th>{{t "Name"}}</th>
+          <th>{{t "Prefix"}}</th>
+          <th>{{t "Scopes"}}</th>
+          <th>{{t "Status"}}</th>
+          <th>{{t "Last Used"}}</th>
+          <th>{{t "Expires"}}</th>
+          <th>{{t "Actions"}}</th>
+        </tr>
+      </thead>
+      <tbody id="mgmt-tokens-body">
+        <tr><td colspan="7" class="text-center text-muted">{{t "Loading..."}}</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create Management Token Drawer -->
+<div id="mgmt-token-drawer" class="drawer">
+  <div class="drawer-header">
+    <span class="drawer-title">{{t "Create Management Token"}}</span>
+    <button class="drawer-close" onclick="closeMgmtTokenDrawer()">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-group">
+      <label class="form-label">{{t "Name"}}</label>
+      <input type="text" id="mt-name" class="form-input du-input du-input-bordered" placeholder="{{t "e.g. CI usage export"}}" aria-label="Token Name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Scopes"}}</label>
+      <label class="flex items-center gap-2" style="padding:3px 0">
+        <input type="checkbox" class="mt-scope" value="read:usage" checked aria-label="read:usage"> <code class="text-xs">read:usage</code>
+        <span class="text-xs text-muted">— {{t "Read usage & reconciliation"}}</span>
+      </label>
+      <label class="flex items-center gap-2" style="padding:3px 0">
+        <input type="checkbox" class="mt-scope" value="read:pricing" checked aria-label="read:pricing"> <code class="text-xs">read:pricing</code>
+        <span class="text-xs text-muted">— {{t "Read model price book"}}</span>
+      </label>
+      <label class="flex items-center gap-2" style="padding:3px 0">
+        <input type="checkbox" class="mt-scope" value="read:members" aria-label="read:members"> <code class="text-xs">read:members</code>
+        <span class="text-xs text-muted">— {{t "List enterprise members"}}</span>
+      </label>
+      <label class="flex items-center gap-2" style="padding:3px 0">
+        <input type="checkbox" class="mt-scope" value="manage:keys" aria-label="manage:keys"> <code class="text-xs">manage:keys</code>
+        <span class="text-xs text-muted">— {{t "Create / disable / delete enterprise keys"}}</span>
+      </label>
+      <label class="flex items-center gap-2" style="padding:3px 0">
+        <input type="checkbox" class="mt-scope" value="manage:members" aria-label="manage:members"> <code class="text-xs">manage:members</code>
+        <span class="text-xs text-muted">— {{t "Manage member limits & removal"}}</span>
+      </label>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Expires In (days)"}}</label>
+      <select id="mt-expiry" class="form-select du-select du-select-bordered" aria-label="Expiry">
+        <option value="365" selected>365</option>
+        <option value="90">90</option>
+        <option value="30">30</option>
+        <option value="730">730</option>
+      </select>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-secondary" onclick="closeMgmtTokenDrawer()">{{t "Cancel"}}</button>
+    <button class="btn btn-primary" onclick="submitMgmtToken()">{{t "Create"}}</button>
+  </div>
+</div>
+<div id="mgmt-token-backdrop" class="drawer-backdrop" onclick="closeMgmtTokenDrawer()"></div>
+
+<!-- One-time token reveal modal -->
+<div id="mgmt-token-reveal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <span class="modal-title">{{t "Token Created"}}</span>
+      <button class="modal-close" onclick="document.getElementById('mgmt-token-reveal').style.display='none'">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-sm text-warning mb-2">{{t "Copy this token now. For security it will not be shown again."}}</p>
+      <div class="flex items-center gap-2">
+        <code id="mgmt-token-value" class="text-sm" style="word-break:break-all;flex:1;padding:8px;background:var(--bg-hover);border-radius:var(--radius)"></code>
+        <button class="btn btn-secondary btn-sm" onclick="copyMgmtToken()">{{t "Copy"}}</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="document.getElementById('mgmt-token-reveal').style.display='none'">{{t "Done"}}</button>
+    </div>
+  </div>
+</div>
+{{end}}
+
+{{if eq .Role "enterprise_admin"}}
+<!-- Data retention (enterprise admin only) -->
+<div class="card mt-4" id="retention-card" data-enterprise-id="{{$d.ID}}">
+  <div class="card-header">
+    <h2 class="card-title" id="retention-title">{{t "Data retention"}}</h2>
+  </div>
+  <p class="text-sm text-muted mt-2">{{t "Choose what the gateway stores about your enterprise's API requests and for how long. Billing records are not affected."}}</p>
+  <fieldset class="form-group mt-3" id="retention-mode-group" style="border:0;padding:0;margin:0">
+    <legend class="form-label">{{t "Retention mode"}}</legend>
+    <label class="flex items-center gap-2" style="padding:3px 0">
+      <input type="radio" name="retention-mode" value="off" onchange="retentionModeChanged()">
+      <span>{{t "Off"}}</span> <span class="text-xs text-muted">— {{t "Nothing is stored"}}</span>
+    </label>
+    <label class="flex items-center gap-2" style="padding:3px 0">
+      <input type="radio" name="retention-mode" value="metadata" onchange="retentionModeChanged()">
+      <span>{{t "Metadata only"}}</span> <span class="text-xs text-muted">— {{t "Request details are stored, message content is not"}}</span>
+    </label>
+    <label class="flex items-center gap-2" style="padding:3px 0">
+      <input type="radio" name="retention-mode" value="standard" onchange="retentionModeChanged()">
+      <span>{{t "Full payload"}}</span> <span class="text-xs text-muted">— {{t "Requests and responses are stored in full"}}</span>
+    </label>
+  </fieldset>
+  <div class="form-group mt-3">
+    <label class="form-label" for="retention-days">{{t "Retention period (days)"}}</label>
+    <select id="retention-days" class="form-select du-select du-select-bordered" style="max-width:200px"></select>
+  </div>
+  <div class="text-xs text-muted mt-2" aria-live="polite">
+    <div>{{t "Last updated"}}: <span id="retention-updated">-</span></div>
+    <div>{{t "Last purge"}}: <span id="retention-last-purge">-</span></div>
+  </div>
+  <div class="flex items-center gap-2 mt-4">
+    <button type="button" class="btn btn-primary btn-sm" id="retention-save" onclick="saveRetention()">{{t "Save retention settings"}}</button>
+    <button type="button" class="btn btn-danger btn-sm" id="retention-purge-btn" onclick="openRetentionPurge()">{{t "Purge stored data"}}</button>
+  </div>
+</div>
+
+<!-- Security policy (enterprise admin only) -->
+<div class="card mt-4" id="security-card">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Security policy"}}</h2>
+  </div>
+  <p class="text-sm text-muted mt-2">{{t "When enabled, every member of your enterprise must set up two-factor authentication. Members who have not done so can only reach their profile page until they enrol."}}</p>
+  <label class="flex items-center gap-2 mt-3" for="require-mfa">
+    <input type="checkbox" id="require-mfa" onchange="saveEnterpriseSecurity()">
+    <span>{{t "Require two-factor authentication for all members"}}</span>
+  </label>
+  <div class="text-xs text-muted mt-2" aria-live="polite">{{t "Members with two-factor authentication"}}: <span id="mfa-enrolled-count">-</span></div>
+</div>
+
+<!-- Single sign-on (OpenID Connect; enterprise admin only) -->
+<div class="card mt-4" id="sso-card">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Single sign-on (OpenID Connect)"}}</h2>
+  </div>
+  <p class="text-sm text-muted mt-2">{{t "Let your members sign in with your company identity provider. The client secret is stored encrypted and is never shown again."}}</p>
+  <div class="text-xs text-muted mt-2">{{t "Redirect URI to register at your identity provider"}}: <code id="sso-redirect-uri" style="word-break:break-all">-</code></div>
+  <div class="form-group mt-3">
+    <label class="form-label" for="sso-issuer">{{t "Issuer URL"}}</label>
+    <input type="url" id="sso-issuer" class="form-input" placeholder="https://login.example.com/realms/acme" autocomplete="off">
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="sso-client-id">{{t "Client ID"}}</label>
+    <input type="text" id="sso-client-id" class="form-input" autocomplete="off">
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="sso-client-secret">{{t "Client secret"}}</label>
+    <input type="password" id="sso-client-secret" class="form-input" autocomplete="new-password" placeholder="">
+    <div class="text-xs text-muted mt-1" id="sso-secret-state" aria-live="polite"></div>
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="sso-scopes">{{t "Scopes"}}</label>
+    <input type="text" id="sso-scopes" class="form-input" value="openid email profile" autocomplete="off">
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="sso-domains">{{t "Allowed email domains (comma separated)"}}</label>
+    <input type="text" id="sso-domains" class="form-input" placeholder="example.com, example.org" autocomplete="off">
+  </div>
+  <label class="flex items-center gap-2 mt-2" for="sso-enabled">
+    <input type="checkbox" id="sso-enabled"> <span>{{t "Enable single sign-on"}}</span>
+  </label>
+  <label class="flex items-center gap-2 mt-2" for="sso-jit">
+    <input type="checkbox" id="sso-jit" checked> <span>{{t "Create accounts automatically on first sign-in (members only)"}}</span>
+  </label>
+  <label class="flex items-center gap-2 mt-2" for="sso-enforce">
+    <input type="checkbox" id="sso-enforce"> <span>{{t "Require single sign-on for members"}}</span>
+  </label>
+  <p class="text-xs text-muted mt-1">{{t "Enterprise admins can always sign in with a password so you cannot lock yourself out."}}</p>
+  <div class="flex items-center gap-2 mt-4">
+    <button type="button" class="btn btn-primary btn-sm" id="sso-save" onclick="saveEnterpriseSSO()">{{t "Save single sign-on settings"}}</button>
+    <button type="button" class="btn btn-secondary btn-sm" id="sso-test" onclick="testEnterpriseSSO()">{{t "Test connection"}}</button>
+    <button type="button" class="btn btn-danger btn-sm" id="sso-delete" onclick="deleteEnterpriseSSO()">{{t "Remove single sign-on"}}</button>
+  </div>
+  <div class="text-sm mt-2" id="sso-test-result" role="status" aria-live="polite"></div>
+</div>
+
+<!-- Purge confirmation modal -->
+<div id="retention-purge-modal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="retention-purge-title">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <span class="modal-title" id="retention-purge-title">{{t "Purge stored data"}}</span>
+      <button type="button" class="modal-close" aria-label="{{t "Close"}}" onclick="closeRetentionPurge()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-sm text-warning">{{t "This permanently deletes all stored request and response payloads of your enterprise. This cannot be undone."}}</p>
+      <p class="text-sm mt-2">{{t "To confirm, type your enterprise ID:"}} <code id="retention-purge-id" class="text-xs" style="word-break:break-all">{{$d.ID}}</code></p>
+      <div class="form-group mt-2">
+        <label class="form-label" for="retention-purge-confirm">{{t "Enterprise ID"}}</label>
+        <input type="text" id="retention-purge-confirm" class="form-input du-input du-input-bordered" autocomplete="off" oninput="retentionPurgeInput()">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeRetentionPurge()">{{t "Cancel"}}</button>
+      <button type="button" class="btn btn-danger" id="retention-purge-confirm-btn" onclick="confirmRetentionPurge()" disabled>{{t "Purge"}}</button>
+    </div>
+  </div>
+</div>
+{{end}}
+
+<!-- Change Request Drawer -->
+<div id="change-drawer" class="drawer">
+  <div class="drawer-header">
+    <span class="drawer-title">{{t "Request Information Change"}}</span>
+    <button class="drawer-close" onclick="closeChangeDrawer()">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <p class="text-sm text-muted mb-4">{{t "Changes to verified enterprise information require administrator approval."}}</p>
+    <div class="form-group">
+      <label class="form-label">{{t "Legal Name"}}</label>
+      <input type="text" id="cr-legal-name" class="form-input du-input du-input-bordered" value="{{if $d.LegalName}}{{$d.LegalName}}{{else}}{{$d.Name}}{{end}}" aria-label="Cr Legal Name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Enterprise Name"}}</label>
+      <input type="text" id="cr-name" class="form-input du-input du-input-bordered" value="{{$d.Name}}" aria-label="Cr Name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Country / Region"}}</label>
+      <input type="text" id="cr-country" class="form-input du-input du-input-bordered" value="{{$d.Country}}" aria-label="Cr Country">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Taxpayer identification number"}}</label>
+      <input type="text" id="cr-tax-number" class="form-input du-input du-input-bordered" value="{{$d.TaxNumber}}" aria-label="Cr Tax Number">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Registered Address"}}</label>
+      <input type="text" id="cr-address" class="form-input du-input du-input-bordered" value="{{$d.RegisteredAddress}}" aria-label="Cr Address">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Bank of deposit"}}</label>
+      <input type="text" id="cr-bank-name" class="form-input du-input du-input-bordered" value="{{$d.BankName}}" aria-label="Cr Bank Name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Bank account number"}}</label>
+      <input type="text" id="cr-bank-account" class="form-input du-input du-input-bordered" value="{{$d.BankAccount}}" aria-label="Cr Bank Account">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Contact Email"}}</label>
+      <input type="email" id="cr-contact-email" class="form-input du-input du-input-bordered" value="{{$d.ContactEmail}}" aria-label="Cr Contact Email">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Contact Name"}}</label>
+      <input type="text" id="cr-contact-name" class="form-input du-input du-input-bordered" value="{{$d.ContactName}}" aria-label="Cr Contact Name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Contact Phone"}}</label>
+      <input type="text" id="cr-contact-phone" class="form-input du-input du-input-bordered" value="{{$d.ContactPhone}}" aria-label="Cr Contact Phone">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Reason"}}</label>
+      <textarea id="cr-reason" class="form-textarea" rows="2" placeholder="{{t "Reason for change (optional)"}}"></textarea>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-secondary" onclick="closeChangeDrawer()">{{t "Cancel"}}</button>
+    <button class="btn btn-primary" onclick="submitChangeRequest()">{{t "Submit Change Request"}}</button>
+  </div>
+</div>
+<div id="change-drawer-backdrop" class="drawer-backdrop" onclick="closeChangeDrawer()"></div>
+
+<script>
+function openChangeDrawer() {
+  document.getElementById('change-drawer').classList.add('open');
+  document.getElementById('change-drawer-backdrop').classList.add('open');
+}
+function closeChangeDrawer() {
+  document.getElementById('change-drawer').classList.remove('open');
+  document.getElementById('change-drawer-backdrop').classList.remove('open');
+}
+async function submitChangeRequest() {
+  var payload = {
+    legal_name: document.getElementById('cr-legal-name').value.trim(),
+    name: document.getElementById('cr-name').value.trim(),
+    country: document.getElementById('cr-country').value.trim(),
+    tax_number: document.getElementById('cr-tax-number').value.trim(),
+    registered_address: document.getElementById('cr-address').value.trim(),
+    bank_name: document.getElementById('cr-bank-name').value.trim(),
+    bank_account: document.getElementById('cr-bank-account').value.trim(),
+    contact_email: document.getElementById('cr-contact-email').value.trim(),
+    contact_name: document.getElementById('cr-contact-name').value.trim(),
+    contact_phone: document.getElementById('cr-contact-phone').value.trim(),
+    reason: document.getElementById('cr-reason').value.trim()
+  };
+  var csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  try {
+    var res = await fetch('/api/enterprise/settings/change-request', {
+      method: 'POST', headers: {'Content-Type':'application/json','X-CSRF-Token': csrf},
+      body: JSON.stringify(payload)
+    });
+    var data = await res.json();
+    if (data.success) {
+      closeChangeDrawer();
+      showMessage(_t('Done'), _t('Change request submitted for review'));
+      loadPendingChanges();
+    } else { showMessage(_t('Error'), data.error?.message || _t('Failed')); }
+  } catch(e) { showMessage(_t('Error'), _t('Network error')); }
+}
+
+async function loadPendingChanges() {
+  try {
+    var res = await fetch('/api/enterprise/settings/change-requests');
+    var data = await res.json();
+    var requests = data.requests || [];
+
+    // Pending section
+    var pendingCard = document.getElementById('pending-changes-card');
+    var pending = requests.filter(function(r) { return r.status === 'pending'; });
+    if (pending.length === 0) { pendingCard.style.display = 'none'; }
+    else {
+      pendingCard.style.display = '';
+      var dates = {};
+      pending.forEach(function(r) { var d = formatDate(r.created_at); dates[d] = (dates[d]||0) + 1; });
+      var html = Object.keys(dates).map(function(d) {
+        return '<div class="flex items-center gap-2 py-2" style="border-bottom:1px solid var(--border)"><span class="badge badge-warning">' + _t('Pending') + '</span><span>' + d + ' — ' + dates[d] + ' ' + _t('field(s) submitted') + '</span></div>';
+      }).join('');
+      document.getElementById('pending-changes-content').innerHTML = html;
+    }
+
+    // History section (approved / rejected)
+    var historyCard = document.getElementById('change-history-card');
+    var history = requests.filter(function(r) { return r.status === 'approved' || r.status === 'rejected'; });
+    if (history.length === 0) { historyCard.style.display = 'none'; }
+    else {
+      historyCard.style.display = '';
+      var fieldLabels = {
+        'legal_name': _t('Legal Name'), 'name': _t('Enterprise Name'), 'country': _t('Country / Region'),
+        'tax_number': _t('Taxpayer identification number'), 'registered_address': _t('Registered Address'),
+        'bank_name': _t('Bank of deposit'), 'bank_account': _t('Bank account number'),
+        'contact_email': _t('Contact Email'), 'contact_name': _t('Contact Name'), 'contact_phone': _t('Contact Phone')
+      };
+      var statusClass = {'approved':'badge-success','rejected':'badge-danger'};
+      var html = history.slice(0, 20).map(function(r) {
+        return '<div class="flex items-center gap-2 py-2" style="border-bottom:1px solid var(--border)">' +
+          '<span class="badge ' + (statusClass[r.status]||'badge-muted') + '">' + _t(r.status === 'approved' ? 'Approved' : 'Rejected') + '</span>' +
+          '<span class="text-muted">' + formatDate(r.created_at) + '</span>' +
+          '<span>' + escapeHtml(fieldLabels[r.field]||r.field) + '</span>' +
+          '<span class="text-muted">→</span>' +
+          '<span class="font-medium">' + escapeHtml(r.new_value||'-') + '</span>' +
+          '</div>';
+      }).join('');
+      document.getElementById('change-history-content').innerHTML = html;
+    }
+  } catch(e) { /* ignore */ }
+}
+function escapeHtml(s) { var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+// ---- Management Tokens ----
+var mgmtTokensCsrf = function(){ return document.querySelector('meta[name="csrf-token"]')?.content || ''; };
+
+function openMgmtTokenDrawer() {
+  var el = document.getElementById('mgmt-token-drawer'); if (!el) return;
+  document.getElementById('mt-name').value = '';
+  document.querySelectorAll('.mt-scope').forEach(function(cb){ cb.checked = true; });
+  document.getElementById('mt-expiry').value = '365';
+  el.classList.add('open');
+  document.getElementById('mgmt-token-backdrop').classList.add('open');
+}
+function closeMgmtTokenDrawer() {
+  var el = document.getElementById('mgmt-token-drawer'); if (!el) return;
+  el.classList.remove('open');
+  document.getElementById('mgmt-token-backdrop').classList.remove('open');
+}
+
+async function loadMgmtTokens() {
+  var body = document.getElementById('mgmt-tokens-body');
+  if (!body) return; // non-admin: section not rendered
+  try {
+    var res = await fetch('/api/management-tokens');
+    var data = await res.json();
+    var tokens = data.tokens || [];
+    if (tokens.length === 0) {
+      body.innerHTML = '<tr><td colspan="7" class="text-center text-muted">' + _t('No tokens yet') + '</td></tr>';
+      return;
+    }
+    body.innerHTML = tokens.map(function(t) {
+      var statusCls = t.status === 'active' ? 'badge-success' : (t.status === 'revoked' ? 'badge-danger' : 'badge-warning');
+      var scopes = (t.scopes || []).map(function(s){ return '<code class="text-xs">' + escapeHtml(s) + '</code>'; }).join(' ');
+      var actions = t.status === 'active'
+        ? '<button class="btn btn-sm btn-warning" onclick="revokeMgmtToken(\'' + t.id + '\')">' + _t('Revoke') + '</button> '
+        : '';
+      actions += '<button class="btn btn-sm btn-danger" onclick="deleteMgmtToken(\'' + t.id + '\')">' + _t('Delete') + '</button>';
+      return '<tr>' +
+        '<td>' + escapeHtml(t.name || '') + '</td>' +
+        '<td><code class="text-xs">' + escapeHtml(t.prefix || '') + '</code></td>' +
+        '<td>' + scopes + '</td>' +
+        '<td><span class="badge ' + statusCls + '">' + escapeHtml(t.status) + '</span></td>' +
+        '<td class="text-xs text-muted">' + (t.last_used_at ? formatDate(t.last_used_at) : '—') + '</td>' +
+        '<td class="text-xs text-muted">' + (t.expires_at ? formatDate(t.expires_at) : '—') + '</td>' +
+        '<td>' + actions + '</td>' +
+        '</tr>';
+    }).join('');
+  } catch(e) {
+    body.innerHTML = '<tr><td colspan="7" class="text-center text-error">' + _t('Failed to load tokens') + '</td></tr>';
+  }
+}
+
+async function submitMgmtToken() {
+  var name = document.getElementById('mt-name').value.trim();
+  if (!name) { showMessage(_t('Notice'), _t('Please enter a token name')); return; }
+  var scopes = Array.from(document.querySelectorAll('.mt-scope:checked')).map(function(cb){ return cb.value; });
+  if (scopes.length === 0) { showMessage(_t('Notice'), _t('Please select at least one scope')); return; }
+  var days = parseInt(document.getElementById('mt-expiry').value) || 365;
+  try {
+    var res = await fetch('/api/management-tokens', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRF-Token': mgmtTokensCsrf()},
+      body: JSON.stringify({ name: name, scopes: scopes, expires_in_days: days })
+    });
+    var data = await res.json();
+    if (data.token) {
+      closeMgmtTokenDrawer();
+      document.getElementById('mgmt-token-value').textContent = data.token;
+      document.getElementById('mgmt-token-reveal').style.display = 'flex';
+      loadMgmtTokens();
+    } else {
+      showMessage(_t('Error'), data.error?.message || _t('Failed'));
+    }
+  } catch(e) { showMessage(_t('Error'), _t('Network error')); }
+}
+
+function copyMgmtToken() {
+  var v = document.getElementById('mgmt-token-value').textContent || '';
+  if (navigator.clipboard) { navigator.clipboard.writeText(v); showMessage(_t('Done'), _t('Copied')); }
+}
+
+async function revokeMgmtToken(id) {
+  if (typeof showConfirm === 'function') {
+    showConfirm(_t('Revoke Token'), _t('Revoke this token? Any script using it will stop working.'), function(){ doMgmtTokenAction('/api/management-tokens/' + id + '/revoke', 'POST'); });
+  } else if (confirm(_t('Revoke this token?'))) { doMgmtTokenAction('/api/management-tokens/' + id + '/revoke', 'POST'); }
+}
+async function deleteMgmtToken(id) {
+  if (typeof showConfirm === 'function') {
+    showConfirm(_t('Delete Token'), _t('Delete this token permanently?'), function(){ doMgmtTokenAction('/api/management-tokens/' + id, 'DELETE'); });
+  } else if (confirm(_t('Delete this token?'))) { doMgmtTokenAction('/api/management-tokens/' + id, 'DELETE'); }
+}
+async function doMgmtTokenAction(url, method) {
+  try {
+    var res = await fetch(url, { method: method, headers: {'X-CSRF-Token': mgmtTokensCsrf()} });
+    var data = await res.json();
+    if (data.success) { loadMgmtTokens(); }
+    else { showMessage(_t('Error'), data.error?.message || _t('Failed')); }
+  } catch(e) { showMessage(_t('Error'), _t('Network error')); }
+}
+
+
+// ---- Data retention ----
+var retentionDayChoices = [7, 14, 30, 60, 90, 180, 365];
+var retentionCsrf = function(){ return document.querySelector('meta[name="csrf-token"]')?.content || ''; };
+
+function retentionSelectedMode() {
+  var el = document.querySelector('input[name="retention-mode"]:checked');
+  return el ? el.value : '';
+}
+function retentionModeChanged() {
+  // Days are meaningless when nothing is stored.
+  var sel = document.getElementById('retention-days');
+  if (sel) sel.disabled = retentionSelectedMode() === 'off';
+}
+function retentionFillDays(current) {
+  var sel = document.getElementById('retention-days');
+  var choices = retentionDayChoices.slice();
+  if (choices.indexOf(current) === -1) { choices.push(current); choices.sort(function(a, b){ return a - b; }); }
+  sel.innerHTML = '';
+  choices.forEach(function(n) {
+    var o = document.createElement('option');
+    o.value = String(n); o.textContent = n + ' ' + _t('days');
+    if (n === current) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+function retentionRender(p) {
+  var radio = document.querySelector('input[name="retention-mode"][value="' + p.mode + '"]');
+  if (radio) radio.checked = true;
+  retentionFillDays(p.days);
+  retentionModeChanged();
+  document.getElementById('retention-updated').textContent = p.updated_at ? formatDate(p.updated_at) : _t('Never');
+  var lp = p.last_purge || {};
+  var purgeEl = document.getElementById('retention-last-purge');
+  if (lp.at) {
+    purgeEl.textContent = formatDate(lp.at) + ' — ' + (lp.status === 'ok' ? _t('Succeeded') : _t('Failed'));
+  } else {
+    purgeEl.textContent = _t('Never');
+  }
+}
+async function loadRetention() {
+  if (!document.getElementById('retention-card')) return; // non-admin: section not rendered
+  try {
+    var res = await fetch('/api/enterprise/retention');
+    var data = await res.json();
+    if (!res.ok) { showMessage(_t('Error'), data.error?.message || _t('Failed')); return; }
+    retentionRender(data);
+  } catch(e) { showMessage(_t('Error'), _t('Network error')); }
+}
+async function saveRetention() {
+  var mode = retentionSelectedMode();
+  if (!mode) { showMessage(_t('Notice'), _t('Please select a retention mode')); return; }
+  var days = parseInt(document.getElementById('retention-days').value, 10);
+  var body = { mode: mode };
+  if (!isNaN(days)) body.days = days;
+  try {
+    var res = await fetch('/api/enterprise/retention', {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json','X-CSRF-Token': retentionCsrf()},
+      body: JSON.stringify(body)
+    });
+    var data = await res.json();
+    if (data.success) { retentionRender(data.policy); showMessage(_t('Done'), _t('Retention settings saved')); }
+    else { showMessage(_t('Error'), data.error?.message || _t('Failed')); }
+  } catch(e) { showMessage(_t('Error'), _t('Network error')); }
+}
+function openRetentionPurge() {
+  var input = document.getElementById('retention-purge-confirm');
+  input.value = '';
+  document.getElementById('retention-purge-confirm-btn').disabled = true;
+  document.getElementById('retention-purge-modal').style.display = 'flex';
+  input.focus();
+}
+function closeRetentionPurge() {
+  document.getElementById('retention-purge-modal').style.display = 'none';
+  document.getElementById('retention-purge-btn').focus();
+}
+function retentionPurgeInput() {
+  var want = document.getElementById('retention-card').dataset.enterpriseId || '';
+  var got = document.getElementById('retention-purge-confirm').value.trim();
+  // Case-insensitive like the server; an empty id must never enable the button.
+  document.getElementById('retention-purge-confirm-btn').disabled = !want || got.toLowerCase() !== want.toLowerCase();
+}
+async function confirmRetentionPurge() {
+  var confirmText = document.getElementById('retention-purge-confirm').value.trim();
+  var btn = document.getElementById('retention-purge-confirm-btn');
+  btn.disabled = true;
+  try {
+    var res = await fetch('/api/enterprise/retention/purge', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRF-Token': retentionCsrf()},
+      body: JSON.stringify({ confirm: confirmText })
+    });
+    var data = await res.json();
+    closeRetentionPurge();
+    if (data.success) { showMessage(_t('Done'), _t('Stored data purged')); }
+    else { showMessage(_t('Error'), data.error?.message || _t('Failed')); }
+    loadRetention();
+  } catch(e) { btn.disabled = false; showMessage(_t('Error'), _t('Network error')); }
+}
+document.addEventListener('keydown', function(e) {
+  var m = document.getElementById('retention-purge-modal');
+  if (e.key === 'Escape' && m && m.style.display !== 'none') closeRetentionPurge();
+});
+
+
+// ---- Security policy (require MFA) ----
+async function loadEnterpriseSecurity() {
+  if (!document.getElementById('security-card')) return;
+  try {
+    var res = await fetch('/api/enterprise/security');
+    var data = await res.json();
+    if (!res.ok) { showMessage(_t('Error'), data.error?.message || _t('Failed')); return; }
+    document.getElementById('require-mfa').checked = !!data.require_mfa;
+    document.getElementById('mfa-enrolled-count').textContent = data.members_mfa_enrolled + ' / ' + data.members_total;
+  } catch(e) { showMessage(_t('Error'), _t('Network error')); }
+}
+async function saveEnterpriseSecurity() {
+  var box = document.getElementById('require-mfa');
+  try {
+    var res = await fetch('/api/enterprise/security', {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json','X-CSRF-Token': retentionCsrf()},
+      body: JSON.stringify({ require_mfa: box.checked })
+    });
+    var data = await res.json();
+    if (data.success) { showMessage(_t('Done'), _t('Security policy saved')); }
+    else { box.checked = !box.checked; showMessage(_t('Error'), data.error?.message || _t('Failed')); }
+  } catch(e) { box.checked = !box.checked; showMessage(_t('Error'), _t('Network error')); }
+}
+
+// ---- Single sign-on (OIDC) ----
+function ssoDomainsFromInput() {
+  return document.getElementById('sso-domains').value.split(',').map(function(d){ return d.trim(); }).filter(Boolean);
+}
+async function loadEnterpriseSSO() {
+  if (!document.getElementById('sso-card')) return;
+  try {
+    var res = await fetch('/api/enterprise/sso');
+    var data = await res.json();
+    if (!res.ok) { showMessage(_t('Error'), data.error?.message || _t('Failed')); return; }
+    document.getElementById('sso-redirect-uri').textContent = data.redirect_uri || '-';
+    document.getElementById('sso-issuer').value = data.issuer || '';
+    document.getElementById('sso-client-id').value = data.client_id || '';
+    document.getElementById('sso-client-secret').value = '';
+    document.getElementById('sso-secret-state').textContent = data.client_secret_set ? _t('A client secret is stored. Leave empty to keep it.') : _t('No client secret stored yet.');
+    document.getElementById('sso-scopes').value = data.scopes || 'openid email profile';
+    document.getElementById('sso-domains').value = (data.allowed_email_domains || []).join(', ');
+    document.getElementById('sso-enabled').checked = !!data.enabled;
+    document.getElementById('sso-jit').checked = data.jit_provisioning !== false;
+    document.getElementById('sso-enforce').checked = !!data.enforce_sso;
+  } catch(e) { showMessage(_t('Error'), _t('Network error')); }
+}
+async function saveEnterpriseSSO() {
+  var body = {
+    enabled: document.getElementById('sso-enabled').checked,
+    issuer: document.getElementById('sso-issuer').value.trim(),
+    client_id: document.getElementById('sso-client-id').value.trim(),
+    scopes: document.getElementById('sso-scopes').value.trim(),
+    allowed_email_domains: ssoDomainsFromInput(),
+    jit_provisioning: document.getElementById('sso-jit').checked,
+    enforce_sso: document.getElementById('sso-enforce').checked
+  };
+  var secret = document.getElementById('sso-client-secret').value;
+  if (secret) body.client_secret = secret; // omitted = keep the stored secret
+  try {
+    var res = await fetch('/api/enterprise/sso', {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json','X-CSRF-Token': retentionCsrf()},
+      body: JSON.stringify(body)
+    });
+    var data = await res.json();
+    if (data.success) { showMessage(_t('Done'), _t('Single sign-on settings saved')); loadEnterpriseSSO(); }
+    else { showMessage(_t('Error'), data.error?.message || _t('Failed')); }
+  } catch(e) { showMessage(_t('Error'), _t('Network error')); }
+}
+async function testEnterpriseSSO() {
+  var out = document.getElementById('sso-test-result');
+  out.textContent = '';
+  try {
+    var res = await fetch('/api/enterprise/sso/test', { method: 'POST', headers: {'X-CSRF-Token': retentionCsrf()} });
+    var data = await res.json();
+    if (!res.ok) { out.textContent = data.error?.message || _t('Failed'); return; }
+    out.textContent = data.ok ? (_t('Connection OK') + ' (' + data.jwks_keys + ' ' + _t('signing keys') + ')') : (_t('Connection failed') + ': ' + (data.error || ''));
+  } catch(e) { out.textContent = _t('Network error'); }
+}
+async function deleteEnterpriseSSO() {
+  if (!confirm(_t('Remove the single sign-on configuration? Members will use passwords again.'))) return;
+  try {
+    var res = await fetch('/api/enterprise/sso', { method: 'DELETE', headers: {'X-CSRF-Token': retentionCsrf()} });
+    var data = await res.json();
+    if (data.success) { showMessage(_t('Done'), _t('Single sign-on removed')); loadEnterpriseSSO(); }
+    else { showMessage(_t('Error'), data.error?.message || _t('Failed')); }
+  } catch(e) { showMessage(_t('Error'), _t('Network error')); }
+}
+
+document.addEventListener('DOMContentLoaded', function(){ loadPendingChanges(); loadMgmtTokens(); loadRetention(); loadEnterpriseSecurity(); loadEnterpriseSSO(); });
+</script>
+{{end}}

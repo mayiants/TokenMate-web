@@ -1,0 +1,321 @@
+{{define "layout-sidebar"}}
+  <!-- Sidebar -->
+  <aside id="sidebar" class="sidebar" aria-label="Main navigation">
+    <div id="sidebar-fixed-tooltip" class="sidebar-fixed-tooltip" aria-hidden="true"></div>
+    <div class="sidebar-header"></div>
+    <nav class="sidebar-nav">
+      {{if or (eq .Role "enterprise_admin") (eq .Role "system_admin") (eq .Role "super_admin")}}
+      <div class="sidebar-section-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <span>{{t "sidebar.user_console"}}</span>
+      </div>
+      {{end}}
+      <!-- Core -->
+      <a href="/dashboard" class="sidebar-subitem {{if eq .Page "dashboard"}}active{{end}}" {{if eq .Page "dashboard"}}aria-current="page"{{end}} data-title="{{t "nav.dashboard"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span class="nav-text">{{t "nav.dashboard"}}</span>
+        <span class="nav-tooltip">{{t "nav.dashboard"}}</span>
+      </a>
+      <a href="/models" class="sidebar-subitem {{if eq .Page "models-gallery"}}active{{end}}" {{if eq .Page "models-gallery"}}aria-current="page"{{end}} data-title="{{t "Models Gallery"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 10v6M4.22 4.22l4.24 4.24m7.08 7.08l4.24 4.24M1 12h6m10 0h6M4.22 19.78l4.24-4.24m7.08-7.08l4.24-4.24"/></svg>
+        <span class="nav-text">{{t "Models Gallery"}}</span>
+        <span class="nav-tooltip">{{t "Models Gallery"}}</span>
+      </a>
+      <a href="/apikeys" class="sidebar-subitem {{if eq .Page "apikeys"}}active{{end}}" {{if eq .Page "apikeys"}}aria-current="page"{{end}} data-title="{{t "API Keys"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span class="nav-text">{{t "API Keys"}}</span>
+        <span class="nav-tooltip">{{t "API Keys"}}</span>
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <!-- Usage & Status -->
+      <a href="/usage-logs" class="sidebar-subitem {{if eq .Page "usage-logs"}}active{{end}}" {{if eq .Page "usage-logs"}}aria-current="page"{{end}} data-title="{{t "nav.usage_logs"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span class="nav-text">{{t "nav.usage_logs"}}</span>
+        <span class="nav-tooltip">{{t "nav.usage_logs"}}</span>
+      </a>
+      <a href="/status" class="sidebar-subitem {{if eq .Page "status"}}active{{end}}" {{if eq .Page "status"}}aria-current="page"{{end}} data-title="{{t "Service Status"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <span class="nav-text">{{t "Service Status"}}</span>
+        <span class="nav-tooltip">{{t "Service Status"}}</span>
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <!-- Billing & Finance -->
+      <a href="/billing" class="sidebar-subitem {{if eq .Page "billing"}}active{{end}}" {{if eq .Page "billing"}}aria-current="page"{{end}} data-title="{{t "nav.billing"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span class="nav-text">{{t "nav.billing"}}</span>
+        <span class="nav-tooltip">{{t "nav.billing"}}</span>
+      </a>
+      <a href="/billing-details" class="sidebar-subitem {{if eq .Page "billing-details"}}active{{end}}" {{if eq .Page "billing-details"}}aria-current="page"{{end}} data-title="{{t "nav.billing_details"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span class="nav-text">{{t "nav.billing_details"}}</span>
+        <span class="nav-tooltip">{{t "nav.billing_details"}}</span>
+      </a>
+      <a href="/voucher" class="sidebar-subitem {{if eq .Page "voucher"}}active{{end}}" {{if eq .Page "voucher"}}aria-current="page"{{end}} data-title="{{t "nav.voucher"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M2 9a3 3 0 0 1 0-6h20a3 3 0 0 1 0 6"/><path d="M2 15a3 3 0 0 0 0 6h20a3 3 0 0 0 0-6"/><path d="M2 9v6"/><path d="M22 9v6"/><path d="M9 9v6"/><path d="M15 9v6"/></svg>
+        <span class="nav-text">{{t "nav.voucher"}}</span>
+        <span class="nav-tooltip">{{t "nav.voucher"}}</span>
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <!-- Account -->
+      <a href="/plan-and-group" class="sidebar-subitem {{if eq .Page "plan-and-group"}}active{{end}}" {{if eq .Page "plan-and-group"}}aria-current="page"{{end}} data-title="{{t "nav.plan_and_group"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <span class="nav-text">{{t "nav.plan_and_group"}}</span>
+        <span class="nav-tooltip">{{t "nav.plan_and_group"}}</span>
+      </a>
+
+      {{if eq .Role "enterprise_admin"}}
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><line x1="8" y1="6" x2="10" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="6" x2="16" y2="6"/><line x1="14" y1="10" x2="16" y2="10"/></svg>
+        <span>{{t "Enterprise Console"}}</span>
+      </div>
+      <a href="/enterprise" class="sidebar-subitem {{if eq .Page "enterprise/dashboard"}}active{{end}}" {{if eq .Page "enterprise/dashboard"}}aria-current="page"{{end}} data-title="{{t "Overview"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span class="nav-text">{{t "Overview"}}</span>
+        <span class="nav-tooltip">{{t "Overview"}}</span>
+      </a>
+      <a href="/enterprise/users" class="sidebar-subitem {{if eq .Page "enterprise/users"}}active{{end}}" {{if eq .Page "enterprise/users"}}aria-current="page"{{end}} data-title="{{t "Members"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-text">{{t "Members"}}</span>
+        <span class="nav-tooltip">{{t "Members"}}</span>
+      </a>
+      <a href="/enterprise/groups" class="sidebar-subitem {{if eq .Page "enterprise/groups"}}active{{end}}" {{if eq .Page "enterprise/groups"}}aria-current="page"{{end}} data-title="{{t "Groups"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span class="nav-text">{{t "Groups"}}</span>
+        <span class="nav-tooltip">{{t "Groups"}}</span>
+      </a>
+      <a href="/enterprise/keys" class="sidebar-subitem {{if eq .Page "enterprise/keys"}}active{{end}}" {{if eq .Page "enterprise/keys"}}aria-current="page"{{end}} data-title="{{t "Enterprise Keys"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1"/><path d="M12 16v3"/></svg>
+        <span class="nav-text">{{t "Enterprise Keys"}}</span>
+        <span class="nav-tooltip">{{t "Enterprise Keys"}}</span>
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <a href="/enterprise/billing" class="sidebar-subitem {{if eq .Page "enterprise/billing"}}active{{end}}" {{if eq .Page "enterprise/billing"}}aria-current="page"{{end}} data-title="{{t "Billing & Invoice"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span class="nav-text">{{t "Billing & Invoice"}}</span>
+        <span class="nav-tooltip">{{t "Billing & Invoice"}}</span>
+      </a>
+      <a href="/enterprise/usage" class="sidebar-subitem {{if eq .Page "enterprise/usage"}}active{{end}}" {{if eq .Page "enterprise/usage"}}aria-current="page"{{end}} data-title="{{t "Usage & Reconciliation"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span class="nav-text">{{t "Usage & Reconciliation"}}</span>
+        <span class="nav-tooltip">{{t "Usage & Reconciliation"}}</span>
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <a href="/enterprise/audit" class="sidebar-subitem {{if eq .Page "enterprise/audit"}}active{{end}}" {{if eq .Page "enterprise/audit"}}aria-current="page"{{end}} data-title="{{t "Audit Logs"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span class="nav-text">{{t "Audit Logs"}}</span>
+        <span class="nav-tooltip">{{t "Audit Logs"}}</span>
+      </a>
+      <a href="/enterprise/alerts" class="sidebar-subitem {{if eq .Page "enterprise/alerts"}}active{{end}}" {{if eq .Page "enterprise/alerts"}}aria-current="page"{{end}} data-title="{{t "Alerts"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span class="nav-text">{{t "Alerts"}}</span>
+        <span class="nav-tooltip">{{t "Alerts"}}</span>
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <a href="/enterprise/settings" class="sidebar-subitem {{if eq .Page "enterprise/settings"}}active{{end}}" {{if eq .Page "enterprise/settings"}}aria-current="page"{{end}} data-title="{{t "Settings"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68 1.65 1.65 0 0 0 9 3V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-text">{{t "Settings"}}</span>
+        <span class="nav-tooltip">{{t "Settings"}}</span>
+      </a>
+      {{end}}
+
+      {{if or (eq .Role "system_admin") (eq .Role "super_admin")}}
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l-.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>{{t "System Console"}}</span>
+      </div>
+
+      <!-- Overview & Operations -->
+      <a href="/admin" class="sidebar-subitem {{if eq .Page "admin"}}active{{end}}" {{if eq .Page "admin"}}aria-current="page"{{end}} data-title="{{t "Overview"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span class="nav-text">{{t "Overview"}}</span>
+        <span class="nav-tooltip">{{t "Overview"}}</span>
+      </a>
+      <a href="/admin/usage-explorer" class="sidebar-subitem {{if eq .Page "admin-usage-explorer"}}active{{end}}" {{if eq .Page "admin-usage-explorer"}}aria-current="page"{{end}} data-title="{{t "Usage Explorer"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 21H3"/><path d="M5 21V7l8-4 8 4v14"/><path d="M19 21V10"/><path d="M12 21V17"/><path d="M12 13V10"/></svg>
+        <span class="nav-text">{{t "Usage Explorer"}}</span>
+        <span class="nav-tooltip">{{t "Usage Explorer"}}</span>
+      </a>
+      <a href="/admin/users" class="sidebar-subitem {{if eq .Page "admin-users"}}active{{end}}" {{if eq .Page "admin-users"}}aria-current="page"{{end}} data-title="{{t "User Management"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="nav-text">{{t "User Management"}}</span>
+        <span class="nav-tooltip">{{t "User Management"}}</span>
+      </a>
+      <a href="/admin/groups" class="sidebar-subitem {{if eq .Page "admin-groups"}}active{{end}}" {{if eq .Page "admin-groups"}}aria-current="page"{{end}} data-title="{{t "User Groups"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-text">{{t "User Groups"}}</span>
+        <span class="nav-tooltip">{{t "User Groups"}}</span>
+      </a>
+      <a href="/admin/enterprise" class="sidebar-subitem {{if eq .Page "admin-enterprise"}}active{{end}}" {{if eq .Page "admin-enterprise"}}aria-current="page"{{end}} data-title="{{t "Enterprise Management"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><line x1="8" y1="6" x2="10" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="6" x2="16" y2="6"/><line x1="14" y1="10" x2="16" y2="10"/></svg>
+        <span class="nav-text">{{t "Enterprise Management"}}</span>
+        <span class="nav-tooltip">{{t "Enterprise Management"}}</span>
+      </a>
+      <a href="/admin/enterprise-applications" class="sidebar-subitem {{if eq .Page "admin-enterprise-applications"}}active{{end}}" {{if eq .Page "admin-enterprise-applications"}}aria-current="page"{{end}} data-title="{{t "Enterprise Applications"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        <span class="nav-text">{{t "Enterprise Applications"}}</span>
+        <span class="nav-tooltip">{{t "Enterprise Applications"}}</span>
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <!-- Models & Keys -->
+      <a href="/admin/models" class="sidebar-subitem {{if eq .Page "admin-models-general"}}active{{end}}" {{if eq .Page "admin-models-general"}}aria-current="page"{{end}} data-title="{{t "Model Management"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="16 2 16 10 22 10"/><path d="M8 2H2v16a2 2 0 0 0 2 2h16"/><path d="M8 18V2"/></svg>
+        <span class="nav-text">{{t "Model Management"}}</span>
+        <span class="nav-tooltip">{{t "Model Management"}}</span>
+      </a>
+      <a href="/admin/models-aws" class="sidebar-subitem {{if eq .Page "admin-models-aws"}}active{{end}}" {{if eq .Page "admin-models-aws"}}aria-current="page"{{end}} data-title="{{t "AWS Models"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+        <span class="nav-text">{{t "AWS Models"}}</span>
+        <span class="nav-tooltip">{{t "AWS Models"}}</span>
+      </a>
+      <a href="/admin/keypool" class="sidebar-subitem {{if eq .Page "admin-keypool"}}active{{end}}" {{if eq .Page "admin-keypool"}}aria-current="page"{{end}} data-title="{{t "API Key Pool"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span class="nav-text">{{t "API Key Pool"}}</span>
+        <span class="nav-tooltip">{{t "API Key Pool"}}</span>
+      </a>
+      <a href="/admin/keys" class="sidebar-subitem {{if eq .Page "admin-keys"}}active{{end}}" {{if eq .Page "admin-keys"}}aria-current="page"{{end}} data-title="{{t "nav.admin.keys"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        <span class="nav-text">{{t "nav.admin.keys"}}</span>
+        <span class="nav-tooltip">{{t "nav.admin.keys"}}</span>
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <!-- Pricing & Subscriptions -->
+      <a href="/admin/pricing" class="sidebar-subitem {{if eq .Page "admin-pricing"}}active{{end}}" {{if eq .Page "admin-pricing"}}aria-current="page"{{end}} data-title="{{t "Pricing Rules"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span class="nav-text">{{t "Pricing Rules"}}</span>
+        <span class="nav-tooltip">{{t "Pricing Rules"}}</span>
+      </a>
+      <a href="/admin/upstream-pricing" class="sidebar-subitem {{if eq .Page "admin-upstream-pricing"}}active{{end}}" {{if eq .Page "admin-upstream-pricing"}}aria-current="page"{{end}} data-title="{{t "Upstream Pricing"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><line x1="12" y1="1" x2="12" y2="23"/></svg>
+        <span class="nav-text">{{t "Upstream Pricing"}}</span>
+        <span class="nav-tooltip">{{t "Upstream Pricing"}}</span>
+      </a>
+      <a href="/admin/subscriptions" class="sidebar-subitem {{if eq .Page "admin-subscriptions"}}active{{end}}" {{if eq .Page "admin-subscriptions"}}aria-current="page"{{end}} data-title="{{t "Subscription Plans"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <span class="nav-text">{{t "Subscription Plans"}}</span>
+        <span class="nav-tooltip">{{t "Subscription Plans"}}</span>
+      </a>
+      <a href="/admin/vouchers" class="sidebar-subitem {{if eq .Page "admin-vouchers"}}active{{end}}" {{if eq .Page "admin-vouchers"}}aria-current="page"{{end}} data-title="{{t "Voucher Management"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M2 9a3 3 0 0 1 0-6h20a3 3 0 0 1 0 6"/><path d="M2 15a3 3 0 0 0 0 6h20a3 3 0 0 0 0-6"/><path d="M2 9v6"/><path d="M22 9v6"/><path d="M9 9v6"/><path d="M15 9v6"/></svg>
+        <span class="nav-text">{{t "Voucher Management"}}</span>
+        <span class="nav-tooltip">{{t "Voucher Management"}}</span>
+      </a>
+      <a href="/admin/rate-limits" class="sidebar-subitem {{if eq .Page "admin-rate-limits"}}active{{end}}" {{if eq .Page "admin-rate-limits"}}aria-current="page"{{end}} data-title="{{t "Rate Limits"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M12 12l10-5"/><path d="M12 12v10"/></svg>
+        <span class="nav-text">{{t "Rate Limits"}}</span>
+        <span class="nav-tooltip">{{t "Rate Limits"}}</span>
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <!-- Upstream & Monitoring -->
+      <a href="/admin/providers" class="sidebar-subitem {{if eq .Page "admin-providers"}}active{{end}}" {{if eq .Page "admin-providers"}}aria-current="page"{{end}} data-title="{{t "Provider Management"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        <span class="nav-text">{{t "Provider Management"}}</span>
+        <span class="nav-tooltip">{{t "Provider Management"}}</span>
+      </a>
+      <a href="/admin/provider-health" class="sidebar-subitem {{if eq .Page "admin-provider-health"}}active{{end}}" {{if eq .Page "admin-provider-health"}}aria-current="page"{{end}} data-title="{{t "Provider Health"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span class="nav-text">{{t "Provider Health"}}</span>
+        <span class="nav-tooltip">{{t "Provider Health"}}</span>
+      </a>
+      <a href="/admin/monitor-upstream" class="sidebar-subitem {{if eq .Page "admin-monitor-upstream"}}active{{end}}" {{if eq .Page "admin-monitor-upstream"}}aria-current="page"{{end}} data-title="{{t "Upstream Monitor"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span class="nav-text">{{t "Upstream Monitor"}}</span>
+        <span class="nav-tooltip">{{t "Upstream Monitor"}}</span>
+      </a>
+      <a href="/admin/monitor-downstream" class="sidebar-subitem {{if eq .Page "admin-monitor-downstream"}}active{{end}}" {{if eq .Page "admin-monitor-downstream"}}aria-current="page"{{end}} data-title="{{t "Downstream Monitor"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span class="nav-text">{{t "Downstream Monitor"}}</span>
+        <span class="nav-tooltip">{{t "Downstream Monitor"}}</span>
+      </a>
+      <a href="/admin/upstream-ops" class="sidebar-subitem {{if eq .Page "admin-upstream-ops"}}active{{end}}" {{if eq .Page "admin-upstream-ops"}}aria-current="page"{{end}} data-title="{{t "Upstream Operations"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span class="nav-text">{{t "Upstream Operations"}}</span>
+        <span class="nav-tooltip">{{t "Upstream Operations"}}</span>
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <!-- Finance & Reconciliation -->
+      <a href="/admin/reconciliation" class="sidebar-subitem {{if eq .Page "admin-reconciliation"}}active{{end}}" {{if eq .Page "admin-reconciliation"}}aria-current="page"{{end}} data-title="{{t "Reconciliation & Invoices"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="14" y1="18" x2="16" y2="18"/></svg>
+        <span class="nav-text">{{t "Reconciliation & Invoices"}}</span>
+        <span class="nav-tooltip">{{t "Reconciliation & Invoices"}}</span>
+      </a>
+      <a href="/admin/reconciliation-ops" class="sidebar-subitem {{if eq .Page "admin-reconciliation-ops"}}active{{end}}" {{if eq .Page "admin-reconciliation-ops"}}aria-current="page"{{end}} data-title="{{t "Upstream Reconciliation"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="6" y1="7" x2="6.01" y2="7"/><line x1="6" y1="11" x2="6.01" y2="11"/></svg>
+        <span class="nav-text">{{t "Upstream Reconciliation"}}</span>
+        <span class="nav-tooltip">{{t "Upstream Reconciliation"}}</span>
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <!-- Content & Compliance -->
+      <a href="/admin/announcements" class="sidebar-subitem {{if eq .Page "admin-announcements"}}active{{end}}" {{if eq .Page "admin-announcements"}}aria-current="page"{{end}} data-title="{{t "Announcements"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="nav-text">{{t "Announcements"}}</span>
+        <span class="nav-tooltip">{{t "Announcements"}}</span>
+      </a>
+      <a href="/admin/audit-logs" class="sidebar-subitem {{if eq .Page "admin-audit-logs"}}active{{end}}" {{if eq .Page "admin-audit-logs"}}aria-current="page"{{end}} data-title="{{t "Audit Logs"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span class="nav-text">{{t "Audit Logs"}}</span>
+        <span class="nav-tooltip">{{t "Audit Logs"}}</span>
+      </a>
+      <a href="/admin/compliance" class="sidebar-subitem {{if eq .Page "admin-compliance"}}active{{end}}" {{if eq .Page "admin-compliance"}}aria-current="page"{{end}} data-title="{{t "Compliance"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+        <span class="nav-text">{{t "Compliance"}}</span>
+        <span class="nav-tooltip">{{t "Compliance"}}</span>
+      </a>
+      <a href="/admin/settings" class="sidebar-subitem {{if eq .Page "admin-settings"}}active{{end}}" {{if eq .Page "admin-settings"}}aria-current="page"{{end}} data-title="{{t "System Settings"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l-.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-text">{{t "System Settings"}}</span>
+        <span class="nav-tooltip">{{t "System Settings"}}</span>
+      </a>
+
+      {{if eq .Role "super_admin"}}
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span>{{t "Super Console"}}</span>
+      </div>
+      <a href="/super/admin-management" class="sidebar-subitem {{if eq .Page "super/admin-management"}}active{{end}}" {{if eq .Page "super/admin-management"}}aria-current="page"{{end}} data-title="{{t "Admin Config"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="nav-text">{{t "Admin Config"}}</span>
+        <span class="nav-tooltip">{{t "Admin Config"}}</span>
+      </a>
+      <a href="/super/payment" class="sidebar-subitem {{if eq .Page "super/payment"}}active{{end}}" {{if eq .Page "super/payment"}}aria-current="page"{{end}} data-title="{{t "Payment Config"}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span class="nav-text">{{t "Payment Config"}}</span>
+        <span class="nav-tooltip">{{t "Payment Config"}}</span>
+      </a>
+      {{end}}
+      {{end}}
+    </nav>
+    <div class="sidebar-footer">
+      <button type="button" class="sidebar-collapse-btn" id="sidebar-collapse-btn-footer" aria-label="Toggle sidebar" aria-expanded="true" aria-controls="sidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+    </div>
+  </aside>
+  <script>
+    (function() {
+      const sb = document.getElementById('sidebar');
+      if (!sb) return;
+      const key = 'sidebarScroll';
+      try {
+        const saved = sessionStorage.getItem(key);
+        if (saved) sb.scrollTop = parseInt(saved, 10);
+      } catch (e) {}
+      window.addEventListener('beforeunload', function() {
+        try { sessionStorage.setItem(key, sb.scrollTop); } catch (e) {}
+      });
+    })();
+  </script>
+{{end}}

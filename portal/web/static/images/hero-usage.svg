@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="600" height="360" style="background:#ffffff;font-family:system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif">
+<text x="300.0" y="28" text-anchor="middle" font-size="16" font-weight="600" fill="#0f172a">近 7 天模型调用</text>
+<line x1="60" y1="310.0" x2="570" y2="310.0" stroke="#e2e8f0" stroke-width="1"/>
+<text x="50" y="314.0" text-anchor="end" font-size="11" fill="#64748b">0</text>
+<line x1="60" y1="258.0" x2="570" y2="258.0" stroke="#e2e8f0" stroke-width="1"/>
+<text x="50" y="262.0" text-anchor="end" font-size="11" fill="#64748b">607</text>
+<line x1="60" y1="206.0" x2="570" y2="206.0" stroke="#e2e8f0" stroke-width="1"/>
+<text x="50" y="210.0" text-anchor="end" font-size="11" fill="#64748b">1,214</text>
+<line x1="60" y1="154.0" x2="570" y2="154.0" stroke="#e2e8f0" stroke-width="1"/>
+<text x="50" y="158.0" text-anchor="end" font-size="11" fill="#64748b">1,821</text>
+<line x1="60" y1="102.0" x2="570" y2="102.0" stroke="#e2e8f0" stroke-width="1"/>
+<text x="50" y="106.0" text-anchor="end" font-size="11" fill="#64748b">2,428</text>
+<line x1="60" y1="50.0" x2="570" y2="50.0" stroke="#e2e8f0" stroke-width="1"/>
+<text x="50" y="54.0" text-anchor="end" font-size="11" fill="#64748b">3,035</text>
+<rect x="76.39285714285714" y="203.80764163372857" width="40.07142857142858" height="106.19235836627142" rx="4" ry="4" fill="#3b82f6" fill-opacity="0.85"/>
+<text x="96.42857142857143" y="197.80764163372857" text-anchor="middle" font-size="11" font-weight="600" fill="#3b82f6">1,240</text>
+<text x="96.42857142857143" y="328" text-anchor="middle" font-size="11" fill="#64748b">06-08</text>
+<rect x="149.25" y="151.56785243741763" width="40.07142857142858" height="158.43214756258237" rx="4" ry="4" fill="#3b82f6" fill-opacity="0.85"/>
+<text x="169.28571428571428" y="145.56785243741763" text-anchor="middle" font-size="11" font-weight="600" fill="#3b82f6">1,850</text>
+<text x="169.28571428571428" y="328" text-anchor="middle" font-size="11" fill="#64748b">06-09</text>
+<rect x="222.10714285714286" y="188.39262187088272" width="40.07142857142858" height="121.60737812911728" rx="4" ry="4" fill="#3b82f6" fill-opacity="0.85"/>
+<text x="242.14285714285714" y="182.39262187088272" text-anchor="middle" font-size="11" font-weight="600" fill="#3b82f6">1,420</text>
+<text x="242.14285714285714" y="328" text-anchor="middle" font-size="11" fill="#64748b">06-10</text>
+<rect x="294.9642857142857" y="112.17391304347822" width="40.07142857142858" height="197.82608695652178" rx="4" ry="4" fill="#3b82f6" fill-opacity="0.85"/>
+<text x="315.0" y="106.17391304347822" text-anchor="middle" font-size="11" font-weight="600" fill="#3b82f6">2,310</text>
+<text x="315.0" y="328" text-anchor="middle" font-size="11" fill="#64748b">06-11</text>
+<rect x="367.8214285714286" y="140.43478260869563" width="40.07142857142858" height="169.56521739130437" rx="4" ry="4" fill="#3b82f6" fill-opacity="0.85"/>
+<text x="387.8571428571429" y="134.43478260869563" text-anchor="middle" font-size="11" font-weight="600" fill="#3b82f6">1,980</text>
+<text x="387.8571428571429" y="328" text-anchor="middle" font-size="11" fill="#64748b">06-12</text>
+<rect x="440.6785714285715" y="83.91304347826085" width="40.07142857142858" height="226.08695652173915" rx="4" ry="4" fill="#3b82f6" fill-opacity="0.85"/>
+<text x="460.7142857142858" y="77.91304347826085" text-anchor="middle" font-size="11" font-weight="600" fill="#3b82f6">2,640</text>
+<text x="460.7142857142858" y="328" text-anchor="middle" font-size="11" fill="#64748b">06-13</text>
+<rect x="513.5357142857143" y="125.87615283267456" width="40.07142857142858" height="184.12384716732544" rx="4" ry="4" fill="#3b82f6" fill-opacity="0.85"/>
+<text x="533.5714285714287" y="119.87615283267456" text-anchor="middle" font-size="11" font-weight="600" fill="#3b82f6">2,150</text>
+<text x="533.5714285714287" y="328" text-anchor="middle" font-size="11" fill="#64748b">06-14</text>
+<line x1="60" y1="50" x2="60" y2="310" stroke="#e2e8f0" stroke-width="1"/>
+<line x1="60" y1="310" x2="570" y2="310" stroke="#e2e8f0" stroke-width="1"/>
+</svg>

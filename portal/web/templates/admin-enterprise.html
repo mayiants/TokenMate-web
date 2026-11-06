@@ -1,0 +1,980 @@
+{{define "content"}}
+{{$d := .Data}}{{$enterprises := $d.Items}}
+{{$totalMembers := 0.0}}
+{{range $enterprises}}
+  {{$totalMembers = add $totalMembers .MemberCount}}
+{{end}}
+
+<!-- ── Page Header ── -->
+<div class="page-header">
+  <h1 class="page-title">{{t "Enterprise Management"}}</h1>
+</div>
+
+<!-- ── Enterprise Stats ── -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-primary">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><path d="M17 22V6a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v16"/><path d="M12 11h0"/><path d="M12 15h0"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{if $d}}{{$d.Total}}{{else}}0{{end}}</div>
+      <div class="stat-label">{{t "Total Enterprises"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-success">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{if $d}}{{$d.ActiveCount}}{{else}}0{{end}}</div>
+      <div class="stat-label">{{t "Active Enterprises"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-error">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{if $d}}{{$d.SuspendedCount}}{{else}}0{{end}}</div>
+      <div class="stat-label">{{t "Disabled"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-warning">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{int $totalMembers}}</div>
+      <div class="stat-label">{{t "Member Count"}}</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Actions ── -->
+<div class="key-search-bar">
+  <form method="get" action="/admin/enterprise" style="display:flex;gap:8px;align-items:center">
+    <input type="text" name="search" class="form-input form-input-sm du-input du-input-bordered" style="width:220px"
+           placeholder="{{t "Search name / email / legal name..."}}" value="{{.Data.Search}}">
+    <button type="submit" class="btn btn-sm btn-secondary">{{t "Search"}}</button>
+  </form>
+  <label for="status-filter" class="visually-hidden">{{t "Filter by status"}}</label>
+  <select id="status-filter" class="form-select form-select-sm du-select du-select-bordered" style="width:auto;min-width:110px" onchange="filterEnterprises()" aria-label="{{t "Filter by status"}}">
+    <option value="">{{t "All Statuses"}}</option>
+    <option value="active">{{t "Active"}}</option>
+    <option value="suspended">{{t "Disable"}}</option>
+    <option value="deleted">{{t "Deleted"}}</option>
+  </select>
+  <div class="flex-1"></div>
+  <button class="btn btn-primary btn-sm" onclick="openCreateDrawer()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{{t "New"}}</button>
+</div>
+
+<!-- ── Enterprise Table ── -->
+{{if $enterprises}}
+<div class="card">
+  <div class="data-table-wrapper">
+    <table class="data-table du-table du-table-zebra" id="enterprises-table">
+      <thead>
+        <tr>
+          <th>{{t "ID"}}</th>
+          <th>{{t "Enterprise Name"}}</th>
+          <th>{{t "Contact Email"}}</th>
+          <th>{{t "Domains"}}</th>
+          <th>{{t "Members"}}</th>
+          <th>{{t "Verified"}}</th>
+          <th style="text-align:right">{{t "Actions"}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range $enterprises}}
+        <tr data-id="{{.ID}}" data-status="{{.Status}}">
+          <td><code title="{{.ID}}">{{slice .ID 0 8}}</code></td>
+          <td>
+            <div class="font-medium">{{.Name}}
+              {{if eq .Status "active"}}<span class="badge badge-soft-success">{{t "Active"}}</span>
+              {{else if eq .Status "suspended"}}<span class="badge badge-soft-error">{{t "Disable"}}</span>
+              {{else if eq .Status "admin_vacant"}}<span class="badge badge-soft-warning">admin_vacant</span>
+              {{else if eq .Status "deleted"}}<span class="badge badge-outline">{{t "Deleted"}}</span>
+              {{else}}<span class="badge">{{.Status}}</span>{{end}}
+            </div>
+            <!-- Quota/credit/multiplier live under the name as one muted line
+                 instead of a separate table row: keeps each enterprise to a
+                 single visual row and restores zebra striping. Each label+value
+                 group is nowrap so long numbers break only between groups. -->
+            <div class="text-xs meta-line" style="margin-top:3px">
+              <span class="meta-line-item">{{t "Quota"}} <strong style="color:var(--text)">{{fmtNum .QuotaUsed}}/{{fmtNum .QuotaTotal}}</strong></span>
+              <span class="meta-line-item">{{t "Credit"}} <strong style="color:var(--text)">${{printf "%.2f" (div (int .CreditUsed) 1000000.0)}}/${{printf "%.2f" (div (int .CreditTotal) 1000000.0)}}</strong></span>
+              <span class="meta-line-item">{{t "Prepaid"}} <strong style="color:var(--text)">${{printf "%.2f" (div (int .PrepaidBalance) 1000000.0)}}</strong></span>
+              <span class="meta-line-item">{{t "Multiplier"}} <strong style="color:var(--text)">{{printf "%.2f" .PricingRatio}}x</strong></span>
+            </div>
+          </td>
+          <td>{{if .ContactEmail}}{{.ContactEmail}}{{else}}<span class="text-muted">-</span>{{end}}</td>
+          <td>{{if .AllowedDomains}}{{.AllowedDomains}}{{else}}<span class="text-muted">-</span>{{end}}</td>
+          <td>{{.MemberCount}}/{{.MaxMembers}}</td>
+          <td>{{if .VerifiedAt}}{{.VerifiedAt.Format "2006-01-02"}}{{else}}<span class="badge badge-soft-warning">{{t "Unverified"}}</span>{{end}}</td>
+          <td style="text-align:right">
+            <div class="action-bar" style="justify-content:flex-end">
+              <button class="btn btn-sm btn-secondary" onclick="openEditDrawer('{{.ID}}')">{{t "Edit"}}</button>
+              <button class="btn btn-sm btn-primary" onclick="showTopupModal('{{.ID}}', '{{.Name}}')">{{t "Recharge"}}</button>
+              <button class="btn btn-sm btn-secondary" onclick="manageMembers('{{.ID}}')">{{t "Members"}}</button>
+              {{if eq .Status "active"}}
+              <button class="btn btn-sm btn-warning" onclick="confirmSuspend('{{.ID}}', '{{.Name}}')">{{t "Disable"}}</button>
+              {{else}}
+              <button class="btn btn-sm btn-success" onclick="confirmActivate('{{.ID}}', '{{.Name}}')">{{t "Enable"}}</button>
+              {{end}}
+              <button class="btn btn-sm btn-danger" onclick="confirmDelete('{{.ID}}', '{{.Name}}')">{{t "Delete"}}</button>
+            </div>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{if gt $d.TotalPages 1}}
+  <div class="pagination">
+    {{if gt $d.Page 1}}
+    <a class="btn btn-sm btn-secondary" href="/admin/enterprise?page={{int (sub $d.Page 1)}}">{{t "Previous"}}</a>
+    {{end}}
+      <span class="pagination-info">{{t "page_info" (dict "Total" $d.Total "Page" $d.Page "TotalPages" $d.TotalPages)}}</span>
+      {{if lt $d.Page $d.TotalPages}}
+    <a class="btn btn-sm btn-secondary" href="/admin/enterprise?page={{int (add $d.Page 1)}}">{{t "Next"}}</a>
+    {{end}}
+    </div>
+  {{end}}
+</div>
+{{else}}
+<div class="card">
+  <p class="text-muted text-center mt-4">{{t "No data"}}</p>
+</div>
+{{end}}
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!--  Create Enterprise Drawer                                            -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div id="create-drawer" class="drawer drawer-lg">
+  <div class="drawer-header">
+    <span class="drawer-title">{{t "Create Enterprise"}}</span>
+    <button class="drawer-close" onclick="closeCreateDrawer()">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <form id="create-form">
+      <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+      <div class="form-group">
+        <label class="form-label">{{t "Company name *"}}</label>
+        <input type="text" name="name" class="form-input du-input du-input-bordered" required placeholder="{{t "Full Company Name"}}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Contact email *"}}</label>
+        <input type="email" name="contact_email" class="form-input du-input du-input-bordered" required placeholder="admin@company.com">
+      </div>
+      <div class="grid gap-4" style="grid-template-columns: 1fr 1fr">
+        <div class="form-group">
+          <label class="form-label">{{t "Token Quota"}}</label>
+          <input type="number" name="quota_total" class="form-input du-input du-input-bordered" value="10000000" min="0" aria-label="{{t "Quota Total"}}">
+          <p class="text-xs text-muted mt-1">{{t "0 = Unlimited"}}</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{t "Credit Limit (micro-USD)"}}</label>
+          <input type="number" name="credit_total" class="form-input du-input du-input-bordered" value="0" min="0" aria-label="{{t "Credit Total"}}">
+          <p class="text-xs text-muted mt-1">{{t "1000000 = $1.00, 0 = Not configured"}}</p>
+        </div>
+      </div>
+      <div class="grid gap-4" style="grid-template-columns: 1fr 1fr">
+        <div class="form-group">
+          <label class="form-label">{{t "Max Members"}}</label>
+          <input type="number" name="max_members" class="form-input du-input du-input-bordered" value="50" min="1" aria-label="{{t "Max Members"}}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{t "Max Admins"}}</label>
+          <input type="number" name="max_admins" class="form-input du-input du-input-bordered" value="3" min="1" aria-label="{{t "Max Admins"}}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Billing Cycle"}}</label>
+        <select name="billing_cycle" class="form-select du-select du-select-bordered" aria-label="{{t "Billing Cycle"}}">
+          <option value="monthly">{{t "Monthly"}}</option>
+          <option value="quarterly">{{t "Quarterly"}}</option>
+          <option value="yearly">{{t "Yearly"}}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Allowed Email Domains (optional)"}}</label>
+        <input type="text" name="allowed_domains" class="form-input du-input du-input-bordered" placeholder="company.com,subsidiary.com">
+        <p class="text-xs text-muted mt-1">{{t "Comma-separated. Only these domains are allowed. Leave empty for no restriction."}}</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Pricing Multiplier"}}</label>
+        <input type="number" name="pricing_ratio" class="form-input du-input du-input-bordered" value="1.00" min="0" step="0.01" placeholder="1.00">
+        <p class="text-xs text-muted mt-1">{{t "0.8 = 20% off, 1.0 = Original price"}}</p>
+      </div>
+      <div class="grid gap-4" style="grid-template-columns: 1fr 1fr">
+        <div class="form-group">
+          <label class="form-label">{{t "Display Currency"}}</label>
+          <select name="display_currency" class="form-select du-select du-select-bordered" aria-label="{{t "Display Currency"}}">
+            <option value="USD">USD ($)</option>
+            <option value="CNY">CNY (¥)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="JPY">JPY (¥)</option>
+            <option value="SGD">SGD (S$)</option>
+            <option value="KRW">KRW (₩)</option>
+            <option value="MYR">MYR (RM)</option>
+            <option value="IDR">IDR (Rp)</option>
+            <option value="THB">THB (฿)</option>
+            <option value="VND">VND (₫)</option>
+            <option value="TWD">TWD (NT$)</option>
+            <option value="HKD">HKD (HK$)</option>
+            <option value="MOP">MOP (MOP$)</option>
+            <option value="AUD">AUD (A$)</option>
+            <option value="NZD">NZD (NZ$)</option>
+            <option value="RUB">RUB (₽)</option>
+          </select>
+          <p class="text-xs text-muted mt-1">{{t "Currency used for local amounts"}}</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{t "Exchange Rate"}}</label>
+          <input type="number" name="exchange_rate" class="form-input du-input du-input-bordered" value="1.000000" min="0" step="0.000001" placeholder="1.000000">
+          <p class="text-xs text-muted mt-1">{{t "Fallback rate when live rate is unavailable"}}</p>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="drawer-footer">
+    <button type="button" class="btn btn-secondary" onclick="closeCreateDrawer()">{{t "Cancel"}}</button>
+    <button type="button" class="btn btn-primary" onclick="submitCreate()">{{t "Create"}}</button>
+  </div>
+</div>
+<div id="create-drawer-backdrop" class="drawer-backdrop" onclick="closeCreateDrawer()"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!--  Edit Enterprise Drawer                                              -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div id="edit-drawer" class="drawer drawer-lg">
+  <div class="drawer-header">
+    <span class="drawer-title">{{t "Edit business"}}</span>
+    <button class="drawer-close" onclick="closeEditDrawer()">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <form id="edit-form">
+      <input type="hidden" name="id" id="edit-id">
+      <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+      <div class="form-group">
+        <label class="form-label">{{t "Company name *"}}</label>
+        <input type="text" name="name" id="edit-name" class="form-input du-input du-input-bordered" required placeholder="{{t "Full Company Name"}}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Contact email *"}}</label>
+        <input type="email" name="contact_email" id="edit-contact_email" class="form-input du-input du-input-bordered" required placeholder="admin@company.com">
+      </div>
+      <div class="grid gap-4" style="grid-template-columns: 1fr 1fr">
+        <div class="form-group">
+          <label class="form-label">{{t "Token Quota"}}</label>
+          <input type="number" name="quota_total" id="edit-quota_total" class="form-input du-input du-input-bordered" min="0" aria-label="{{t "Quota Total"}}">
+          <p class="text-xs text-muted mt-1">{{t "0 = Unlimited"}}</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{t "Credit Limit (micro-USD)"}}</label>
+          <input type="number" name="credit_total" id="edit-credit_total" class="form-input du-input du-input-bordered" min="0" aria-label="{{t "Credit Total"}}">
+          <p class="text-xs text-muted mt-1">1000000 = $1.00</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{t "Prepaid Balance (USD)"}}</label>
+          <input type="number" name="prepaid_balance" id="edit-prepaid_balance" class="form-input du-input du-input-bordered" step="0.01" aria-label="{{t "Prepaid Balance"}}">
+          <p class="text-xs text-muted mt-1">{{t "Deducted before the monthly allowance; may go negative via adjustment. Saved as micro-USD."}}</p>
+        </div>
+      </div>
+      <div class="grid gap-4" style="grid-template-columns: 1fr 1fr 1fr">
+        <div class="form-group">
+          <label class="form-label">{{t "Pricing Multiplier"}}</label>
+          <input type="number" name="pricing_ratio" id="edit-pricing_ratio" class="form-input du-input du-input-bordered" min="0" step="0.01" placeholder="1.00">
+          <p class="text-xs text-muted mt-1">{{t "0.8 = 20% off, 1.0 = Original price"}}</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{t "Max Members"}}</label>
+          <input type="number" name="max_members" id="edit-max_members" class="form-input du-input du-input-bordered" min="1" aria-label="{{t "Max Members"}}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{t "Max Admins"}}</label>
+          <input type="number" name="max_admins" id="edit-max_admins" class="form-input du-input du-input-bordered" min="1" aria-label="{{t "Max Admins"}}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Billing Cycle"}}</label>
+        <select name="billing_cycle" id="edit-billing_cycle" class="form-select du-select du-select-bordered" aria-label="{{t "Billing Cycle"}}">
+          <option value="monthly">{{t "Monthly"}}</option>
+          <option value="quarterly">{{t "Quarterly"}}</option>
+          <option value="yearly">{{t "Yearly"}}</option>
+        </select>
+      </div>
+      <div class="grid gap-4" style="grid-template-columns: 1fr 1fr">
+        <div class="form-group">
+          <label class="form-label">{{t "Display Currency"}}</label>
+          <select name="display_currency" id="edit-display_currency" class="form-select du-select du-select-bordered" aria-label="{{t "Display Currency"}}">
+            <option value="USD">USD ($)</option>
+            <option value="CNY">CNY (¥)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="JPY">JPY (¥)</option>
+            <option value="SGD">SGD (S$)</option>
+            <option value="KRW">KRW (₩)</option>
+            <option value="MYR">MYR (RM)</option>
+            <option value="IDR">IDR (Rp)</option>
+            <option value="THB">THB (฿)</option>
+            <option value="VND">VND (₫)</option>
+            <option value="TWD">TWD (NT$)</option>
+            <option value="HKD">HKD (HK$)</option>
+            <option value="MOP">MOP (MOP$)</option>
+            <option value="AUD">AUD (A$)</option>
+            <option value="NZD">NZD (NZ$)</option>
+            <option value="RUB">RUB (₽)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{t "Exchange Rate"}}</label>
+          <input type="number" name="exchange_rate" id="edit-exchange_rate" class="form-input du-input du-input-bordered" min="0" step="0.000001" placeholder="1.000000">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Allowed Email Domains (optional)"}}</label>
+        <input type="text" name="allowed_domains" id="edit-allowed_domains" class="form-input du-input du-input-bordered" placeholder="company.com,subsidiary.com">
+        <p class="text-xs text-muted mt-1">{{t "Comma-separated. Only these domains are allowed. Leave empty for no restriction."}}</p>
+      </div>
+      <hr style="margin:12px 0;border-color:var(--border)">
+      <div class="form-group">
+        <label class="form-label">{{t "Verification Status"}}</label>
+        <div class="flex items-center gap-2">
+          <span id="edit-verify-state" class="text-muted"></span>
+          <button type="button" class="btn btn-sm btn-success" id="edit-verify-btn" style="display:none" onclick="verifyCurrentEnterprise()">{{t "Mark as verified"}}</button>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="drawer-footer">
+    <button type="button" class="btn btn-secondary" onclick="closeEditDrawer()">{{t "Cancel"}}</button>
+    <button type="button" class="btn btn-primary" onclick="submitEdit()">{{t "Save"}}</button>
+  </div>
+</div>
+<div id="edit-drawer-backdrop" class="drawer-backdrop" onclick="closeEditDrawer()"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!--  Members Modal                                                       -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div id="members-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <span class="modal-title">{{t "Member Management"}}</span>
+      <button class="modal-close" onclick="closeModal('members-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="flex gap-2 mb-4">
+        <input type="email" id="invite-email" class="form-input du-input du-input-bordered" placeholder="user@company.com" style="flex:1">
+        <select id="invite-role" class="form-select du-select du-select-bordered" style="width:140px" aria-label="Invite Role">
+          <option value="member">{{t "Member"}}</option>
+          <option value="admin">{{t "Enterprise Admin"}}</option>
+        </select>
+        <button class="btn btn-primary" onclick="inviteMember()">{{t "Invite"}}</button>
+      </div>
+      <p class="text-xs text-muted mb-4">{{t "Enterprise admins can manage members and API Keys."}}</p>
+      <div id="members-list">
+        <p class="text-muted text-center">{{t "Loading..."}}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!--  Transfer Member Modal                                               -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div id="transfer-member-modal" class="modal-overlay" style="display:none;z-index:2100">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <span class="modal-title">{{t "Transfer Member"}}</span>
+      <button class="modal-close" onclick="closeModal('transfer-member-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="transfer-user-id">
+      <p class="text-sm text-muted" id="transfer-member-hint" style="margin-bottom:12px"></p>
+      <div class="form-group">
+        <label class="form-label" for="transfer-target">{{t "Target Enterprise"}}</label>
+        <select id="transfer-target" class="form-select du-select du-select-bordered">
+          <option value="">{{t "(Detach — no enterprise)"}}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="transfer-role">{{t "Role in Target Enterprise"}}</label>
+        <select id="transfer-role" class="form-select du-select du-select-bordered">
+          <option value="member">{{t "Member"}}</option>
+          <option value="admin">{{t "Admin"}}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="transfer-reason">{{t "Reason"}}</label>
+        <input type="text" id="transfer-reason" class="form-input du-input du-input-bordered" placeholder="{{t "Optional reason for the audit log"}}">
+      </div>
+      <p class="form-hint" style="color:var(--color-error)">⚠ {{t "This bypasses the normal invitation flow and is recorded in the audit log."}}</p>
+      <div class="modal-footer" style="margin-top:16px">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('transfer-member-modal')">{{t "Cancel"}}</button>
+        <button type="button" class="btn btn-primary" id="transfer-confirm-btn" onclick="confirmTransferMember()">{{t "Confirm"}}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!--  Topup Modal                                                         -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div id="topup-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <span class="modal-title">{{t "Enterprise Recharge"}}</span>
+      <button class="modal-close" onclick="closeModal('topup-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--bg-hover); padding:12px 16px; border-radius:var(--radius); margin-bottom:16px;">
+        <div class="font-medium" id="topup-enterprise-name"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Add Token Quota"}}</label>
+        <input type="number" id="topup-quota" class="form-input du-input du-input-bordered" value="0" min="0" placeholder="{{t "0 = Do not add"}}">
+        <p class="text-xs text-muted mt-1">{{t "Added on top of existing quota"}}</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Add Credit (micro-USD)"}}</label>
+        <input type="number" id="topup-credit" class="form-input du-input du-input-bordered" value="0" min="0" placeholder="{{t "0 = Do not add"}}">
+        <p class="text-xs text-muted mt-1">{{t "1000000 = $1.00, added on top of existing credit"}}</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Add Prepaid Balance (micro-USD)"}}</label>
+        <input type="number" id="topup-prepaid" class="form-input du-input du-input-bordered" value="0" min="0" placeholder="{{t "0 = Do not add"}}">
+        <p class="text-xs text-muted mt-1">{{t "1000000 = $1.00, added on top of the prepaid balance (never reset monthly)"}}</p>
+      </div>
+      <div class="form-group" id="topup-invoice-group" style="display:none">
+        <label style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="topup-issue-invoice">
+          <span>{{t "Issue invoice for this prepaid top-up"}}</span>
+        </label>
+        <p class="text-xs text-muted mt-1">{{t "For wire transfers where the customer needs the invoice immediately. The amount leaves the after-consumption invoice pool."}}</p>
+        <input type="text" id="topup-invoice-title" class="form-input du-input du-input-bordered mt-2" placeholder="{{t "Invoice title (required when issuing)"}}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Notes"}}</label>
+        <input type="text" id="topup-reason" class="form-input du-input du-input-bordered" placeholder="{{t "Recharge reason (optional)"}}">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('topup-modal')">{{t "Cancel"}}</button>
+      <button class="btn btn-primary" onclick="submitTopup()">{{t "Top Up"}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!--  Enterprise Detail Modal                                             -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div id="detail-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <span class="modal-title">{{t "Enterprise Details"}}</span>
+      <button class="modal-close" onclick="closeModal('detail-modal')">&times;</button>
+    </div>
+    <div class="modal-body" id="detail-body">
+      <div class="text-center py-4 text-muted">{{t "Loading..."}}</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('detail-modal')">{{t "Close"}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!--  Inline JS — replaces page-admin-enterprise.js                       -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<script>
+// ── State ──────────────────────────────────────────────────────────────
+var currentEnterpriseId = null;
+var currentTopupId = null;
+var labelID = {{t "label_ID" | json}};
+
+// ── Drawer helpers ─────────────────────────────────────────────────────
+function openDrawer(id) {
+  document.getElementById(id).classList.add('open');
+  document.getElementById(id + '-backdrop').classList.add('open');
+}
+function closeDrawer(id) {
+  document.getElementById(id).classList.remove('open');
+  document.getElementById(id + '-backdrop').classList.remove('open');
+}
+
+// ── Create Enterprise Drawer ───────────────────────────────────────────
+function filterEnterprises() {
+  var status = document.getElementById('status-filter').value;
+  var groups = document.querySelectorAll('#enterprises-table tbody');
+  groups.forEach(function(group) {
+    var groupStatus = group.getAttribute('data-status') || '';
+    group.style.display = (!status || groupStatus === status) ? '' : 'none';
+  });
+}
+
+function openCreateDrawer() {
+  document.getElementById('create-form').reset();
+  openDrawer('create-drawer');
+}
+function closeCreateDrawer() { closeDrawer('create-drawer'); }
+
+function submitCreate() {
+  var form = document.getElementById('create-form');
+  var data = {
+    name: form.name.value,
+    contact_email: form.contact_email.value,
+    quota_total: parseInt(form.quota_total.value) || 0,
+    credit_total: parseInt(form.credit_total.value) || 0,
+    max_admins: parseInt(form.max_admins.value) || 3,
+    max_members: parseInt(form.max_members.value) || 50,
+    allowed_domains: form.allowed_domains.value,
+    billing_cycle: form.billing_cycle.value,
+    pricing_ratio: parseFloat(form.pricing_ratio.value) || 1.0,
+    display_currency: form.display_currency.value,
+    exchange_rate: parseFloat(form.exchange_rate.value) || 1.0
+  };
+  fetch('/api/admin/enterprise', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(result) {
+    closeCreateDrawer();
+    if (result.success) {
+      showMessage(_t('Created'), _t('Enterprise created'));
+      setTimeout(function() { window.location.reload(); }, 1000);
+    } else {
+      showMessage(_t('Create failed'), result.error ? result.error.message : _t('Unknown error'));
+    }
+  })
+  .catch(function(e) {
+    closeCreateDrawer();
+    showMessage(_t('Request failed'), e.message);
+  });
+}
+
+// ── Edit Enterprise Drawer ─────────────────────────────────────────────
+function openEditDrawer(id) {
+  fetch('/api/admin/enterprise/' + id)
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+      if (result.enterprise) {
+        var e = result.enterprise;
+        document.getElementById('edit-id').value = e.id;
+        document.getElementById('edit-name').value = e.name;
+        document.getElementById('edit-contact_email').value = e.contact_email || '';
+        document.getElementById('edit-quota_total').value = e.quota_total || 0;
+        document.getElementById('edit-credit_total').value = e.credit_total || 0;
+        document.getElementById('edit-prepaid_balance').value = ((e.prepaid_balance || 0) / 1000000).toFixed(2);
+        document.getElementById('edit-pricing_ratio').value = e.pricing_ratio || 1.0;
+        document.getElementById('edit-max_members').value = e.max_members || 50;
+        document.getElementById('edit-allowed_domains').value = e.allowed_domains || '';
+        document.getElementById('edit-max_admins').value = e.max_admins || 3;
+        document.getElementById('edit-billing_cycle').value = e.billing_cycle || 'monthly';
+        document.getElementById('edit-display_currency').value = e.display_currency || 'USD';
+        document.getElementById('edit-exchange_rate').value = (e.exchange_rate || 1.0).toFixed(6);
+        var verifyState = document.getElementById('edit-verify-state');
+        var verifyBtn = document.getElementById('edit-verify-btn');
+        if (e.verified_at) {
+          verifyState.textContent = _t('Verified') + ' (' + formatDateTime(e.verified_at) + ')';
+          verifyBtn.style.display = 'none';
+        } else {
+          verifyState.textContent = _t('Unverified');
+          verifyBtn.style.display = '';
+        }
+        openDrawer('edit-drawer');
+      }
+    })
+    .catch(function(e) {
+      showMessage(_t('Load failed'), e.message);
+    });
+}
+function closeEditDrawer() { closeDrawer('edit-drawer'); }
+
+function submitEdit() {
+  var id = document.getElementById('edit-id').value;
+  var data = {
+    name: document.getElementById('edit-name').value,
+    contact_email: document.getElementById('edit-contact_email').value,
+    quota_total: parseInt(document.getElementById('edit-quota_total').value) || 0,
+    credit_total: parseInt(document.getElementById('edit-credit_total').value) || 0,
+    prepaid_balance: Math.round(parseFloat(document.getElementById('edit-prepaid_balance').value || '0') * 1000000),
+    pricing_ratio: parseFloat(document.getElementById('edit-pricing_ratio').value) || 1.0,
+    max_admins: parseInt(document.getElementById('edit-max_admins').value) || 3,
+    max_members: parseInt(document.getElementById('edit-max_members').value) || 50,
+    allowed_domains: document.getElementById('edit-allowed_domains').value,
+    billing_cycle: document.getElementById('edit-billing_cycle').value,
+    display_currency: document.getElementById('edit-display_currency').value,
+    exchange_rate: parseFloat(document.getElementById('edit-exchange_rate').value) || 1.0
+  };
+  fetch('/api/admin/enterprise/' + id, {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(result) {
+    closeEditDrawer();
+    if (result.success) {
+      showMessage(_t('Saved'), _t('Enterprise info updated'));
+      setTimeout(function() { window.location.reload(); }, 1000);
+    } else {
+      showMessage(_t('Save failed'), result.error ? result.error.message : _t('Unknown error'));
+    }
+  })
+  .catch(function(e) {
+    closeEditDrawer();
+    showMessage(_t('Request failed'), e.message);
+  });
+}
+
+// ── View Enterprise Detail ─────────────────────────────────────────────
+function viewEnterprise(id) {
+  document.getElementById('detail-modal').style.display = 'flex';
+  document.getElementById('detail-body').innerHTML = '<div class="text-center py-4 text-muted">' + _t('Loading...') + '</div>';
+  fetch('/api/admin/enterprise/' + id)
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+      if (result.enterprise) {
+        var e = result.enterprise;
+        var html = '<div class="space-y-3">';
+        html += '<div class="flex justify-between"><span class="text-muted">' + labelID + '</span><code>' + e.id + '</code></div>';
+        html += '<div class="flex justify-between"><span class="text-muted">' + _t('Name') + '</span><strong>' + e.name + '</strong></div>';
+        html += '<div class="flex justify-between"><span class="text-muted">' + _t('Contact Email') + '</span><span>' + (e.contact_email || '-') + '</span></div>';
+        html += '<div class="flex justify-between"><span class="text-muted">' + _t('Status') + '</span><span class="badge badge-' + (e.status === 'active' ? 'success' : 'warning') + '">' + e.status + '</span></div>';
+        html += '<div class="flex justify-between"><span class="text-muted">' + _t('Member Count') + '</span><span>' + e.member_count + '</span></div>';
+        html += '<div class="flex justify-between"><span class="text-muted">' + _t('Quota') + '</span><span>' + (e.quota_total || 0).toLocaleString() + ' tokens</span></div>';
+        html += '<div class="flex justify-between"><span class="text-muted">' + _t('Quota Used') + '</span><span>' + (e.quota_used || 0).toLocaleString() + ' tokens</span></div>';
+        html += '<div class="flex justify-between"><span class="text-muted">' + _t('Credit Limit') + '</span><span>$' + ((e.credit_total || 0) / 1000000).toFixed(2) + '</span></div>';
+        html += '<div class="flex justify-between"><span class="text-muted">' + _t('Credit Used') + '</span><span>$' + ((e.credit_used || 0) / 1000000).toFixed(2) + '</span></div>';
+        html += '<div class="flex justify-between"><span class="text-muted">' + _t('Pricing Multiplier') + '</span><span>' + (e.pricing_ratio || 1.0).toFixed(2) + 'x</span></div>';
+        html += '<div class="flex justify-between"><span class="text-muted">' + _t('Display Currency') + '</span><span>' + (e.display_currency || 'USD') + '</span></div>';
+        html += '<div class="flex justify-between"><span class="text-muted">' + _t('Exchange Rate') + '</span><span>' + (e.exchange_rate || 1.0).toFixed(6) + '</span></div>';
+        html += '<div class="flex justify-between"><span class="text-muted">' + _t('Created At') + '</span><span>' + formatDateTime(e.created_at) + '</span></div>';
+        html += '</div>';
+        document.getElementById('detail-body').innerHTML = html;
+      }
+    })
+    .catch(function(e) {
+      document.getElementById('detail-body').innerHTML = '<div class="text-center text-danger py-4">' + _t('Load failed: ') + e.message + '</div>';
+    });
+}
+
+// ── Manage Members ─────────────────────────────────────────────────────
+function manageMembers(id) {
+  currentEnterpriseId = id;
+  document.getElementById('members-modal').style.display = 'flex';
+  loadMembers(id);
+}
+
+function loadMembers(enterpriseId) {
+  document.getElementById('members-list').innerHTML = '<div class="text-center text-muted py-4">' + _t('Loading...') + '</div>';
+  fetch('/api/admin/enterprise/' + enterpriseId + '/members')
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+      var html = '';
+      if (result.invitations && result.invitations.length > 0) {
+        html += '<div style="margin-bottom:16px;"><div class="font-medium text-warning" style="margin-bottom:8px;">' + _t('Pending Invitations') + ' (' + result.invitations.length + ')</div>';
+        html += '<div class="data-table-wrapper"><table class="data-table du-table du-table-zebra"><thead><tr><th>' + _t('Email') + '</th><th>' + _t('Role') + '</th><th>' + _t('Status') + '</th><th>' + _t('Actions') + '</th></tr></thead><tbody>';
+        result.invitations.forEach(function(inv) {
+          var roleLabel = inv.role === 'admin' ? _t('Admin') : _t('Member');
+          var statusLabel = inv.status === 'email_confirmed' ? _t('Awaiting EA Approval') : (inv.status === 'ea_approved' ? _t('Awaiting System Admin Approval') : _t('Pending Registration'));
+          html += '<tr><td>' + inv.email + '</td><td>' + roleLabel + '</td><td><span class="badge badge-warning">' + statusLabel + '</span></td>';
+          html += '<td>';
+          if (inv.status === 'ea_approved' || inv.status === 'email_confirmed') {
+            html += '<button class="btn btn-sm btn-secondary" onclick="approveInvitation(\'' + inv.id + '\')">' + _t('Approve') + '</button> ';
+          }
+          html += '<button class="btn btn-sm btn-danger" onclick="rejectInvitation(\'' + inv.id + '\')">' + _t('Reject') + '</button></td></tr>';
+        });
+        html += '</tbody></table></div></div>';
+      }
+      if (result.members && result.members.length > 0) {
+        html += '<div><div class="font-medium" style="margin-bottom:8px;">' + _t('Joined Members') + ' (' + result.members.length + ')</div>';
+        html += '<div class="data-table-wrapper"><table class="data-table du-table du-table-zebra"><thead><tr><th>' + _t('Email') + '</th><th>' + _t('Name') + '</th><th>' + _t('Role') + '</th><th>' + _t('Actions') + '</th></tr></thead><tbody>';
+        result.members.forEach(function(m) {
+          var roleLabel = m.role === 'admin' || m.role === 'enterprise_admin' ? _t('Admin') : _t('Member');
+          html += '<tr><td>' + m.email + '</td><td>' + (m.name || '-') + '</td><td>' + roleLabel + '</td>';
+          html += '<td><button class="btn btn-sm btn-warning" onclick="transferMember(\'' + m.id + '\',\'' + (m.name || m.email).replace(/'/g, "\\'") + '\')">' + _t('Transfer') + '</button> ';
+          html += '<button class="btn btn-sm btn-danger" onclick="removeMember(\'' + m.id + '\')">' + _t('Remove') + '</button></td></tr>';
+        });
+        html += '</tbody></table></div></div>';
+      } else if (!result.invitations || result.invitations.length === 0) {
+        html = '<p class="text-muted text-center">' + _t('No data') + '</p>';
+      }
+      document.getElementById('members-list').innerHTML = html;
+    })
+    .catch(function(e) {
+      document.getElementById('members-list').innerHTML = '<div class="text-center text-danger py-4">' + _t('Load failed: ') + e.message + '</div>';
+    });
+}
+
+function inviteMember() {
+  var email = document.getElementById('invite-email').value;
+  var role = document.getElementById('invite-role').value;
+  if (!email) { showMessage(_t('Error'), _t('Please enter email')); return; }
+  fetch('/api/admin/enterprise/' + currentEnterpriseId + '/invite', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({email: email, role: role})
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(result) {
+    if (result.success) {
+      closeModal('members-modal');
+      showToast('success', _t('Invitation email sent to ') + email);
+      window.location.reload();
+    } else {
+      showMessage(_t('Invitation failed'), result.error ? result.error.message : _t('Unknown error'));
+    }
+  })
+  .catch(function(e) { showMessage(_t('Invitation failed'), e.message); });
+}
+
+function removeMember(userId) {
+  showConfirm(_t('Confirm Remove'), _t('Are you sure you want to remove this member?'), function() {
+    fetch('/api/admin/enterprise/' + currentEnterpriseId + '/members/' + userId, { method: 'DELETE' })
+      .then(function(r) { return r.json(); })
+      .then(function(result) {
+        if (result.success) {
+          closeModal('members-modal');
+          showToast('success', _t('Member removed'));
+          window.location.reload();
+        }
+        else { showMessage(_t('Remove failed'), result.error ? result.error.message : _t('Unknown error')); }
+      })
+      .catch(function(e) { showMessage(_t('Remove failed'), e.message); });
+  });
+}
+
+// ── Transfer Member to another enterprise (SA force-reassign) ──
+var _transferEnterpriseCache = null;
+
+function transferMember(userId, memberLabel) {
+  document.getElementById('transfer-user-id').value = userId;
+  document.getElementById('transfer-reason').value = '';
+  document.getElementById('transfer-role').value = 'member';
+  document.getElementById('transfer-member-hint').textContent =
+    _t('Transferring member') + ': ' + (memberLabel || userId);
+
+  var sel = document.getElementById('transfer-target');
+  sel.innerHTML = '<option value="">' + _t('(Detach — no enterprise)') + '</option>';
+  var fillOptions = function(list) {
+    list.forEach(function(e) {
+      // Skip the enterprise the member is currently in.
+      if (e.id === currentEnterpriseId) return;
+      var opt = document.createElement('option');
+      opt.value = e.id;
+      opt.textContent = e.name;
+      sel.appendChild(opt);
+    });
+  };
+  if (_transferEnterpriseCache) {
+    fillOptions(_transferEnterpriseCache);
+  } else {
+    fetch('/api/admin/enterprise')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        _transferEnterpriseCache = data.enterprises || [];
+        fillOptions(_transferEnterpriseCache);
+      })
+      .catch(function() {});
+  }
+  document.getElementById('transfer-member-modal').style.display = 'flex';
+}
+
+function confirmTransferMember() {
+  var userId = document.getElementById('transfer-user-id').value;
+  if (!userId) return;
+  var targetId = document.getElementById('transfer-target').value;
+  var role = document.getElementById('transfer-role').value;
+  var reason = document.getElementById('transfer-reason').value;
+  var csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+  var btn = document.getElementById('transfer-confirm-btn');
+  btn.disabled = true;
+  fetch('/api/admin/enterprise/reassign-user', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+    body: JSON.stringify({ user_id: userId, target_enterprise_id: targetId, role: role, reason: reason })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(result) {
+    btn.disabled = false;
+    if (result.success) {
+      closeModal('transfer-member-modal');
+      showToast('success', _t('Member transferred'));
+      window.location.reload();
+    } else {
+      showMessage(_t('Transfer failed'), result.error ? result.error.message : _t('Unknown error'));
+    }
+  })
+  .catch(function(e) { btn.disabled = false; showMessage(_t('Transfer failed'), e.message); });
+}
+
+function approveInvitation(inviteId) {
+  fetch('/api/admin/enterprise/' + currentEnterpriseId + '/invitations/' + inviteId + '/approve', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+      if (result.success) {
+        closeModal('members-modal');
+        showToast('success', _t('Invitation approved'));
+        window.location.reload();
+      }
+      else { showMessage(_t('Approval failed'), result.error ? result.error.message : _t('Unknown error')); }
+    })
+    .catch(function(e) { showMessage(_t('Approval failed'), e.message); });
+}
+
+function rejectInvitation(inviteId) {
+  showConfirm(_t('Confirm Reject'), _t('Are you sure you want to reject this invitation?'), function() {
+    fetch('/api/admin/enterprise/' + currentEnterpriseId + '/invitations/' + inviteId + '/reject', { method: 'POST' })
+      .then(function(r) { return r.json(); })
+      .then(function(result) {
+        if (result.success) {
+          closeModal('members-modal');
+          showToast('success', _t('Invitation rejected'));
+          window.location.reload();
+        }
+        else { showMessage(_t('Reject failed'), result.error ? result.error.message : _t('Unknown error')); }
+      })
+      .catch(function(e) { showMessage(_t('Reject failed'), e.message); });
+  });
+}
+
+// ── Suspend / Activate / Delete ────────────────────────────────────────
+function confirmSuspend(id, name) {
+  var msg = _t('Are you sure you want to disable this enterprise?\n\nAll members will be unable to use the service.') + '\n\n' + name;
+  showConfirm(_t('Confirm Disable'), msg, function() {
+    fetch('/api/admin/enterprise/' + id + '/suspend', { method: 'POST', headers: {'Content-Type': 'application/json'} })
+      .then(function(r) { return r.json(); })
+      .then(function(result) {
+        if (result.success) {
+          showMessage(_t('Disabled'), _t('Enterprise disabled'));
+          setTimeout(function() { window.location.reload(); }, 1000);
+        } else {
+          showMessage(_t('Disable failed'), result.error ? result.error.message : _t('Unknown error'));
+        }
+      })
+      .catch(function(e) { showMessage(_t('Request failed'), e.message); });
+  });
+}
+
+function confirmActivate(id, name) {
+  var msg = _t('Are you sure you want to enable this enterprise?') + '\n\n' + name;
+  showConfirm(_t('Confirm Activate'), msg, function() {
+    fetch('/api/admin/enterprise/' + id + '/activate', { method: 'POST', headers: {'Content-Type': 'application/json'} })
+      .then(function(r) { return r.json(); })
+      .then(function(result) {
+        if (result.success) {
+          showMessage(_t('Enabled'), _t('Enterprise enabled'));
+          setTimeout(function() { window.location.reload(); }, 1000);
+        } else {
+          showMessage(_t('Activation failed'), result.error ? result.error.message : _t('Unknown error'));
+        }
+      })
+      .catch(function(e) { showMessage(_t('Request failed'), e.message); });
+  });
+}
+
+function verifyCurrentEnterprise() {
+  var id = document.getElementById('edit-id').value;
+  if (!id) return;
+  showConfirm(_t('Verify'), _t('Mark this enterprise as verified?'), function() {
+    fetch('/api/admin/enterprise/' + id + '/verify', { method: 'POST', headers: {'Content-Type': 'application/json'} })
+      .then(function(r) { return r.json(); })
+      .then(function(result) {
+        if (result.success) {
+          showMessage(_t('Verified'), _t('Enterprise verified'));
+          setTimeout(function() { window.location.reload(); }, 1000);
+        } else {
+          showMessage(_t('Verify'), result.error ? result.error.message : _t('Unknown error'));
+        }
+      })
+      .catch(function(e) { showMessage(_t('Request failed'), e.message); });
+  });
+}
+
+function confirmDelete(id, name) {
+  var msg = _t('Are you sure you want to permanently delete this enterprise?\n\nThis will:\n- Remove all member enterprise associations\n- Delete enterprise quota and settings\n- This action cannot be undone.') + '\n\n' + name;
+  showConfirm(_t('Delete'), msg, function() {
+    fetch('/api/admin/enterprise/' + id, { method: 'DELETE' })
+      .then(function(r) { return r.json(); })
+      .then(function(result) {
+        if (result.success) {
+          showMessage(_t('Deleted'), _t('Enterprise deleted'));
+          setTimeout(function() { window.location.reload(); }, 1000);
+        } else {
+          showMessage(_t('Delete failed'), result.error ? result.error.message : _t('Unknown error'));
+        }
+      })
+      .catch(function(e) { showMessage(_t('Request failed'), e.message); });
+  });
+}
+
+// ── Topup ──────────────────────────────────────────────────────────────
+function showTopupModal(id, name) {
+  currentTopupId = id;
+  document.getElementById('topup-enterprise-name').textContent = name;
+  document.getElementById('topup-quota').value = 0;
+  document.getElementById('topup-credit').value = 0;
+  document.getElementById('topup-prepaid').value = 0;
+  document.getElementById('topup-reason').value = '';
+  document.getElementById('topup-issue-invoice').checked = false;
+  document.getElementById('topup-invoice-title').value = '';
+  document.getElementById('topup-invoice-group').style.display = 'none';
+  document.getElementById('topup-modal').style.display = 'flex';
+}
+
+// The invoice block only matters when a prepaid amount is entered.
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.id === 'topup-prepaid') {
+    var v = parseInt(e.target.value) || 0;
+    document.getElementById('topup-invoice-group').style.display = v > 0 ? '' : 'none';
+  }
+});
+
+function submitTopup() {
+  if (!currentTopupId) return;
+  var quota = parseInt(document.getElementById('topup-quota').value) || 0;
+  var credit = parseInt(document.getElementById('topup-credit').value) || 0;
+  var prepaid = parseInt(document.getElementById('topup-prepaid').value) || 0;
+  var reason = document.getElementById('topup-reason').value;
+  if (quota <= 0 && credit <= 0 && prepaid <= 0) { showMessage(_t('Error'), _t('Please enter at least one recharge amount')); return; }
+  var data = { reason: reason };
+  if (quota > 0) data.quota_total = quota;
+  if (credit > 0) data.credit_total = credit;
+  if (prepaid > 0) {
+    data.prepaid_balance = prepaid;
+    if (document.getElementById('topup-issue-invoice').checked) {
+      var invoiceTitle = document.getElementById('topup-invoice-title').value.trim();
+      if (!invoiceTitle) { showMessage(_t('Error'), _t('Invoice title is required when issuing an invoice')); return; }
+      data.issue_invoice = true;
+      data.invoice_title = invoiceTitle;
+    }
+  }
+  fetch('/api/admin/enterprise/' + currentTopupId + '/topup', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(result) {
+    closeModal('topup-modal');
+    if (result.success) {
+      showMessage(_t('Recharged'), _t('Enterprise quota/credit updated'));
+      setTimeout(function() { window.location.reload(); }, 1000);
+    } else {
+      showMessage(_t('Recharge failed'), result.error ? result.error.message : _t('Unknown error'));
+    }
+  })
+  .catch(function(e) {
+    closeModal('topup-modal');
+    showMessage(_t('Request failed'), e.message);
+  });
+}
+</script>
+{{end}}

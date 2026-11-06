@@ -1,0 +1,72 @@
+# Binaries
+/portal
+/server
+/ai-proxy
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+# Output of the go coverage tool
+*.out
+# Config files with secrets
+.env
+.env.go-platform
+config.yaml
+*.local.yaml
+# Log files
+*.log
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+# Python
+__pycache__/
+*.pyc
+# OS
+.DS_Store
+Thumbs.db
+# Frontend dist (built from ai-proxy-main)
+dist/
+# E2E test screenshots (binary files, regenerated)
+tests/e2e/screenshots/
+# Docs screenshots
+docs/screenshots/
+# All screenshot directories
+**/screenshots/
+# Node.js
+node_modules/
+package-lock.json
+package.json
+test-admin-pages.js
+/ai-portal
+bin/
+test-results/
+e2e/screenshots/
+
+# Generated Docker Compose files (created by start.sh)
+docker-compose.portal.yml
+
+# User uploaded files (bind-mounted at runtime)
+uploads/
+
+# Tailwind build artifacts (rebuilt via scripts/rebuild-tailwind.sh)
+web/static/css/tailwind.min.css
+web/static/js/tailwindcss.js
+.venv-i18n/
+.gstack/
+portal-local
+.bin/
+tests/loadtest/loadtest
+tests/loadtest/loadtest.exe
+
+# local DB snapshots (start.sh snapshot)
+backups/
+*.dump
+.env.migrated
+gintmp_main_check.go
+mirror-local.sh

@@ -1,0 +1,684 @@
+{{define "content"}}
+{{$d := .Data}}
+
+<div class="page-header">
+  <h1 class="page-title">{{t "Models Gallery"}}</h1>
+</div>
+
+<!-- Toolbar -->
+<div class="gallery-toolbar">
+  <input type="text" id="gallery-search" class="form-input du-input du-input-bordered" placeholder="{{t "Search model name..."}}" style="flex:1;min-width:200px;max-width:400px">
+  <select id="gallery-provider" class="form-select du-select du-select-bordered" style="max-width:180px">
+    <option value="">{{t "All Providers"}}</option>
+  </select>
+  <select id="gallery-type" class="form-select du-select du-select-bordered" style="max-width:140px">
+    <option value="">{{t "All Types"}}</option>
+    <option value="text">Text</option>
+    <option value="image">Image</option>
+    <option value="video">Video</option>
+    <option value="audio">Audio</option>
+  </select>
+  <select id="gallery-sort" class="form-select du-select du-select-bordered" style="max-width:180px">
+    <option value="default">{{t "Default"}}</option>
+    <option value="price-low">{{t "Price: Low to High"}}</option>
+    <option value="price-high">{{t "Price: High to Low"}}</option>
+    <option value="name">{{t "Name"}}</option>
+  </select>
+  <button id="gallery-copy-selected-btn" class="btn btn-secondary btn-sm" disabled onclick="copySelectedModels()" style="white-space:nowrap">{{t "Copy Selected (0)"}}</button>
+</div>
+
+<div class="gallery-count" id="gallery-count"></div>
+
+<!-- Card Grid -->
+<div class="gallery-grid" id="gallery-grid">
+  <div class="gallery-loading">{{t "Loading..."}}</div>
+</div>
+
+<!-- Empty State -->
+<div class="empty-state-illustrated" id="gallery-empty" style="display:none">
+  <img src="/static/img/illustrations/empty-no-models.svg" alt="" aria-hidden="true">
+  <h3>{{t "No models found"}}</h3>
+  <p>{{t "Try adjusting your search or filters to find what you need."}}</p>
+</div>
+
+<!-- Drawer: Model Detail -->
+<div id="model-detail-drawer" class="drawer">
+  <div class="drawer-header">
+    <div style="display:flex;align-items:center;gap:8px;min-width:0">
+      <span id="drawer-provider-badge" class="gallery-card-provider" style="flex-shrink:0"></span>
+      <span class="drawer-title" id="drawer-model-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+    </div>
+    <button class="drawer-close" onclick="closeModelDrawer()" aria-label="Close">&times;</button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+</div>
+<div id="model-detail-backdrop" class="drawer-backdrop" onclick="closeModelDrawer()"></div>
+
+<script>
+(function() {
+  var allModels = [];
+  var isAuth = {{.IsAuth}};
+  var apiBase = window.location.origin;
+
+  // Fetch models on load
+  fetch('/api/models/public')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      allModels = data.models || [];
+      populateProviders(allModels);
+      renderGallery();
+    })
+    .catch(function() {
+      document.getElementById('gallery-grid').innerHTML = '<p style="color:var(--text-muted)">{{t "Failed to load models"}}</p>';
+    });
+
+  function populateProviders(models) {
+    var providers = {};
+    models.forEach(function(m) {
+      var mf = m.manufacturer || m.provider || '';
+      if (mf && !providers[mf]) providers[mf] = true;
+    });
+    var sel = document.getElementById('gallery-provider');
+    Object.keys(providers).sort().forEach(function(p) {
+      var opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      sel.appendChild(opt);
+    });
+  }
+
+  function renderGallery() {
+    var q = document.getElementById('gallery-search').value.toLowerCase().trim();
+    var provider = document.getElementById('gallery-provider').value;
+    var type = document.getElementById('gallery-type').value;
+    var sort = document.getElementById('gallery-sort').value;
+
+    var filtered = allModels.filter(function(m) {
+      var mf = m.manufacturer || m.provider || '';
+      if (provider && mf !== provider) return false;
+      if (type) {
+        // Type filter matches either the primary model_type or any supported
+        // modality, so multi-type models (e.g. text+image) appear under each
+        // relevant category.
+        var supported = m.supported_types || [m.model_type || 'text'];
+        if (supported.indexOf(type) === -1) return false;
+      }
+      if (q) {
+        var name = (m.api_model_name || '').toLowerCase();
+        var display = (m.name || '').toLowerCase();
+        if (name.indexOf(q) === -1 && display.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+
+    function effectiveSortPrice(m) {
+      if (m.billing_type === 'per_request') {
+        return m.fixed_price || m.output_price || m.input_price || 0;
+      }
+      return m.input_price || 0;
+    }
+
+    // Sort
+    if (sort === 'price-low') {
+      filtered.sort(function(a, b) { return effectiveSortPrice(a) - effectiveSortPrice(b); });
+    } else if (sort === 'price-high') {
+      filtered.sort(function(a, b) { return effectiveSortPrice(b) - effectiveSortPrice(a); });
+    } else if (sort === 'name') {
+      filtered.sort(function(a, b) {
+        var na = (a.name || a.api_model_name || '').toLowerCase();
+        var nb = (b.name || b.api_model_name || '').toLowerCase();
+        return na.localeCompare(nb);
+      });
+    }
+
+    var grid = document.getElementById('gallery-grid');
+    var empty = document.getElementById('gallery-empty');
+    var count = document.getElementById('gallery-count');
+
+    count.textContent = filtered.length + ' ' + (filtered.length === 1 ? '{{t "model"}}' : '{{t "models"}}');
+
+    if (filtered.length === 0) {
+      grid.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+    grid.style.display = 'grid';
+    empty.style.display = 'none';
+
+    var providerColors = [
+      { bg: 'var(--primary-light)', color: 'var(--primary)' },
+      { bg: 'var(--color-violet-light)', color: 'var(--color-violet)' },
+      { bg: 'var(--color-orange-light)', color: 'var(--color-orange)' },
+      { bg: 'var(--color-cyan-light)', color: 'var(--color-cyan)' },
+      { bg: 'var(--color-indigo-light)', color: 'var(--color-indigo)' },
+    ];
+    function providerColorHash(name) {
+      var h = 0;
+      for (var ci = 0; ci < name.length; ci++) h = ((h << 5) - h) + name.charCodeAt(ci);
+      return providerColors[Math.abs(h) % providerColors.length];
+    }
+    var providerMeta = {
+      'openai': { color: '#10a37f', abbr: 'OA' },
+      'anthropic': { color: '#d4a574', abbr: 'An' },
+      'google': { color: '#ea4335', abbr: 'G' },
+      'deepseek': { color: '#4f46e5', abbr: 'D' },
+      'meta': { color: '#0081fb', abbr: 'M' },
+      'mistral': { color: '#ff7000', abbr: 'Mi' },
+      'mistralai': { color: '#ff7000', abbr: 'Mi' },
+      'xai': { color: '#1f2937', abbr: 'X' },
+      'x-ai': { color: '#1f2937', abbr: 'X' },
+      'moonshot': { color: '#7c3aed', abbr: 'Mo' },
+      'moonshotai': { color: '#7c3aed', abbr: 'Mo' },
+      'qwen': { color: '#1677ff', abbr: 'Q' },
+      'alibaba': { color: '#ff6a00', abbr: 'Ali' },
+      'minimax': { color: '#ff4d4f', abbr: 'Mx' },
+      'bytedance': { color: '#3c8cff', abbr: 'B' },
+      'bytedanceseed': { color: '#3c8cff', abbr: 'B' },
+      'kuaishou': { color: '#ff6600', abbr: 'Ku' },
+      'nvidia': { color: '#76b900', abbr: 'N' },
+      'xiaomi': { color: '#ff6900', abbr: 'Mi' },
+      'microsoft': { color: '#0078d4', abbr: 'Ms' },
+      'baichuan': { color: '#ff6a00', abbr: 'Bc' },
+      'stepfun': { color: '#2563eb', abbr: 'St' },
+      '01ai': { color: '#1e3a8a', abbr: '01' },
+      'zhipuai': { color: '#0ea5e9', abbr: 'Zp' },
+      'zhipu': { color: '#0ea5e9', abbr: 'Zp' },
+      'amazon': { color: '#ff9900', abbr: 'Amz' },
+      'tokenrouter': { color: '#7c3aed', abbr: 'TR' },
+      'aws': { color: '#ff9900', abbr: 'AWS' },
+      'azure': { color: '#0078d4', abbr: 'Az' },
+      'perplexity': { color: '#20808d', abbr: 'Px' },
+      'cohere': { color: '#39594d', abbr: 'Co' },
+      'tencent': { color: '#0047ab', abbr: 'Tx' },
+      'sakana': { color: '#e0245e', abbr: 'Sa' },
+      'thinkingmachines': { color: '#111827', abbr: 'Tm' },
+      'poolside': { color: '#0d9488', abbr: 'Po' },
+      'nousresearch': { color: '#d97706', abbr: 'No' },
+      'upstage': { color: '#6366f1', abbr: 'Up' },
+      'writer': { color: '#9ca3af', abbr: 'Wr' },
+      'ibm': { color: '#1f70c1', abbr: 'IBM' },
+      'other': { color: '#64748b', abbr: '?' }
+    };
+    function getProviderMeta(name) {
+      var key = (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (providerMeta[key]) return providerMeta[key];
+      var pc = providerColorHash(name);
+      return { color: pc.color, abbr: (name || '?').slice(0, 2).toUpperCase() };
+    }
+    var typeColors = {
+      'text':  'var(--primary)',
+      'image': 'var(--color-violet)',
+      'video': 'var(--color-orange)',
+      'audio': 'var(--color-cyan)',
+    };
+
+    // HOT badge is admin-configurable via /admin/models (is_hot field).
+    // No longer auto-computed from price percentiles.
+
+    grid.innerHTML = filtered.map(function(m, i) {
+      var providerName = m.manufacturer || m.provider || '';
+      var meta = getProviderMeta(providerName);
+      var modelType = m.model_type || 'text';
+      var borderColor = typeColors[modelType] || 'var(--border)';
+      var modelName = m.api_model_name || m.name || '';
+      var isFree = (m.billing_type === 'per_request' && m.fixed_price === 0);
+      var isHot = !isFree && m.is_hot;
+      var providerIconStyle = 'display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:' + meta.color + ';color:#fff;font-size:0.7rem;font-weight:700;flex-shrink:0;text-shadow:0 1px 2px rgba(0,0,0,0.2);';
+      var providerBadgeStyle = 'display:inline-flex;align-items:center;gap:8px;background:var(--bg-hover);color:var(--text);padding:4px 10px 4px 4px;border-radius:10px;font-size:0.75rem;font-weight:600;border:1px solid var(--border);';
+      var supportedTypes = m.supported_types || [modelType];
+      var typeLabel = supportedTypes.map(function(t) { return _t(t.charAt(0).toUpperCase() + t.slice(1)); }).join(' / ');
+      var typeTagClass = 'gallery-type-tag gallery-type-tag--' + (modelType || 'text');
+      var badges = [];
+      if (isFree) badges.push('<span class="gallery-badge gallery-badge-free">' + _t('Free') + '</span>');
+      else if (isHot) badges.push('<span class="gallery-badge gallery-badge-hot">HOT</span>');
+      badges.push('<span class="' + typeTagClass + '">' + escapeHtml(typeLabel) + '</span>');
+
+      return '<div class="gallery-card card-hover" onclick="openModelDetail(' + i + ')" data-index="' + i + '" data-model-name="' + escapeHtml(modelName) + '" style="border-left:3px solid ' + borderColor + '">' +
+        '<div class="gallery-card-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:16px">' +
+          '<div style="min-width:0;flex:1">' +
+            '<span class="gallery-card-provider" style="' + providerBadgeStyle + '"><span style="' + providerIconStyle + '">' + escapeHtml(meta.abbr) + '</span>' + escapeHtml(providerName) + '</span>' +
+            '<span class="gallery-card-name">' + escapeHtml(modelName) + '</span>' +
+          '</div>' +
+          '<div class="gallery-card-actions" onclick="event.stopPropagation()">' +
+            '<button class="gallery-card-action-btn" title="Copy model name" onclick="copyModelNameGallery(this)" aria-label="Copy model name">' +
+              '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>' +
+                '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>' +
+              '</svg>' +
+            '</button>' +
+            '<input type="checkbox" class="gallery-card-checkbox" title="Select for bulk copy" onchange="updateGallerySelection()" data-model-index="' + i + '" aria-label="Select model">' +
+          '</div>' +
+        '</div>' +
+        '<div class="gallery-card-prices">' +
+          renderCardPrices(m) +
+        '</div>' +
+        '<div class="gallery-card-footer">' +
+          '<span class="gallery-badge">' + escapeHtml(billingTypeLabel(m)) + '</span>' +
+          badges.join('') +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    // Store filtered models for drawer access
+    window._filteredModels = filtered;
+    // Reset selection state after re-render
+    updateGallerySelection();
+  }
+
+  function billingTypeLabel(m) {
+    if (m.billing_type === 'per_request') return _t('Per Request');
+    if (m.billing_type === 'per_token') return _t('Pay as You Go');
+    return _t('Pay as You Go');
+  }
+
+  function variantSuffix(label, unit) {
+    if (!unit || unit === 'request') return '';
+    var low = (label || '').toLowerCase();
+    // Skip redundant suffix when the label already carries unit information.
+    if (unit === 'second' && (/\s*\/\s*s\b/.test(low) || /\b\d+s\b/.test(low))) return '';
+    if (unit === 'image' && (/\bimage\b/.test(low) || /\s*\/\s*image\b/.test(low))) return '';
+    if (unit === 'block' && /\b\d+s\b/.test(low)) return '';
+    if (unit === 'second') return _t('/ s');
+    if (unit === 'block') return _t('/ block');
+    if (unit === 'image') return _t('/ image');
+    if (unit === 'variant') return _t('/ variant');
+    if (unit === 'm tokens' || unit === 'tokens') return _t('/M tokens');
+    return '';
+  }
+
+  function fixedPriceUnitSuffix(m) {
+    var caps = m.capabilities || {};
+    var pricing = caps.pricing || {};
+    var unit = pricing.billing_unit || caps.billing_unit || '';
+    var types = m.supported_types || [m.model_type || 'text'];
+    if (unit === 'second') return _t('/ s');
+    if (unit === 'block') {
+      var sec = pricing.block_seconds || caps.block_seconds;
+      return sec ? (' / ' + sec + 's ' + _t('block')) : _t('/ block');
+    }
+    if (unit === 'variant') return _t('/ variant');
+    if (unit === 'image' || types.indexOf('image') !== -1 || m.model_type === 'image') return _t('/ image');
+    return _t('/ request');
+  }
+
+  function renderCardPrices(m) {
+    var caps = m.capabilities || {};
+    var pricing = caps.pricing || {};
+    var variants = pricing.variants || [];
+    var extraPrices = pricing.extra_prices || [];
+
+    // Media models (image/video/audio) list their variant buckets on the card,
+    // matching TokenRouter's behavior.
+    if (variants.length) {
+      var html = '';
+      var showCount = 3;
+      variants.slice(0, showCount).forEach(function(v) {
+        html += priceRow(v.label || '', v.price, variantSuffix(v.label, v.unit));
+      });
+      if (variants.length > showCount) {
+        var moreCount = variants.length - showCount;
+        var moreText = _t('and N more').replace('{count}', moreCount);
+        html += '<div class="gallery-price-row">' +
+          '<span class="gallery-price-label">' + escapeHtml(moreText) + '</span>' +
+          '<span class="gallery-price-value gallery-price-more">+' + moreCount + '</span>' +
+        '</div>';
+      }
+      return html;
+    }
+
+    if (m.billing_type === 'per_request') {
+      var price = m.fixed_price;
+      if (price == null || price === '') price = m.output_price;
+      if (price == null || price === '') price = m.input_price;
+      if (price == null || price === '') return '';
+      return priceRow(_t('Fixed Price'), price, fixedPriceUnitSuffix(m));
+    }
+    var html = '';
+    html += priceRow(_t('Input Price'), m.input_price, _t('/M tokens'));
+    html += priceRow(_t('Output Price'), m.output_price, _t('/M tokens'));
+    if (m.input_price_cache_hit != null) html += priceRow(_t('Cache Read'), m.input_price_cache_hit, _t('/M tokens'));
+    // PAYG media models (image/video/audio) may have extra component prices such
+    // as Image Output Price or Audio Input / Audio Completion Price, or
+    // resolution/duration buckets for PAYG video models.
+    extraPrices.forEach(function(v) {
+      html += priceRow(v.label || '', v.price, variantSuffix(v.label, v.unit));
+    });
+    return html;
+  }
+
+  function priceRow(label, price, suffix) {
+    if (price == null || price === '') return '';
+    var val = '$' + Number(price).toFixed(4);
+    return '<div class="gallery-price-row">' +
+      '<span class="gallery-price-label">' + escapeHtml(label) + '</span>' +
+      '<span class="gallery-price-value">' + val + escapeHtml(suffix) + '</span>' +
+    '</div>';
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // Expose for inline onclick
+  window.openModelDetail = function(idx) {
+    var m = window._filteredModels[idx];
+    if (!m) return;
+
+    var drawer = document.getElementById('model-detail-drawer');
+    var backdrop = document.getElementById('model-detail-backdrop');
+    var body = document.getElementById('drawer-body');
+    var nameEl = document.getElementById('drawer-model-name');
+    var providerEl = document.getElementById('drawer-provider-badge');
+
+    providerEl.textContent = m.manufacturer || m.provider || '';
+    nameEl.textContent = m.api_model_name || m.name || '';
+
+    var html = '';
+
+    // Model header info
+    if (m.name || m.description) {
+      html += '<div class="detail-model-header">';
+      if (m.name) html += '<div style="font-size:1rem;color:var(--text-muted);margin-bottom:4px">' + escapeHtml(m.name) + '</div>';
+      if (m.description) html += '<div style="font-size:0.85rem;color:var(--text-muted)">' + escapeHtml(m.description) + '</div>';
+      html += '</div>';
+    }
+
+    // Type badge + status
+    html += '<div style="display:flex;gap:8px;margin-bottom:16px">';
+    var drawerTypes = m.supported_types || [m.model_type || 'text'];
+    var drawerTypeLabel = drawerTypes.map(function(t) { return _t(t.charAt(0).toUpperCase() + t.slice(1)); }).join(' / ');
+    html += '<span class="gallery-type-tag gallery-type-tag--' + (m.model_type || 'text') + '">' + escapeHtml(drawerTypeLabel) + '</span>';
+    if (m.status === 'eol_pending') {
+      html += '<span class="gallery-badge" style="background:var(--warning-bg,rgba(255,165,0,0.15));color:var(--warning,#e6a700)">{{t "EOL Notice"}}</span>';
+      if (m.eol_days_remaining != null) {
+        html += '<span class="gallery-badge">' + m.eol_days_remaining + ' {{t "days remaining"}}</span>';
+      }
+    }
+    html += '</div>';
+
+    // Build tab contents
+    var endpointsHtml = '';
+    endpointsHtml += '<div class="detail-section">';
+    endpointsHtml += '<h3>{{t "API Endpoints"}}</h3>';
+    endpointsHtml += '<p>{{t "All models support the OpenAI-compatible API format."}}</p>';
+    endpointsHtml += '<div class="detail-endpoint"><code>POST ' + apiBase + '/v1/chat/completions</code></div>';
+    endpointsHtml += '</div>';
+
+    if (isAuth) {
+      endpointsHtml += '<div class="detail-section">';
+      endpointsHtml += '<h3>{{t "Quick Start"}}</h3>';
+      endpointsHtml += '<p>{{t "Copy the example and replace the API key with your own key."}}</p>';
+      endpointsHtml += '<div class="detail-code-tabs">';
+      endpointsHtml += '<button class="code-tab active" onclick="switchCodeTab(this, \'python\')">Python</button>';
+      endpointsHtml += '<button class="code-tab" onclick="switchCodeTab(this, \'curl\')">cURL</button>';
+      endpointsHtml += '</div>';
+
+      var modelName = m.api_model_name || m.product_id || '';
+      var pythonCode =
+        "from openai import OpenAI\n\n" +
+        "client = OpenAI(\n" +
+        "    base_url='" + apiBase + "/v1',\n" +
+        "    api_key='<YOUR_API_KEY>',\n" +
+        ")\n\n" +
+        "response = client.chat.completions.create(\n" +
+        "    model='" + modelName + "',\n" +
+        "    messages=[\n" +
+        "        {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n" +
+        "        {\"role\": \"user\", \"content\": \"Hello!\"},\n" +
+        "    ],\n" +
+        ")\n\n" +
+        "print(response.choices[0].message.content)";
+
+      var curlCode =
+        "curl " + apiBase + "/v1/chat/completions \\\n" +
+        "  -H \"Content-Type: application/json\" \\\n" +
+        "  -H \"Authorization: Bearer <YOUR_API_KEY>\" \\\n" +
+        "  -d '{\n" +
+        "    \"model\": \"" + modelName + "\",\n" +
+        "    \"messages\": [\n" +
+        "      {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},\n" +
+        "      {\"role\": \"user\", \"content\": \"Hello!\"}\n" +
+        "    ]\n" +
+        "  }'";
+
+      endpointsHtml += '<div class="detail-code-block">';
+      endpointsHtml += '<pre id="code-python"><code>' + escapeHtml(pythonCode) + '</code></pre>';
+      endpointsHtml += '<pre id="code-curl" style="display:none"><code>' + escapeHtml(curlCode) + '</code></pre>';
+      endpointsHtml += '<button class="btn btn-secondary code-copy-btn" onclick="copyCode()">{{t "Copy"}}</button>';
+      endpointsHtml += '</div>';
+      endpointsHtml += '</div>';
+    }
+
+    var capabilitiesHtml = '';
+    (function() {
+      var caps = m.capabilities || {};
+      var ctxWindow = m.context_window || caps.context_window || 0;
+      var maxOut = m.max_output_tokens || caps.max_output_tokens || 0;
+      var tags = [];
+
+      function fmtNum(n) {
+        if (!n) return '';
+        n = Number(n);
+        if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+        if (n >= 1000) return (n / 1000).toFixed(0) + 'K';
+        return String(n);
+      }
+
+      if (ctxWindow) tags.push('<span class="gallery-badge">{{t "Context"}}: ' + fmtNum(ctxWindow) + '</span>');
+      if (maxOut) tags.push('<span class="gallery-badge">{{t "Max Out"}}: ' + fmtNum(maxOut) + '</span>');
+      if (caps.supports_thinking) tags.push('<span class="gallery-badge">{{t "Thinking"}}</span>');
+      if (caps.supports_vision) tags.push('<span class="gallery-badge">{{t "Vision"}}</span>');
+      if (caps.supports_audio) tags.push('<span class="gallery-badge">{{t "Audio"}}</span>');
+      if (caps.supports_tool_calls) tags.push('<span class="gallery-badge">{{t "Tool Calls"}}</span>');
+      if (caps.supports_parallel_tool_calls) tags.push('<span class="gallery-badge">{{t "Parallel Tools"}}</span>');
+      if (caps.supports_json_mode) tags.push('<span class="gallery-badge">{{t "JSON Mode"}}</span>');
+      if (caps.supports_streaming) tags.push('<span class="gallery-badge">{{t "Streaming"}}</span>');
+
+      if (tags.length > 0 || ctxWindow || maxOut) {
+        capabilitiesHtml += '<div class="detail-section">';
+        capabilitiesHtml += '<h3>{{t "Model Capabilities"}}</h3>';
+        capabilitiesHtml += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">' + tags.join('') + '</div>';
+        var details = [];
+        if (ctxWindow) details.push('{{t "Context Window"}}: ' + Number(ctxWindow).toLocaleString());
+        if (maxOut) details.push('{{t "Max Output Tokens"}}: ' + Number(maxOut).toLocaleString());
+        if (caps.reasoning_efforts && caps.reasoning_efforts.length) {
+          details.push('{{t "Reasoning Efforts"}}: ' + caps.reasoning_efforts.join(', '));
+        }
+        if (caps.speed_tiers && caps.speed_tiers.length) {
+          details.push('{{t "Speed Tiers"}}: ' + caps.speed_tiers.join(', '));
+        }
+        if (details.length > 0) {
+          capabilitiesHtml += '<div style="font-size:0.85rem;color:var(--text-muted);line-height:1.6">' + details.join('<br>') + '</div>';
+        }
+        capabilitiesHtml += '</div>';
+      }
+    })();
+
+    var pricingHtml = '';
+    pricingHtml += '<div class="detail-section">';
+    pricingHtml += '<h3>{{t "Price"}}</h3>';
+    pricingHtml += '<div class="detail-price-table">';
+    pricingHtml += '<div class="price-row"><span>{{t "Billing Type"}}</span><span>' + escapeHtml(billingTypeLabel(m)) + '</span></div>';
+    pricingHtml += renderDrawerPrices(m);
+    pricingHtml += '</div>';
+    if (m.features) {
+      pricingHtml += '<div style="margin-top:8px;font-size:0.85rem;color:var(--text-muted)">{{t "Features"}}: ' + escapeHtml(m.features) + '</div>';
+    }
+    pricingHtml += '</div>';
+
+    // Tabs
+    html += '<div class="drawer-tabs">';
+    html += '<button class="drawer-tab active" data-tab="endpoints" onclick="switchDrawerTab(this, \'endpoints\')">{{t "API Endpoints"}}</button>';
+    html += '<button class="drawer-tab" data-tab="pricing" onclick="switchDrawerTab(this, \'pricing\')">{{t "Price Summary"}}</button>';
+    html += '<button class="drawer-tab" data-tab="capabilities" onclick="switchDrawerTab(this, \'capabilities\')">{{t "Capabilities"}}</button>';
+    html += '</div>';
+    html += '<div class="drawer-tab-panel active" data-panel="endpoints">' + endpointsHtml + '</div>';
+    html += '<div class="drawer-tab-panel" data-panel="pricing">' + pricingHtml + '</div>';
+    html += '<div class="drawer-tab-panel" data-panel="capabilities">' + capabilitiesHtml + '</div>';
+
+    body.innerHTML = html;
+    drawer.classList.add('open');
+    backdrop.classList.add('open');
+  };
+
+  window.closeModelDrawer = function() {
+    document.getElementById('model-detail-drawer').classList.remove('open');
+    document.getElementById('model-detail-backdrop').classList.remove('open');
+  };
+
+  window.switchDrawerTab = function(btn, tab) {
+    var panel = btn.closest('.drawer-body, #drawer-body');
+    if (!panel) panel = document.getElementById('drawer-body');
+    if (!panel) return;
+    panel.querySelectorAll('.drawer-tab').forEach(function(t) { t.classList.remove('active'); });
+    panel.querySelectorAll('.drawer-tab-panel').forEach(function(p) { p.classList.remove('active'); });
+    btn.classList.add('active');
+    var target = panel.querySelector('.drawer-tab-panel[data-panel="' + tab + '"]');
+    if (target) target.classList.add('active');
+  };
+
+  window.switchCodeTab = function(btn, lang) {
+    var tabs = btn.parentElement.querySelectorAll('.code-tab');
+    tabs.forEach(function(t) { t.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('code-python').style.display = lang === 'python' ? '' : 'none';
+    document.getElementById('code-curl').style.display = lang === 'curl' ? '' : 'none';
+  };
+
+  window.copyCode = function() {
+    var py = document.getElementById('code-python');
+    var curl = document.getElementById('code-curl');
+    var active = py.style.display !== 'none' ? py : curl;
+    var text = active.querySelector('code').textContent;
+    navigator.clipboard.writeText(text).then(function() {
+      var btn = document.querySelector('.code-copy-btn');
+      var orig = btn.textContent;
+      btn.textContent = '{{t "Copied!"}}';
+      setTimeout(function() { btn.textContent = orig; }, 2000);
+    });
+  };
+
+  function renderDrawerPriceList(items) {
+    if (!items || !items.length) return '';
+    var listHtml = items.map(function(v) {
+      var suffix = variantSuffix(v.label, v.unit);
+      return escapeHtml(v.label) + ' $' + Number(v.price).toFixed(4) + escapeHtml(suffix);
+    }).join('<br>');
+    return '<div class="price-row" style="align-items:flex-start"><span>' + escapeHtml(_t('Variants')) + '</span><span style="font-size:0.8rem;text-align:right">' + listHtml + '</span></div>';
+  }
+
+  function renderDrawerPrices(m) {
+    var caps = m.capabilities || {};
+    var pricing = caps.pricing || {};
+    var variants = pricing.variants || (caps.variants ? Object.keys(caps.variants).map(function(k) { return {label: k, price: caps.variants[k]}; }) : []);
+    var extraPrices = pricing.extra_prices || [];
+
+    if (m.billing_type === 'per_request') {
+      var price = m.fixed_price;
+      if (price == null || price === '') price = m.output_price;
+      if (price == null || price === '') price = m.input_price;
+      if (price == null || price === '') return '';
+      var html = priceDetailRow(_t('Fixed Price'), price, fixedPriceUnitSuffix(m));
+      // For variant-priced models, list the available resolution/duration/spec buckets.
+      html += renderDrawerPriceList(variants);
+      var blockSeconds = pricing.block_seconds || caps.block_seconds;
+      if (pricing.billing_unit === 'block' || caps.billing_unit === 'block' && blockSeconds) {
+        html += '<div class="price-row"><span>' + escapeHtml(_t('Block Size')) + '</span><span>' +
+          escapeHtml(blockSeconds + 's') + '</span></div>';
+      }
+      return html;
+    }
+    var html = '';
+    // PAYG media models that bill by the second/image/block should not show
+    // meaningless token rows; list their variant buckets directly.
+    var mediaTypes = {'image': true, 'video': true, 'audio': true};
+    if (variants.length && mediaTypes[m.model_type || '']) {
+      html += renderDrawerPriceList(variants);
+      var blockSeconds = pricing.block_seconds || caps.block_seconds;
+      if ((pricing.billing_unit === 'block' || caps.billing_unit === 'block') && blockSeconds) {
+        html += '<div class="price-row"><span>' + escapeHtml(_t('Block Size')) + '</span><span>' +
+          escapeHtml(blockSeconds + 's') + '</span></div>';
+      }
+      return html;
+    }
+    html += priceDetailRow(_t('Input Price'), m.input_price, _t('/M tokens'));
+    html += priceDetailRow(_t('Output Price'), m.output_price, _t('/M tokens'));
+    if (m.input_price_cache_hit != null) html += priceDetailRow(_t('Cache Read'), m.input_price_cache_hit, _t('/M tokens'));
+    if (m.input_price_cache_miss != null) html += priceDetailRow(_t('Cache Write'), m.input_price_cache_miss, _t('/M tokens'));
+    if (m.reasoning_price != null) html += priceDetailRow(_t('Reasoning Price'), m.reasoning_price, _t('/M tokens'));
+    // PAYG media models may have extra component prices (e.g. Image Output Price,
+    // Audio Input) when they do not use per-unit variant billing.
+    html += renderDrawerPriceList(extraPrices);
+    return html;
+  }
+
+  function priceDetailRow(label, price, suffix) {
+    if (price == null || price === '') return '';
+    return '<div class="price-row"><span>' + escapeHtml(label) + '</span><span>$' + Number(price).toFixed(4) + escapeHtml(suffix) + '</span></div>';
+  }
+
+  window.copyModelNameGallery = function(btn) {
+    // btn may be the <button> itself or a child SVG element — normalise to the button
+    var button = btn.tagName === 'BUTTON' ? btn : btn.closest('button');
+    var card = button ? button.closest('.gallery-card') : null;
+    var name = card ? card.dataset.modelName : '';
+    if (!name) return;
+    navigator.clipboard.writeText(name).then(function() {
+      // Flash the SVG stroke green as feedback without touching innerHTML
+      var svg = button ? button.querySelector('svg') : null;
+      if (svg) {
+        svg.style.stroke = 'var(--success, #16a34a)';
+        setTimeout(function() { svg.style.stroke = ''; }, 1500);
+      }
+      if (typeof showToast === 'function') showToast('success', '{{t "Copied"}}: ' + name);
+    }).catch(function() {
+      // Fallback for browsers that block clipboard without user gesture
+      if (typeof showToast === 'function') showToast('error', '{{t "Copy failed"}}');
+    });
+  };
+
+  window.updateGallerySelection = function() {
+    var checkboxes = document.querySelectorAll('.gallery-card-checkbox');
+    var selected = [];
+    checkboxes.forEach(function(cb) {
+      var card = cb.closest('.gallery-card');
+      if (cb.checked) {
+        if (card) {
+          card.classList.add('selected');
+          selected.push(card.dataset.modelName || '');
+        }
+      } else {
+        if (card) card.classList.remove('selected');
+      }
+    });
+    var btn = document.getElementById('gallery-copy-selected-btn');
+    if (btn) {
+      btn.disabled = selected.length === 0;
+      btn.textContent = '{{t "Copy Selected"}} (' + selected.length + ')';
+    }
+    window._gallerySelectedNames = selected;
+  };
+
+  window.copySelectedModels = function() {
+    var names = (window._gallerySelectedNames || []).filter(Boolean);
+    if (names.length === 0) return;
+    navigator.clipboard.writeText(names.join('\n')).then(function() {
+      if (typeof showToast === 'function') showToast('success', '{{t "Copied"}} ' + names.length + ' {{t "models"}}');
+    });
+  };
+
+  // Event listeners
+  document.getElementById('gallery-search').addEventListener('input', renderGallery);
+  document.getElementById('gallery-provider').addEventListener('change', renderGallery);
+  document.getElementById('gallery-type').addEventListener('change', renderGallery);
+  document.getElementById('gallery-sort').addEventListener('change', renderGallery);
+
+  // ESC to close drawer
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModelDrawer();
+  });
+})();
+</script>
+{{end}}

@@ -1,0 +1,90 @@
+{
+  "test_date": "2026-05-14 14:05:50",
+  "portal_url": "http://127.0.0.1:3001",
+  "proxy_url": "http://127.0.0.1:8080",
+  "num_keys": 100,
+  "model": "gpt-4o",
+  "simulate_latency_ms": 0,
+  "results": {
+    "low_concurrency_10": {
+      "total_requests": 1000,
+      "concurrency": 10,
+      "model": "gpt-4o",
+      "elapsed_seconds": 0.7450034618377686,
+      "rps": 1342.2756419590428,
+      "success_count": 1000,
+      "error_count": 0,
+      "rate_limit_count": 0,
+      "auth_error_count": 0,
+      "simulate_count": 1000,
+      "latency": {
+        "min_ms": 0.6418228149414062,
+        "avg_ms": 7.220746755599976,
+        "p50_ms": 6.250858306884766,
+        "p90_ms": 12.859106063842773,
+        "p99_ms": 22.071361541748047,
+        "max_ms": 35.31646728515625
+      }
+    },
+    "medium_concurrency_50": {
+      "total_requests": 1000,
+      "concurrency": 50,
+      "model": "gpt-4o",
+      "elapsed_seconds": 0.6666824817657471,
+      "rps": 1499.9644168711952,
+      "success_count": 1000,
+      "error_count": 0,
+      "rate_limit_count": 0,
+      "auth_error_count": 0,
+      "simulate_count": 1000,
+      "latency": {
+        "min_ms": 1.1031627655029297,
+        "avg_ms": 24.353793382644653,
+        "p50_ms": 22.268056869506836,
+        "p90_ms": 41.6254997253418,
+        "p99_ms": 86.2736701965332,
+        "max_ms": 124.04322624206543
+      }
+    },
+    "high_concurrency_100": {
+      "total_requests": 1000,
+      "concurrency": 100,
+      "model": "gpt-4o",
+      "elapsed_seconds": 0.6531479358673096,
+      "rps": 1531.046712521733,
+      "success_count": 1000,
+      "error_count": 0,
+      "rate_limit_count": 0,
+      "auth_error_count": 0,
+      "simulate_count": 1000,
+      "latency": {
+        "min_ms": 1.6202926635742188,
+        "avg_ms": 58.29700064659119,
+        "p50_ms": 50.27580261230469,
+        "p90_ms": 101.50361061096191,
+        "p99_ms": 195.79386711120605,
+        "max_ms": 237.8852367401123
+      }
+    },
+    "max_concurrency_200": {
+      "total_requests": 2000,
+      "concurrency": 200,
+      "model": "gpt-4o",
+      "elapsed_seconds": 1.375366449356079,
+      "rps": 1454.1579089241,
+      "success_count": 2000,
+      "error_count": 0,
+      "rate_limit_count": 0,
+      "auth_error_count": 0,
+      "simulate_count": 2000,
+      "latency": {
+        "min_ms": 0.8187294006347656,
+        "avg_ms": 78.94709205627441,
+        "p50_ms": 62.436819076538086,
+        "p90_ms": 193.2389736175537,
+        "p99_ms": 396.1820602416992,
+        "max_ms": 566.157341003418
+      }
+    }
+  }
+}

@@ -1,0 +1,105 @@
+{{define "plan-detail-partial"}}
+{{if .Error}}
+<div class="text-center py-4 text-muted">{{.Error}}</div>
+{{else}}
+<form id="edit-plan-form">
+  <input type="hidden" name="plan_id" value="{{.ID}}">
+  <div class="space-y-4">
+    <div class="flex justify-between">
+      <span class="text-muted">{{t "ID"}}:</span>
+      <span class="font-mono text-sm">{{.ID}}</span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Name *"}}</label>
+      <input type="text" name="name" class="form-input" value="{{.Name}}" required aria-label="{{t "Name"}}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Type"}}</label>
+      <select name="plan_type" class="form-select" required onchange="updateEditRateFields(this.value)" aria-label="{{t "Plan Type"}}">
+        <option value="token" {{if eq .PlanType "token"}}selected{{end}}>{{t "Token Plan"}}</option>
+        <option value="code" {{if eq .PlanType "code"}}selected{{end}}>{{t "Code Plan"}}</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Price ($) *"}}</label>
+      <input type="number" step="0.01" name="price" class="form-input" value="{{.Price}}" required min="0" aria-label="Price">
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Quota"}}</label>
+      <input type="number" name="quota" class="form-input" value="{{.Quota}}" min="1" aria-label="Quota">
+      <p class="text-xs text-muted mt-1">{{t "Token Plan: Token count; Code Plan: Usage count"}}</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Validity"}} ({{t "Days"}})</label>
+      <input type="number" name="duration_days" class="form-input" value="{{.DurationDays}}" min="0" aria-label="{{t "Duration Days"}}">
+      <p class="text-xs text-muted mt-1">{{t "0 = permanent. This is the validity period after purchase (e.g., usable within 30 days), not the purchase window."}}</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Daily Limit"}}</label>
+      <input type="number" name="daily_limit" class="form-input" value="{{.DailyLimit}}" min="0" aria-label="{{t "Daily Limit"}}">
+      <p class="text-xs text-muted mt-1">{{t "0 = unlimited. Token Plan: Daily Token limit; Code Plan: Daily request limit"}}</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Rate Limit"}}</label>
+      <div class="grid grid-cols-2 gap-2" id="edit-rate-fields">
+        <div class="rate-code">
+          <span class="text-xs text-muted">{{t "RPH"}}</span>
+          <input type="number" name="rph_limit" class="form-input" value="{{.RphLimit}}" min="0" aria-label="{{t "RPH Limit"}}">
+        </div>
+        <div class="rate-code">
+          <span class="text-xs text-muted">{{t "RP5H"}}</span>
+          <input type="number" name="rp5h_limit" class="form-input" value="{{.Rp5hLimit}}" min="0" aria-label="{{t "RP5H Limit"}}">
+        </div>
+        <div class="rate-code">
+          <span class="text-xs text-muted">{{t "RPW"}}</span>
+          <input type="number" name="rpw_limit" class="form-input" value="{{.RpwLimit}}" min="0" aria-label="{{t "RPW Limit"}}">
+        </div>
+        <div class="rate-token">
+          <span class="text-xs text-muted">{{t "TPH"}}</span>
+          <input type="number" name="tph_limit" class="form-input" value="{{.TphLimit}}" min="0" aria-label="{{t "TPH Limit"}}">
+        </div>
+        <div class="rate-token">
+          <span class="text-xs text-muted">{{t "TPD"}}</span>
+          <input type="number" name="tpd_limit" class="form-input" value="{{.TpdLimit}}" min="0" aria-label="{{t "TPD Limit"}}">
+        </div>
+        <div class="rate-token">
+          <span class="text-xs text-muted">{{t "TPW"}}</span>
+          <input type="number" name="tpw_limit" class="form-input" value="{{.TpwLimit}}" min="0" aria-label="{{t "TPW Limit"}}">
+        </div>
+        <div>
+          <span class="text-xs text-muted">{{t "Number of concurrencies"}}</span>
+          <input type="number" name="concurrent_limit" class="form-input" value="{{.ConcurrentLimit}}" min="0" aria-label="{{t "Concurrent Limit"}}">
+        </div>
+        <div>
+          <span class="text-xs text-muted">{{t "RPM"}}</span>
+          <input type="number" name="rpm_limit" class="form-input" value="{{.RpmLimit}}" min="0" aria-label="{{t "RPM Limit"}}">
+        </div>
+        <div>
+          <span class="text-xs text-muted">{{t "TPM"}}</span>
+          <input type="number" name="tpm_limit" class="form-input" value="{{.TpmLimit}}" min="0" aria-label="{{t "TPM Limit"}}">
+        </div>
+      </div>
+      <p class="text-xs text-muted mt-1">{{t "0 = unlimited. Code Plan uses RPH/RP5H/RPW; Token Plan uses TPH/TPD/TPW"}}</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">{{t "Allowed Models"}}</label>
+      <div id="edit-plan-models-selected" style="border:1px solid var(--border);border-radius:8px;padding:8px;min-height:40px;background:var(--bg-card);margin-bottom:10px"></div>
+      <label class="form-label">{{t "Selectable Models"}}</label>
+      <input type="text" id="edit-plan-model-search" class="form-input" placeholder="{{t "Search models..."}}" oninput="filterPlanModels('edit')" style="max-width:220px;margin-bottom:6px"><span class="text-muted text-xs" id="edit-plan-model-count" style="margin-left:8px"></span>
+      <div id="edit-plan-models" data-selected='{{.ModelPerms}}' style="max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px 8px;background:var(--bg-card)"></div>
+      <p class="text-xs text-muted mt-1">{{t "None selected = all models available. When any are selected, subscription keys can only use the selected models."}}</p>
+    </div>
+    <script>
+    (function() {
+      var select = document.querySelector('#edit-plan-form select[name="plan_type"]');
+      if (select) updateEditRateFields(select.value);
+    })();
+    </script>
+    <div class="flex justify-between">
+      <span class="text-muted">{{t "Status"}}:</span>
+      <span class="badge badge-{{if eq .Status "active"}}success{{else}}error{{end}}">{{if eq .Status "active"}}{{t "Active"}}{{else}}{{t "Disabled"}}{{end}}</span>
+    </div>
+  </div>
+</form>
+{{end}}
+{{end}}

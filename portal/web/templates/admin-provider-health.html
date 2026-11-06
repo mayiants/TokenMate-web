@@ -1,0 +1,460 @@
+{{define "content"}}
+<div class="page-header">
+  <h1 class="page-title">{{t "Provider Health Monitor"}}</h1>
+  <p class="text-muted">{{t "Automatic calculation based on real upstream traffic, 5-minute window aggregation"}}</p>
+</div>
+
+<!-- Key Stats -->
+<div class="stats-bar" id="summary-cards">
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-success">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value" id="count-healthy">0</div>
+      <div class="stat-label">{{t "Healthy"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-warning">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value" id="count-degraded">0</div>
+      <div class="stat-label">{{t "Degraded"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-error">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value" id="count-unhealthy">0</div>
+      <div class="stat-label">{{t "Unhealthy"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-primary">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value" id="count-unknown">0</div>
+      <div class="stat-label">{{t "Unknown"}}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Search Bar -->
+<div class="key-search-bar">
+  <div style="flex:1"></div>
+  <button class="btn btn-secondary btn-sm" onclick="refreshData()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>{{t "Refresh"}}</button>
+  <button class="btn btn-secondary btn-sm" onclick="exportCSV()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>{{t "Export"}}</button>
+</div>
+
+<!-- Data Table -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Supplier Status"}}</h2>
+    <div class="flex gap-2 flex-wrap">
+      <select class="form-select du-select du-select-bordered" id="filter-window" style="width: 140px" onchange="onWindowChange()" aria-label="{{t "Filter"}}">
+        <option value="15m">{{t "Last 15 minutes"}}</option>
+        <option value="30m">{{t "Last 30 minutes"}}</option>
+        <option value="1h" selected>{{t "Last 1 hour"}}</option>
+        <option value="12h">{{t "Last 12 Hours"}}</option>
+        <option value="24h">{{t "Last 24 Hours"}}</option>
+      </select>
+      <select class="form-select du-select du-select-bordered" id="filter-status" style="width: 120px" onchange="applyFilter()" aria-label="{{t "Filter"}}">
+        <option value="">{{t "All Statuses"}}</option>
+        <option value="healthy">{{t "Healthy"}}</option>
+        <option value="degraded">{{t "Degraded"}}</option>
+        <option value="unhealthy">{{t "Unhealthy"}}</option>
+        <option value="unknown">{{t "Unknown"}}</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="data-table-wrapper">
+    <table class="data-table du-table du-table-zebra" id="health-table">
+      <thead>
+        <tr>
+          <th>{{t "Provider"}}</th>
+          <th>{{t "Status"}}</th>
+          <th class="text-right">{{t "Requests"}}</th>
+          <th class="text-right">{{t "Success Rate"}}</th>
+          <th class="text-right">{{t "Error Rate"}}</th>
+          <th class="text-right">{{t "Average Latency"}}</th>
+          <th>{{t "Actions"}}</th>
+        </tr>
+      </thead>
+      <tbody id="health-table-body">
+        <tr><td colspan="7" class="text-center text-muted py-8">{{t "Loading..."}}</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script src="/static/js/chart.min.js"></script>
+<script>
+let currentProviders = [];
+
+function fmtNum(n) {
+  if (n === undefined || n === null) return '0';
+  return n.toLocaleString();
+}
+
+function statusBadge(status, source) {
+  // source 'validation' = no recent traffic; status inferred from upstream key validation
+  var mark = source === 'validation' ? ' <span class="text-muted text-xs" title="' + _t('No recent traffic; based on upstream key validation') + '">🔑</span>' : '';
+  if (status === 'healthy') return '<span class="badge badge-success">🟢 ' + _t('Healthy') + '</span>' + mark;
+  if (status === 'degraded') return '<span class="badge badge-warning">🟡 ' + _t('Degraded') + '</span>' + mark;
+  if (status === 'unhealthy') return '<span class="badge badge-error">🔴 ' + _t('Unhealthy') + '</span>' + mark;
+  return '<span class="badge badge-secondary">⚪ ' + _t('Unknown') + '</span>' + mark;
+}
+
+function getWindowLabel() {
+  var sel = document.getElementById('filter-window');
+  return sel.options[sel.selectedIndex].text;
+}
+
+function onWindowChange() {
+  fetchData();
+}
+
+function refreshData() {
+  fetchData();
+}
+
+function fetchData() {
+  var windowVal = document.getElementById('filter-window').value;
+  fetch('/api/admin/provider-health?window=' + encodeURIComponent(windowVal))
+    .then(r => r.json())
+    .then(data => {
+      currentProviders = data.data || [];
+      renderTable();
+      applyFilter();
+      updateSummaryFromTable();
+    })
+    .catch(err => {
+      document.getElementById('health-table-body').innerHTML =
+        '<tr><td colspan="7" class="text-center text-muted py-8">' + _t('Load failed: ') + err.message + '</td></tr>';
+    });
+}
+
+function renderTable() {
+  var tbody = '';
+  if (currentProviders.length === 0) {
+    tbody = '<tr><td colspan="7" class="text-center text-muted py-8">' + _t('No data') + '</td></tr>';
+  } else {
+    currentProviders.forEach(function(p) {
+      var reqCount = p.request_count || 0;
+      var successRate = reqCount > 0 ? ((p.success_count || 0) / reqCount * 100).toFixed(1) : '0.0';
+      var errorRate = reqCount > 0 ? ((p.failure_count || 0) / reqCount * 100).toFixed(1) : '0.0';
+      var latency = (p.avg_latency_ms || 0) > 0 ? p.avg_latency_ms + 'ms' : '-';
+      var disabledBadge = p.enabled ? '' : '<span class="badge badge-secondary">' + _t('Disabled') + '</span>';
+      tbody += '<tr data-status="' + (p.status || 'unknown') + '">' +
+        '<td><div class="flex items-center gap-2"><span class="font-medium">' + (p.name || p.provider) + '</span>' + disabledBadge + '</div></td>' +
+        '<td>' + statusBadge(p.status, p.status_source) + '</td>' +
+        '<td class="text-right font-mono text-sm">' + fmtNum(reqCount) + '</td>' +
+        '<td class="text-right font-mono text-sm">' + successRate + '%</td>' +
+        '<td class="text-right font-mono text-sm">' + errorRate + '%</td>' +
+        '<td class="text-right font-mono text-sm">' + latency + '</td>' +
+        '<td><button class="btn btn-sm btn-ghost" onclick="openDetailModal(\'' + p.provider + '\')">' + _t('Details') + '</button></td>' +
+        '</tr>';
+    });
+  }
+  document.getElementById('health-table-body').innerHTML = tbody;
+}
+
+function applyFilter() {
+  var status = document.getElementById('filter-status').value;
+  var rows = document.querySelectorAll('#health-table tbody tr');
+  rows.forEach(function(row) {
+    var rowStatus = row.getAttribute('data-status') || '';
+    row.style.display = (!status || rowStatus === status) ? '' : 'none';
+  });
+  updateSummaryFromTable();
+}
+
+function updateSummaryFromTable() {
+  var rows = document.querySelectorAll('#health-table tbody tr');
+  var healthy = 0, degraded = 0, unhealthy = 0, unknown = 0;
+  rows.forEach(function(row) {
+    if (row.style.display === 'none') return;
+    var s = row.getAttribute('data-status') || 'unknown';
+    if (s === 'healthy') healthy++;
+    else if (s === 'degraded') degraded++;
+    else if (s === 'unhealthy') unhealthy++;
+    else unknown++;
+  });
+  document.getElementById('count-healthy').textContent = healthy;
+  document.getElementById('count-degraded').textContent = degraded;
+  document.getElementById('count-unhealthy').textContent = unhealthy;
+  document.getElementById('count-unknown').textContent = unknown;
+}
+
+function openDetailModal(provider) {
+  var windowVal = document.getElementById('filter-window').value;
+  fetch('/api/admin/provider-health/' + provider + '?window=' + encodeURIComponent(windowVal))
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('detail-modal-provider').textContent = provider;
+      document.getElementById('detail-modal-window-label').textContent = getWindowLabel();
+
+      var statusHtml = statusBadge(data.status || 'unknown');
+      document.getElementById('detail-modal-status').innerHTML = statusHtml;
+
+      var totalReq = data.request_count || 0;
+      var success = data.success_count || 0;
+      var failure = data.failure_count || 0;
+      var successRate = totalReq > 0 ? ((success / totalReq) * 100).toFixed(1) + '%' : '-';
+      var errorRate = totalReq > 0 ? ((failure / totalReq) * 100).toFixed(1) + '%' : '-';
+      var latency = data.avg_latency_ms > 0 ? data.avg_latency_ms + 'ms' : '-';
+
+      document.getElementById('detail-modal-window-strong').textContent = getWindowLabel();
+      document.getElementById('detail-modal-requests').textContent = totalReq;
+      document.getElementById('detail-modal-success-rate').textContent = successRate;
+      document.getElementById('detail-modal-error-rate').textContent = errorRate;
+      document.getElementById('detail-modal-latency').textContent = latency;
+
+      var h = data.history || [];
+
+      // Render chart
+      renderDetailChart(h);
+
+      // Render table
+      var tbody = '';
+      if (h.length === 0) {
+        tbody = '<tr><td colspan="5" class="text-center text-muted py-4">' + _t('No data') + '</td></tr>';
+      } else {
+        // Show newest first in table
+        var tableData = h.slice().reverse();
+        tableData.forEach(function(item) {
+          var s = item.status || 'unknown';
+          var sBadge = statusBadge(s);
+          tbody += '<tr>' +
+            '<td class="font-mono text-sm">' + item.hour + '</td>' +
+            '<td class="text-right font-mono text-sm">' + (item.request_count || 0) + '</td>' +
+            '<td class="text-right font-mono text-sm">' + (item.success_count || 0) + ' / ' + (item.failure_count || 0) + '</td>' +
+            '<td class="text-right font-mono text-sm">' + (item.avg_latency_ms || 0) + 'ms</td>' +
+            '<td>' + sBadge + '</td>' +
+            '</tr>';
+        });
+      }
+      document.getElementById('detail-modal-history-body').innerHTML = tbody;
+      document.getElementById('detail-modal').style.display = 'flex';
+    })
+    .catch(err => {
+      showMessage(_t('Load failed'), _t('Failed to load details: ') + err.message);
+    });
+}
+
+var detailChartInstance = null;
+
+function renderDetailChart(history) {
+  var ctx = document.getElementById('detail-chart');
+  if (!ctx) return;
+  if (detailChartInstance) {
+    detailChartInstance.destroy();
+    detailChartInstance = null;
+  }
+  if (!history || history.length === 0) {
+    ctx.style.display = 'none';
+    return;
+  }
+  ctx.style.display = 'block';
+
+  // Sort by time ascending for chart
+  var sorted = history.slice().sort(function(a, b) {
+    return new Date(a.hour).getTime() - new Date(b.hour).getTime();
+  });
+
+  var labels = sorted.map(function(item) {
+    var d = new Date(item.hour);
+    return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.getHours() + ':00';
+  });
+
+  var requestData = sorted.map(function(item) { return item.request_count || 0; });
+  var latencyData = sorted.map(function(item) { return item.avg_latency_ms || 0; });
+  var errorRateData = sorted.map(function(item) {
+    var total = (item.request_count || 0);
+    return total > 0 ? ((item.failure_count || 0) / total * 100).toFixed(2) : 0;
+  });
+
+  detailChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: _t('Requests'),
+          data: requestData,
+          borderColor: chartColor('--primary'),
+          backgroundColor: chartColor('--primary', 0.1),
+          fill: true,
+          tension: 0.3,
+          pointRadius: 2,
+          yAxisID: 'y-requests'
+        },
+        {
+          label: _t('Latency (ms)'),
+          data: latencyData,
+          borderColor: chartColor('--success'),
+          backgroundColor: chartColor('--success', 0.1),
+          fill: true,
+          tension: 0.3,
+          pointRadius: 2,
+          yAxisID: 'y-latency'
+        },
+        {
+          label: _t('Error Rate (%)'),
+          data: errorRateData,
+          borderColor: chartColor('--error'),
+          backgroundColor: chartColor('--error', 0.1),
+          fill: true,
+          tension: 0.3,
+          pointRadius: 2,
+          yAxisID: 'y-error'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { font: { size: 11 }, boxWidth: 12, usePointStyle: true }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          titleFont: { size: 12 },
+          bodyFont: { size: 11 },
+          padding: 8,
+          cornerRadius: 4
+        }
+      },
+      scales: {
+        x: {
+          ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 30 }
+        },
+        'y-requests': {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          title: { display: true, text: _t('Requests'), font: { size: 10 } },
+          ticks: { font: { size: 10 } },
+          grid: { display: false }
+        },
+        'y-latency': {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          title: { display: true, text: _t('Latency (ms)'), font: { size: 10 } },
+          ticks: { font: { size: 10 } },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        'y-error': {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          title: { display: true, text: _t('Error Rate (%)'), font: { size: 10 } },
+          ticks: { font: { size: 10 }, callback: function(v) { return v + '%'; } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+function closeDetailModal() {
+  document.getElementById('detail-modal').style.display = 'none';
+  if (detailChartInstance) {
+    detailChartInstance.destroy();
+    detailChartInstance = null;
+  }
+}
+
+function exportCSV() {
+  downloadExport('/api/admin/provider-health/export', 'provider-health-' + formatExportTimestamp() + '.csv');
+}
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+  fetchData();
+});
+</script>
+
+<!-- Detail Modal -->
+<div id="detail-modal" class="modal-overlay" style="display:none; z-index:300">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <span class="modal-title"><span id="detail-modal-provider"></span>{{t "- Details"}}<span id="detail-modal-window-label" style="font-size:0.8rem;font-weight:400;color:var(--text-muted)"></span></span>
+      <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:20px 24px">
+      <div style="margin-bottom:12px">
+        <strong>{{t "Current status:"}}</strong><span id="detail-modal-status"></span>
+      </div>
+      <div id="detail-modal-summary">
+        <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px">
+          {{t "Current status is based on the time range selected on the list page:"}}<strong id="detail-modal-window-strong"></strong>
+        </div>
+        <div class="stats-bar">
+          <div class="stat-item">
+            <div class="stat-content">
+              <div class="stat-value" id="detail-modal-requests">-</div>
+              <div class="stat-label">{{t "Requests"}}</div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-content">
+              <div class="stat-value text-success" id="detail-modal-success-rate">-</div>
+              <div class="stat-label">{{t "Success Rate"}}</div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-content">
+              <div class="stat-value text-danger" id="detail-modal-error-rate">-</div>
+              <div class="stat-label">{{t "Error Rate"}}</div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-content">
+              <div class="stat-value" id="detail-modal-latency">-</div>
+              <div class="stat-label">{{t "Average Latency"}}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <h3 style="font-size:0.95rem;font-weight:600;margin:16px 0 4px">{{t "Historical trends in the past 7 days"}}</h3>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px">{{t "Hour-level aggregation · Independent of the list page time window"}}</div>
+      <div class="chart-canvas" style="margin-bottom:16px">
+        <canvas id="detail-chart"></canvas>
+      </div>
+      <div class="data-table-wrapper" style="max-height:320px;overflow-y:auto">
+        <table class="data-table du-table du-table-zebra" style="margin:0">
+          <thead>
+            <tr>
+              <th>{{t "Time"}}</th>
+              <th class="text-right">{{t "Requests"}}</th>
+              <th class="text-right">{{t "Success/Failure"}}</th>
+              <th class="text-right">{{t "Average Latency"}}</th>
+              <th>{{t "Status"}}</th>
+            </tr>
+          </thead>
+          <tbody id="detail-modal-history-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDetailModal()">{{t "Close"}}</button>
+    </div>
+  </div>
+</div>
+{{end}}

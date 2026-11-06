@@ -1,0 +1,612 @@
+{{define "content"}}
+<div class="page-header">
+  <h1 class="page-title">{{t "Rate Limits & Capacity"}}</h1>
+  <p class="text-muted">{{t "Rate limit usage across subscriptions, groups and upstream keys"}}</p>
+</div>
+
+<!-- Summary Cards -->
+<div class="stats-bar" id="summary-cards">
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-primary">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value" id="stat-items">-</div>
+      <div class="stat-label" id="stat-items-label">{{t "Total Users"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-success">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value" id="stat-requests">-</div>
+      <div class="stat-label">{{t "Total Requests"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-warning">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value" id="stat-tokens">-</div>
+      <div class="stat-label">{{t "Total Tokens"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-error">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value" id="stat-limited">-</div>
+      <div class="stat-label">{{t "Limited / Exceeded"}}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="flex gap-2 border-bottom mb-4" id="rate-limit-tabs">
+  <button class="rl-tab active" data-tab="users" onclick="switchTab('users')">{{t "Users"}}</button>
+  <button class="rl-tab" data-tab="groups" onclick="switchTab('groups')">{{t "Groups"}}</button>
+  <button class="rl-tab" data-tab="apikeys" onclick="switchTab('apikeys')">{{t "API Keys"}}</button>
+  <button class="rl-tab" data-tab="upstream" onclick="switchTab('upstream')">{{t "Upstream Keys"}}</button>
+  <button class="rl-tab" data-tab="capacity" onclick="switchTab('capacity')">{{t "Capacity"}}</button>
+</div>
+
+<!-- Toolbar -->
+<div class="key-search-bar">
+  <label for="window-select" class="visually-hidden">{{t "Time Window"}}</label>
+  <select id="window-select" class="form-select form-select-sm du-select du-select-bordered" style="width:110px" onchange="loadCurrentTab()" aria-label="{{t "Time Window"}}">
+    <option value="1h">{{t "1h"}}</option>
+    <option value="24h">{{t "24h"}}</option>
+    <option value="7d">{{t "7d"}}</option>
+  </select>
+  <label for="search-input" class="visually-hidden">{{t "Search by name"}}</label>
+  <input type="text" id="search-input" class="form-input form-input-sm du-input du-input-bordered" placeholder='{{t "Search by name"}}' style="width:220px" oninput="rateLimitSearchDebounced()">
+  <label class="flex items-center gap-2 text-sm text-muted" style="cursor:pointer">
+    <input type="checkbox" id="near-limit" onchange="applyFilters()">
+    <span>{{t "At Risk"}}</span>
+  </label>
+  <div style="flex:1"></div>
+  <span class="text-muted text-sm" id="result-count"></span>
+  <button class="btn btn-secondary btn-sm" onclick="loadCurrentTab()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>{{t "Refresh"}}
+  </button>
+  <button class="btn btn-secondary btn-sm" id="export-btn" onclick="exportCurrentTab()" style="display:none">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>{{t "Export CSV"}}
+  </button>
+</div>
+
+<!-- Table -->
+<div class="card" id="table-card">
+  <div class="card-header">
+    <h2 class="card-title" id="table-title">{{t "User Rate Limits"}}</h2>
+  </div>
+  <div class="data-table-wrapper" tabindex="0">
+    <table class="data-table du-table du-table-zebra" id="rate-limit-table">
+      <thead id="table-head">
+        <tr>
+          <th>{{t "User"}}</th>
+          <th>{{t "Quota"}}</th>
+          <th>{{t "Minute"}}</th>
+          <th>{{t "Hour"}}</th>
+          <th>{{t "5 Hours"}}</th>
+          <th>{{t "Daily"}}</th>
+          <th>{{t "Weekly"}}</th>
+          <th>{{t "Monthly"}}</th>
+          <th>{{t "Concurrent"}}</th>
+          <th class="text-right">{{t "Requests"}}</th>
+          <th class="text-right">{{t "Tokens"}}</th>
+          <th>{{t "Status"}}</th>
+        </tr>
+      </thead>
+      <tbody id="rate-limit-body">
+        <tr><td colspan="12" class="text-muted text-center py-8">{{t "No data"}}</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Capacity View -->
+<div class="card" id="capacity-card" style="display:none">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Capacity Overview"}}</h2>
+  </div>
+  <div class="card-body" id="capacity-body">
+    <div class="text-muted text-center py-8">{{t "Loading..."}}</div>
+  </div>
+</div>
+
+<script>
+let currentTab = 'users';
+let tabData = { users: [], groups: [], apikeys: [], upstream: [], capacity: null };
+let tabSummary = {};
+
+function fmtNum(n) {
+  if (n === null || n === undefined) return '0';
+  return Number(n).toLocaleString();
+}
+
+function fmtPct(u) {
+  if (u === null || u === undefined) return '';
+  return Math.min(100, Math.round(u * 100)) + '%';
+}
+
+function limitClass(pct) {
+  if (pct >= 80) return 'high';
+  if (pct >= 60) return 'medium';
+  return 'low';
+}
+
+function statusClass(status) {
+  if (status === 'limited') return 'error';
+  if (status === 'warning') return 'warning';
+  if (status === 'caution') return 'medium';
+  return 'success';
+}
+
+function statusLabel(status) {
+  if (status === 'limited') return _t('LIMITED');
+  if (status === 'warning') return _t('Warning');
+  if (status === 'caution') return _t('Caution');
+  return _t('Healthy');
+}
+
+function topUtil(util) {
+  if (!util) return { name: '', value: 0 };
+  var best = { name: '', value: 0 };
+  Object.keys(util).forEach(function(k) {
+    var v = util[k];
+    if (v !== null && v !== undefined && v > best.value) {
+      best = { name: k.toUpperCase(), value: v };
+    }
+  });
+  return best;
+}
+
+function badge(text, type) {
+  var cls = type === 'hard' ? 'badge-error' : (type === 'soft' ? 'badge-warning' : 'badge-secondary');
+  return '<span class="badge ' + cls + '" style="font-size:10px;font-weight:400;">' + text + '</span>';
+}
+function hardBadge() { return badge('HARD', 'hard'); }
+function softBadge() { return badge('SOFT', 'soft'); }
+
+function renderLimitBar(used, limit, label) {
+  if (!limit) {
+    return '<div class="limit-cell"><div class="limit-label"><span>' + label + '</span><span class="text-muted">∞</span></div></div>';
+  }
+  var u = used || 0;
+  var pct = Math.min(100, (u / limit) * 100);
+  var cls = limitClass(pct);
+  return '<div class="limit-cell">' +
+    '<div class="limit-label"><span>' + label + '</span><span class="limit-value ' + cls + '">' + fmtNum(u) + ' / ' + fmtNum(limit) + '</span></div>' +
+    '<div class="progress-bar-bg"><div class="progress-bar-fill ' + cls + '" style="width:' + pct + '%"></div></div>' +
+  '</div>';
+}
+
+function renderLimitBarWithBadge(used, limit, label, type) {
+  var bar = renderLimitBar(used, limit, label);
+  if (!limit) return bar;
+  return bar.replace('</div></div>', '</div>' + (type === 'hard' ? hardBadge() : softBadge()) + '</div>');
+}
+
+function renderUtilBar(util, label, limits) {
+  var top = topUtil(util);
+  var pct = Math.min(100, Math.round(top.value * 100));
+  var cls = limitClass(pct);
+  var title = '';
+  if (util) {
+    title = Object.keys(util).map(function(k) {
+      var v = util[k];
+      return v === null || v === undefined ? '' : k.toUpperCase() + ': ' + fmtPct(v);
+    }).filter(Boolean).join(' | ');
+  }
+  var limitText = renderLimitBadges(limits);
+  return '<div class="limit-cell" title="' + escapeHtml(title) + '">' +
+    '<div class="limit-label"><span>' + escapeHtml(label) + '</span><span class="limit-value ' + cls + '">' + (top.name ? top.name + ' ' : '') + fmtPct(top.value) + '</span></div>' +
+    '<div class="progress-bar-bg"><div class="progress-bar-fill ' + cls + '" style="width:' + pct + '%"></div></div>' +
+    (limitText ? '<div class="limit-badges">' + limitText + '</div>' : '') +
+  '</div>';
+}
+
+function renderLimitBadges(limits) {
+  if (!limits) return '';
+  var pairs = [];
+  var order = ['rpm','rph','rp5h','rpw','rpmonth','tpm','tph','tpd','tpw','tpmonth','quota','concurrent'];
+  order.forEach(function(k) {
+    var v = limits[k];
+    if (v !== null && v !== undefined && v !== 0 && v !== '') {
+      pairs.push('<span class="badge badge-secondary" style="font-size:10px;font-weight:400;">' + k.toUpperCase() + ' ' + fmtNum(v) + '</span>');
+    }
+  });
+  return pairs.join(' ');
+}
+
+function renderQuota(used, remaining) {
+  if (used === null && remaining === null) {
+    return '<span class="text-muted text-xs">' + _t('No active subscription') + '</span>';
+  }
+  var u = used || 0;
+  var r = remaining || 0;
+  var total = u + r;
+  var pct = total > 0 ? (u / total) * 100 : 0;
+  var cls = limitClass(pct);
+  return '<div class="limit-cell">' +
+    '<div class="limit-label"><span>' + _t('Used') + '</span><span class="limit-value ' + cls + '">' + fmtNum(u) + ' / ' + fmtNum(total) + '</span></div>' +
+    '<div class="progress-bar-bg"><div class="progress-bar-fill ' + cls + '" style="width:' + pct + '%"></div></div>' +
+    '<div class="text-xs text-muted">' + fmtNum(r) + ' ' + _t('remaining') + '</div>' +
+  '</div>';
+}
+
+function roleBadge(role) {
+  var cls = {
+    'super_admin': 'error',
+    'system_admin': 'warning',
+    'enterprise_admin': 'info',
+    'user': 'secondary'
+  }[role] || 'secondary';
+  var labels = {
+    'super_admin': _t('role.super_admin'),
+    'system_admin': _t('role.system_admin'),
+    'enterprise_admin': _t('role.enterprise_admin'),
+    'user': _t('role.user')
+  };
+  return '<span class="badge badge-' + cls + '">' + (labels[role] || role) + '</span>';
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  var d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.rl-tab').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+  if (tab !== 'capacity') {
+    document.getElementById('table-card').style.display = '';
+    document.getElementById('capacity-card').style.display = 'none';
+  }
+  loadCurrentTab();
+}
+
+function getWindow() {
+  return document.getElementById('window-select').value;
+}
+
+function updateSummary(summary) {
+  if (currentTab === 'capacity') {
+    document.getElementById('stat-items-label').textContent = _t('Upstream Keys');
+    document.getElementById('stat-items').textContent = fmtNum(summary?.upstream_keys || 0);
+    document.getElementById('stat-requests').textContent = fmtNum(summary?.downstream_requests || 0);
+    document.getElementById('stat-tokens').textContent = fmtNum(summary?.downstream_tokens || 0);
+    document.getElementById('stat-limited').textContent = fmtNum(summary?.enabled_keys || 0);
+    return;
+  }
+  var itemsLabel = {
+    users: _t('Total Users'),
+    groups: _t('Total Groups'),
+    apikeys: _t('Total Keys'),
+    upstream: _t('Total Keys')
+  }[currentTab] || _t('Total');
+  document.getElementById('stat-items-label').textContent = itemsLabel;
+  document.getElementById('stat-items').textContent = fmtNum(summary?.total_users || summary?.total_groups || summary?.total_keys || 0);
+  document.getElementById('stat-requests').textContent = fmtNum(summary?.total_requests || 0);
+  document.getElementById('stat-tokens').textContent = fmtNum(summary?.total_tokens || 0);
+  document.getElementById('stat-limited').textContent = fmtNum(summary?.limited_count || 0);
+}
+
+var rateLimitSearchDebounced = debounceInput(applyFilters, 300);
+function applyFilters() {
+  var q = document.getElementById('search-input').value.trim().toLowerCase();
+  var near = document.getElementById('near-limit').checked;
+  var data = tabData[currentTab] || [];
+  var filtered = data.filter(function(item) {
+    var name = (item.name || '').toLowerCase();
+    var email = (item.email || '').toLowerCase();
+    var provider = (item.provider || '').toLowerCase();
+    var prefix = (item.key_prefix || '').toLowerCase();
+    var matchSearch = !q || name.includes(q) || email.includes(q) || provider.includes(q) || prefix.includes(q);
+    var st = item.status || item.item_status;
+    var matchNear = !near || (st && (st === 'warning' || st === 'limited'));
+    return matchSearch && matchNear;
+  });
+
+  if (currentTab === 'users') renderUsers(filtered);
+  else if (currentTab === 'groups') renderGroups(filtered);
+  else if (currentTab === 'apikeys') renderAPIKeys(filtered);
+  else if (currentTab === 'upstream') renderUpstreamKeys(filtered);
+
+  document.getElementById('result-count').textContent = filtered.length + ' / ' + data.length;
+}
+
+async function loadCurrentTab() {
+  document.getElementById('export-btn').style.display = currentTab === 'capacity' ? 'none' : 'inline-flex';
+  if (currentTab === 'capacity') {
+    document.getElementById('table-title').textContent = _t('Capacity Overview');
+    document.getElementById('rate-limit-table').style.display = 'none';
+    try {
+      var res = await fetch('/api/admin/rate-limits/capacity?window=' + encodeURIComponent(getWindow()));
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || 'Failed to load');
+      tabData.capacity = data;
+      tabSummary = {
+        upstream_keys: data.upstream?.total_keys,
+        enabled_keys: data.upstream?.enabled_keys,
+        downstream_requests: data.downstream?.total_requests,
+        downstream_tokens: data.downstream?.total_tokens,
+        status: data.summary?.status
+      };
+      updateSummary(tabSummary);
+      renderCapacity(data);
+      document.getElementById('result-count').textContent = '';
+    } catch (e) {
+      console.error(e);
+      document.getElementById('rate-limit-body').innerHTML = '<tr><td colspan="11" class="text-error text-center py-8">' + e.message + '</td></tr>';
+    }
+    return;
+  }
+  document.getElementById('rate-limit-table').style.display = '';
+  var endpoints = {
+    users: '/api/admin/rate-limits/usage?window=' + encodeURIComponent(getWindow()),
+    groups: '/api/admin/rate-limits/groups?window=' + encodeURIComponent(getWindow()),
+    apikeys: '/api/admin/rate-limits/apikeys?window=' + encodeURIComponent(getWindow()),
+    upstream: '/api/admin/rate-limits/upstream-keys?window=' + encodeURIComponent(getWindow())
+  };
+  var dataKeys = { users: 'users', groups: 'groups', apikeys: 'api_keys', upstream: 'upstream_keys' };
+  var titles = {
+    users: _t('User Rate Limits'),
+    groups: _t('Group Rate Limits'),
+    apikeys: _t('API Key Rate Limits'),
+    upstream: _t('Upstream Key Rate Limits')
+  };
+  document.getElementById('table-title').textContent = titles[currentTab];
+
+  try {
+    var res = await fetch(endpoints[currentTab]);
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || 'Failed to load');
+    tabData[currentTab] = data[dataKeys[currentTab]] || [];
+    tabSummary = data.summary || {};
+    updateSummary(tabSummary);
+    applyFilters();
+  } catch (e) {
+    console.error(e);
+    document.getElementById('rate-limit-body').innerHTML = '<tr><td colspan="11" class="text-error text-center py-8">' + e.message + '</td></tr>';
+  }
+}
+
+function exportCurrentTab() {
+  var dimension = { users: 'users', groups: 'groups', apikeys: 'apikeys', upstream: 'upstream' }[currentTab];
+  if (!dimension) return;
+  downloadExport('/api/admin/rate-limits/export?dimension=' + encodeURIComponent(dimension) + '&window=' + encodeURIComponent(getWindow()), 'rate-limits-' + formatExportTimestamp() + '.csv');
+}
+
+function setHead(html) {
+  document.getElementById('table-head').innerHTML = html;
+}
+
+function renderStatusBadge(status) {
+  var cls = statusClass(status);
+  return '<span class="badge badge-' + cls + '">' + statusLabel(status) + '</span>';
+}
+
+function renderUsers(users) {
+  setHead('<tr>' +
+    '<th>' + _t('User') + '</th>' +
+    '<th>' + _t('Quota') + '</th>' +
+    '<th>' + _t('Minute') + '</th>' +
+    '<th>' + _t('Hour') + '</th>' +
+    '<th>' + _t('5 Hours') + '</th>' +
+    '<th>' + _t('Daily') + '</th>' +
+    '<th>' + _t('Weekly') + '</th>' +
+    '<th>' + _t('Monthly') + '</th>' +
+    '<th>' + _t('Concurrent') + '</th>' +
+    '<th class="text-right">' + _t('Requests') + '</th>' +
+    '<th class="text-right">' + _t('Tokens') + '</th>' +
+    '<th>' + _t('Status') + '</th>' +
+  '</tr>');
+  var tbody = document.getElementById('rate-limit-body');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="12" class="text-muted text-center py-8">' + _t('No data') + '</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(function(u) {
+    var limits = u.limits || {};
+    var used = u.used || {};
+    return '<tr>' +
+      '<td>' +
+        '<div class="flex flex-col gap-1">' +
+          '<span class="font-medium">' + escapeHtml(u.name || u.email) + '</span>' +
+          '<span class="text-xs text-muted">' + escapeHtml(u.email || '') + '</span>' +
+          roleBadge(u.role) +
+        '</div>' +
+      '</td>' +
+      '<td>' + renderQuota(u.quota?.used, u.quota?.remaining) + softBadge() + '</td>' +
+      '<td>' + renderLimitBarWithBadge(used.rpm, limits.rpm, 'RPM', 'hard') + renderLimitBarWithBadge(used.tpm, limits.tpm, 'TPM', 'hard') + '</td>' +
+      '<td>' + renderLimitBarWithBadge(used.rph, limits.rph, 'RPH', 'hard') + renderLimitBarWithBadge(used.tph, limits.tph, 'TPH', 'hard') + '</td>' +
+      '<td>' + renderLimitBarWithBadge(used.rp5h, limits.rp5h, 'RP5H', 'hard') + '</td>' +
+      '<td>' + renderLimitBarWithBadge(used.daily_quota, limits.rpd, 'RPD', 'soft') + renderLimitBarWithBadge(used.daily_quota, limits.tpd, 'TPD', 'soft') + '</td>' +
+      '<td>' + renderLimitBarWithBadge(used.rpw, limits.rpw, 'RPW', 'hard') + renderLimitBarWithBadge(used.tpw, limits.tpw, 'TPW', 'soft') + '</td>' +
+      '<td>' + renderLimitBarWithBadge(null, limits.rpmonth, 'RPMonth', 'soft') + renderLimitBarWithBadge(null, limits.tpmonth, 'TPMonth', 'hard') + '</td>' +
+      '<td>' + (limits.concurrent ? '<span class="font-mono text-sm">' + fmtNum(limits.concurrent) + '</span>' : '<span class="text-muted">∞</span>') + '</td>' +
+      '<td class="text-right font-mono text-sm">' + fmtNum(u.request_count) + '</td>' +
+      '<td class="text-right font-mono text-sm">' + fmtNum(u.total_tokens) + '</td>' +
+      '<td>' + renderStatusBadge(u.status) + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function renderGroups(groups) {
+  setHead('<tr>' +
+    '<th>' + _t('Group') + '</th>' +
+    '<th>' + _t('Top Utilization') + '</th>' +
+    '<th>' + _t('Monthly') + '</th>' +
+    '<th class="text-right">' + _t('Requests') + '</th>' +
+    '<th class="text-right">' + _t('Tokens') + '</th>' +
+    '<th>' + _t('Status') + '</th>' +
+    '<th class="text-right">' + _t('Actions') + '</th>' +
+  '</tr>');
+  var tbody = document.getElementById('rate-limit-body');
+  if (!groups.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center py-8">' + _t('No data') + '</td></tr>';
+    return;
+  }
+  tbody.innerHTML = groups.map(function(g) {
+    var limits = g.limits || {};
+    var monthlyBadges = [];
+    if (limits.rpmonth) monthlyBadges.push(renderLimitBarWithBadge(null, limits.rpmonth, 'RPMonth', 'soft'));
+    if (limits.tpmonth) monthlyBadges.push(renderLimitBarWithBadge(null, limits.tpmonth, 'TPMonth', 'hard'));
+    return '<tr>' +
+      '<td><span class="font-medium">' + escapeHtml(g.name) + '</span></td>' +
+      '<td>' + renderUtilBar(g.utilization, 'Util', limits) + '</td>' +
+      '<td>' + (monthlyBadges.length ? monthlyBadges.join('') : '<span class="text-muted">∞</span>') + '</td>' +
+      '<td class="text-right font-mono text-sm">' + fmtNum(g.usage?.requests) + '</td>' +
+      '<td class="text-right font-mono text-sm">' + fmtNum(g.usage?.tokens) + '</td>' +
+      '<td>' + renderStatusBadge(g.status) + '</td>' +
+      '<td class="text-right"><a class="btn btn-sm btn-outline" href="/admin/groups">' + _t('Edit Group') + '</a></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function renderAPIKeys(keys) {
+  setHead('<tr>' +
+    '<th>' + _t('API Key') + '</th>' +
+    '<th>' + _t('Top Utilization') + '</th>' +
+    '<th class="text-right">' + _t('Requests') + '</th>' +
+    '<th class="text-right">' + _t('Tokens') + '</th>' +
+    '<th>' + _t('Status') + '</th>' +
+    '<th class="text-right">' + _t('Actions') + '</th>' +
+  '</tr>');
+  var tbody = document.getElementById('rate-limit-body');
+  if (!keys.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-muted text-center py-8">' + _t('No data') + '</td></tr>';
+    return;
+  }
+  tbody.innerHTML = keys.map(function(k) {
+    var limits = k.limits || {};
+    var effective = k.effective_limits || {};
+    var group = k.group_limits || {};
+    var statusBadge = k.status === 'active' ? '<span class="badge badge-success">' + _t('Active') + '</span>' : '<span class="badge badge-muted">' + escapeHtml(k.status || '') + '</span>';
+    var title = 'Key: RPM ' + (limits.rpm || '∞') + ' / TPM ' + (limits.tpm || '∞') +
+                ' | Group: RPM ' + (group.rpm || '∞') + ' / TPM ' + (group.tpm || '∞') +
+                ' | Effective = min(key, group, subscription)';
+    return '<tr>' +
+      '<td>' +
+        '<div class="flex flex-col gap-1">' +
+          '<span class="font-medium">' + escapeHtml(k.name) + '</span>' +
+          '<span class="text-xs text-muted font-mono">' + escapeHtml(k.key_prefix || '') + '</span>' +
+          statusBadge +
+        '</div>' +
+      '</td>' +
+      '<td title="' + escapeHtml(title) + '">' + renderUtilBar(k.utilization, 'Util (effective)', effective) + '</td>' +
+      '<td class="text-right font-mono text-sm">' + fmtNum(k.usage?.requests) + '</td>' +
+      '<td class="text-right font-mono text-sm">' + fmtNum(k.usage?.tokens) + '</td>' +
+      '<td>' + renderStatusBadge(k.item_status) + '</td>' +
+      '<td class="text-right"><a class="btn btn-sm btn-outline" href="/apikeys">' + _t('View Key') + '</a></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function renderUpstreamKeys(keys) {
+  setHead('<tr>' +
+    '<th>' + _t('Upstream Key') + '</th>' +
+    '<th>' + _t('Top Utilization') + '</th>' +
+    '<th class="text-right">' + _t('Requests') + '</th>' +
+    '<th class="text-right">' + _t('Tokens') + '</th>' +
+    '<th>' + _t('Status') + '</th>' +
+    '<th class="text-right">' + _t('Actions') + '</th>' +
+  '</tr>');
+  var tbody = document.getElementById('rate-limit-body');
+  if (!keys.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-muted text-center py-8">' + _t('No data') + '</td></tr>';
+    return;
+  }
+  tbody.innerHTML = keys.map(function(k) {
+    var limits = k.limits || {};
+    var enabledBadge = k.enabled ? '<span class="badge badge-success">' + _t('Enabled') + '</span>' : '<span class="badge badge-muted">' + _t('Disabled') + '</span>';
+    return '<tr>' +
+      '<td>' +
+        '<div class="flex flex-col gap-1">' +
+          '<span class="font-medium">' + escapeHtml(k.name) + '</span>' +
+          '<span class="text-xs text-muted">' + escapeHtml(k.provider) + '</span>' +
+          enabledBadge +
+        '</div>' +
+      '</td>' +
+      '<td title="Quota is soft (routing reference only)">' + renderUtilBar(k.utilization, 'Util', limits) + softBadge() + '</td>' +
+      '<td class="text-right font-mono text-sm">' + fmtNum(k.usage?.requests) + '</td>' +
+      '<td class="text-right font-mono text-sm">' + fmtNum(k.usage?.tokens) + '</td>' +
+      '<td>' + renderStatusBadge(k.status) + '</td>' +
+      '<td class="text-right"><a class="btn btn-sm btn-outline" href="/admin/keypool">' + _t('Edit Key') + '</a></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function renderCapacity(data) {
+  document.getElementById('table-card').style.display = 'none';
+  document.getElementById('capacity-card').style.display = '';
+  var up = data.upstream || {};
+  var down = data.downstream || {};
+  var util = data.utilization || {};
+  var body = document.getElementById('capacity-body');
+
+  var cards = '<div class="stats-bar" style="margin-bottom:24px">' +
+    '<div class="stat-item"><div class="stat-content"><div class="stat-value">' + fmtNum(up.total_rpm) + '</div><div class="stat-label">' + _t('Upstream RPM') + '</div></div></div>' +
+    '<div class="stat-item"><div class="stat-content"><div class="stat-value">' + fmtNum(up.total_tpm) + '</div><div class="stat-label">' + _t('Upstream TPM') + '</div></div></div>' +
+    '<div class="stat-item"><div class="stat-content"><div class="stat-value">' + fmtNum(down.total_requests) + '</div><div class="stat-label">' + _t('Downstream Requests') + '</div></div></div>' +
+    '<div class="stat-item"><div class="stat-content"><div class="stat-value">' + fmtNum(down.total_tokens) + '</div><div class="stat-label">' + _t('Downstream Tokens') + '</div></div></div>' +
+  '</div>';
+
+  var peakCards = '<div class="stats-bar" style="margin-bottom:24px">' +
+    '<div class="stat-item"><div class="stat-content"><div class="stat-value">' + fmtNum(down.peak_rpm) + '</div><div class="stat-label">' + _t('Peak RPM') + '</div></div></div>' +
+    '<div class="stat-item"><div class="stat-content"><div class="stat-value">' + fmtNum(down.peak_tpm) + '</div><div class="stat-label">' + _t('Peak TPM') + '</div></div></div>' +
+    '<div class="stat-item"><div class="stat-content"><div class="stat-value">' + (down.avg_rpm ? down.avg_rpm.toFixed(1) : '0') + '</div><div class="stat-label">' + _t('Avg RPM') + '</div></div></div>' +
+    '<div class="stat-item"><div class="stat-content"><div class="stat-value">' + (down.avg_tpm ? down.avg_tpm.toFixed(0) : '0') + '</div><div class="stat-label">' + _t('Avg TPM') + '</div></div></div>' +
+  '</div>';
+
+  function capRow(label, u, total, unit) {
+    var v = util[u] || 0;
+    var pct = Math.min(100, Math.round(v * 100));
+    var cls = limitClass(pct);
+    return '<div style="margin-bottom:16px">' +
+      '<div class="limit-label"><span>' + _t(label) + '</span><span class="limit-value ' + cls + '">' + fmtNum(down[unit]) + ' / ' + fmtNum(total) + ' (' + fmtPct(v) + ')</span></div>' +
+      '<div class="progress-bar-bg" style="height:8px"><div class="progress-bar-fill ' + cls + '" style="width:' + pct + '%"></div></div>' +
+    '</div>';
+  }
+
+  var utilSection = '<div style="max-width:720px">' +
+    capRow('RPM Utilization', 'rpm', up.total_rpm, 'peak_rpm') +
+    capRow('TPM Utilization', 'tpm', up.total_tpm, 'peak_tpm') +
+    capRow('Quota Utilization', 'quota', up.total_quota, 'total_requests') +
+  '</div>';
+
+  body.innerHTML = cards + peakCards + utilSection;
+}
+
+loadCurrentTab();
+</script>
+
+<style>
+.rl-tab { padding: 10px 16px; border: none; background: transparent; border-bottom: 2px solid transparent; cursor: pointer; font-size: 14px; color: var(--text-muted); font-weight: 500; }
+.rl-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.rl-tab:hover { color: var(--primary); }
+.limit-cell { min-width: 120px; margin-bottom: 6px; }
+.limit-cell:last-child { margin-bottom: 0; }
+.badge-error { background: var(--error-bg); color: var(--error-text); }
+.badge-warning { background: var(--warning-bg); color: var(--warning-text); }
+.limit-label { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 2px; }
+.limit-value.low { color: var(--success-text); }
+.limit-value.medium { color: var(--warning-text); }
+.limit-value.high { color: var(--error-text); }
+.limit-badges { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
+#rate-limit-table td { vertical-align: top; }
+.progress-bar-bg { background: var(--bg-hover); border-radius: 2px; height: 4px; overflow: hidden; }
+.progress-bar-fill { height: 100%; border-radius: 2px; }
+.progress-bar-fill.low { background: var(--success); }
+.progress-bar-fill.medium { background: var(--warning); }
+.progress-bar-fill.high { background: var(--error); }
+</style>
+{{end}}

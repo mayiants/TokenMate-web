@@ -1,0 +1,46 @@
+{{define "audit-log-detail-partial"}}
+{{if .Error}}
+<div class="text-center py-4 text-muted">{{.Error}}</div>
+{{else}}
+<div class="space-y-4">
+  <div class="flex justify-between">
+    <span class="text-muted">ID:</span>
+    <span class="font-mono">{{.ID}}</span>
+  </div>
+  <div class="flex justify-between">
+    <span class="text-muted">{{t "Time"}}:</span>
+    <span>{{formatDateTime .CreatedAt .Timezone}}</span>
+  </div>
+  <div class="flex justify-between">
+    <span class="text-muted">{{t "User"}}:</span>
+    <span>{{.Email}}</span>
+  </div>
+  <div class="flex justify-between">
+    <span class="text-muted">{{t "Category"}}:</span>
+    <span class="badge badge-info">{{.Category}}</span>
+  </div>
+  <div class="flex justify-between">
+    <span class="text-muted">{{t "Action"}}:</span>
+    <code class="text-sm">{{.Action}}</code>
+  </div>
+  <div class="flex justify-between">
+    <span class="text-muted">{{t "Level"}}:</span>
+    <span class="badge badge-{{if eq .Level "error"}}error{{else if eq .Level "warning"}}warning{{else}}success{{end}}">{{.Level}}</span>
+  </div>
+  <div>
+    <span class="text-muted">{{t "Message"}}:</span>
+    <div class="mt-2 p-3 rounded" style="background:var(--bg-hover)">
+      <pre class="text-sm whitespace-pre-wrap">{{.Message}}</pre>
+    </div>
+  </div>
+  {{if .Details}}
+  <div>
+    <span class="text-muted">{{t "Details"}}:</span>
+    <div class="mt-2 p-3 rounded" style="background:var(--bg-hover)">
+      <pre class="text-sm whitespace-pre-wrap">{{.Details}}</pre>
+    </div>
+  </div>
+  {{end}}
+</div>
+{{end}}
+{{end}}

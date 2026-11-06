@@ -1,0 +1,271 @@
+{{define "content"}}
+{{$admins := .Data}}
+<div class="page-header">
+  <h1 class="page-title">{{t "System / Super Admin Settings"}}</h1>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Admin Config"}}</h2>
+  </div>
+  <div class="flash flash-warning mb-4">
+    <strong>{{t "Warning"}}</strong> {{t "Super admins have the highest privileges. Proceed with caution."}}
+  </div>
+  {{if $admins}}
+  <div class="data-table-wrapper mt-4">
+    <table class="data-table du-table du-table-zebra">
+      <thead>
+        <tr>
+          <th>{{t "Email"}}</th>
+          <th>{{t "Name"}}</th>
+          <th>{{t "Role"}}</th>
+          <th>{{t "Created"}}</th>
+          <th>{{t "Actions"}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range $admins}}
+        <tr>
+          <td>{{.Email}}</td>
+          <td>{{.Name}}</td>
+          <td>{{role .Role}}</td>
+          <td>{{formatDate .CreatedAt $.Timezone}}</td>
+          <td>
+            {{if eq .Role "system_admin"}}
+            <button type="button" class="btn btn-sm btn-success" onclick="promoteAdmin('{{.ID}}')">{{t "Promote"}}</button>
+            {{else if eq .Role "super_admin"}}
+            <button type="button" class="btn btn-sm btn-danger" onclick="demoteAdmin('{{.ID}}')">{{t "Demote"}}</button>
+            {{end}}
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <div class="empty-state-sm">
+    <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <p class="empty-state-title">{{t "No data"}}</p>
+  </div>
+  {{end}}
+</div>
+
+<div class="card mt-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Add Admin"}}</h2>
+  </div>
+  <form id="add-admin-form" onsubmit="return false;">
+    <div class="form-group">
+      <label class="form-label" for="add-admin-email">{{t "Email Address"}}</label>
+      <input type="email" id="add-admin-email" name="email" class="form-input du-input du-input-bordered" required placeholder="admin@example.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="add-admin-name">{{t "Name"}}</label>
+      <input type="text" id="add-admin-name" name="name" class="form-input du-input du-input-bordered" placeholder="{{t "Optional"}}">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="add-admin-password">{{t "Password"}}</label>
+      <input type="password" id="add-admin-password" name="password" class="form-input du-input du-input-bordered" required minlength="8" autocomplete="new-password">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="add-admin-role">{{t "Role"}}</label>
+      <select id="add-admin-role" name="role" class="form-select du-select du-select-bordered" aria-label="Role">
+        <option value="system_admin">{{t "role.system_admin"}}</option>
+      </select>
+    </div>
+    <button type="button" class="btn btn-primary" onclick="addAdmin()">{{t "Add Admin"}}</button>
+  </form>
+</div>
+
+<div class="card mt-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "SMTP Settings"}}</h2>
+    <span id="smtp-source-badge" class="text-muted text-xs"></span>
+  </div>
+  <div id="smtp-message" class="flash mb-4" style="display:none;"></div>
+  <div class="form-group">
+    <label class="form-label" for="smtp-host">{{t "SMTP Host"}}</label>
+    <input id="smtp-host" type="text" class="form-input du-input du-input-bordered" placeholder="smtp.example.com">
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="smtp-port">{{t "SMTP Port"}}</label>
+    <input id="smtp-port" type="number" class="form-input du-input du-input-bordered" placeholder="465">
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="smtp-secure" style="display:flex;align-items:center;gap:8px;">
+      <input id="smtp-secure" type="checkbox" style="width:auto;"> {{t "Use SSL/TLS"}}
+    </label>
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="smtp-user">{{t "SMTP User"}}</label>
+    <input id="smtp-user" type="text" class="form-input du-input du-input-bordered">
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="smtp-password">{{t "SMTP Password"}}</label>
+    <input id="smtp-password" type="password" class="form-input du-input du-input-bordered" autocomplete="new-password">
+    <p class="text-xs text-muted mt-1">{{t "Leave blank to keep current password"}}</p>
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="smtp-from">{{t "Sender Address (From)"}}</label>
+    <input id="smtp-from" type="text" class="form-input du-input du-input-bordered">
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="smtp-test-to">{{t "Test recipient email"}}</label>
+    <input id="smtp-test-to" type="text" class="form-input du-input du-input-bordered" placeholder="admin@example.com">
+  </div>
+  <div class="flex gap-2 items-center flex-wrap">
+    <button type="button" class="btn btn-primary" onclick="saveSmtp()">{{t "Save"}}</button>
+    <button type="button" class="btn btn-secondary" onclick="testSmtp()">{{t "Send Test Email"}}</button>
+    <button type="button" class="btn btn-danger" onclick="resetSmtp()">{{t "Reset to env"}}</button>
+  </div>
+</div>
+
+<style>
+.page-header { margin-bottom: 24px; }
+</style>
+
+<script>
+var executeConfirm = executeGlobalConfirm;
+initTablePagination('.data-table');
+
+function addAdmin() {
+  var email = document.getElementById('add-admin-email').value.trim();
+  var name = document.getElementById('add-admin-name').value.trim();
+  var password = document.getElementById('add-admin-password').value;
+  var role = document.getElementById('add-admin-role').value;
+  if (!email || !password) { showMessage(_t('Error'), _t('Email and password are required')); return; }
+
+  fetch('/api/admin/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email, name: name, password: password, role: role })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+      if (result.success) {
+        showMessage(_t('Added'), _t('Admin added'));
+        setTimeout(function() { window.location.reload(); }, 1000);
+      } else {
+        showMessage(_t('Add failed'), result.error ? result.error.message : _t('Unknown error'));
+      }
+    })
+    .catch(function(e) { showMessage(_t('Request failed'), e.message); });
+}
+
+function promoteAdmin(userId) {
+  showConfirm(_t('Confirm Promotion'), _t('Are you sure you want to promote this user to super admin?'), function() {
+    fetch('/api/admin/users/' + userId + '/promote', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+      .then(function(r) { return r.json(); })
+      .then(function(result) {
+        if (result.success) {
+          showMessage(_t('Promoted'), _t('User promoted to super admin'));
+          setTimeout(function() { window.location.reload(); }, 1000);
+        } else {
+          showMessage(_t('Promotion failed'), result.error ? result.error.message : _t('Unknown error'));
+        }
+      })
+      .catch(function(e) { showMessage(_t('Request failed'), e.message); });
+  });
+}
+
+function demoteAdmin(userId) {
+  showConfirm(_t('Confirm Demotion'), _t('Are you sure you want to demote this user?'), function() {
+    fetch('/api/admin/users/' + userId + '/demote', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+      .then(function(r) { return r.json(); })
+      .then(function(result) {
+        if (result.success) {
+          showMessage(_t('Demoted'), _t('User demoted'));
+          setTimeout(function() { window.location.reload(); }, 1000);
+        } else {
+          showMessage(_t('Demotion failed'), result.error ? result.error.message : _t('Unknown error'));
+        }
+      })
+      .catch(function(e) { showMessage(_t('Request failed'), e.message); });
+  });
+}
+
+function showSmtpMessage(text, ok) {
+  var el = document.getElementById('smtp-message');
+  el.textContent = text;
+  el.style.display = 'block';
+  el.className = 'flash mb-4 ' + (ok ? 'flash-success' : 'flash-error');
+}
+
+function loadSmtp() {
+  fetch('/api/admin/settings/smtp-config')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var cfg = data.config || {};
+      document.getElementById('smtp-host').value = cfg.host || '';
+      document.getElementById('smtp-port').value = cfg.port || '';
+      document.getElementById('smtp-secure').checked = !!cfg.secure;
+      document.getElementById('smtp-user').value = cfg.user || '';
+      document.getElementById('smtp-from').value = cfg.from || '';
+      var pw = document.getElementById('smtp-password');
+      pw.value = '';
+      pw.placeholder = data.has_password ? '•••••••• (set)' : _t('Not set');
+      document.getElementById('smtp-source-badge').textContent =
+        _t('Source') + ': ' + (data.source === 'db' ? _t('Database') : _t('Environment'));
+    })
+    .catch(function(e) { showSmtpMessage(_t('Failed to load SMTP settings') + ': ' + e.message, false); });
+}
+
+function saveSmtp() {
+  var body = {
+    host: document.getElementById('smtp-host').value,
+    port: parseInt(document.getElementById('smtp-port').value, 10) || 0,
+    secure: document.getElementById('smtp-secure').checked,
+    user: document.getElementById('smtp-user').value,
+    password: document.getElementById('smtp-password').value,
+    from: document.getElementById('smtp-from').value
+  };
+  fetch('/api/admin/settings/smtp-config', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+      if (result.success) {
+        showSmtpMessage(_t('SMTP settings saved'), true);
+        loadSmtp();
+      } else {
+        showSmtpMessage(result.error ? result.error.message : _t('Save failed'), false);
+      }
+    })
+    .catch(function(e) { showSmtpMessage(_t('Request failed') + ': ' + e.message, false); });
+}
+
+function testSmtp() {
+  var to = document.getElementById('smtp-test-to').value;
+  fetch('/api/admin/settings/smtp-config/test', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: to })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+      if (result.success) {
+        showSmtpMessage(_t('Test email sent'), true);
+      } else {
+        showSmtpMessage(result.error ? result.error.message : _t('Send failed'), false);
+      }
+    })
+    .catch(function(e) { showSmtpMessage(_t('Request failed') + ': ' + e.message, false); });
+}
+
+function resetSmtp() {
+  showConfirm(_t('Reset to env'), _t('Reset SMTP settings to environment configuration?'), function() {
+    fetch('/api/admin/settings/smtp-config', { method: 'DELETE' })
+      .then(function(r) { return r.json(); })
+      .then(function(result) {
+        if (result.success) {
+          showSmtpMessage(_t('SMTP settings reset to environment'), true);
+          loadSmtp();
+        } else {
+          showSmtpMessage(result.error ? result.error.message : _t('Reset failed'), false);
+        }
+      })
+      .catch(function(e) { showSmtpMessage(_t('Request failed') + ': ' + e.message, false); });
+  });
+}
+
+loadSmtp();
+</script>
+{{end}}

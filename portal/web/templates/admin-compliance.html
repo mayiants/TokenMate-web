@@ -1,0 +1,226 @@
+{{define "content"}}
+<div class="page-header">
+  <h1 class="page-title">{{t "Compliance"}}</h1>
+</div>
+
+<!-- User Data Export (ad-hoc, for regulators / upstream audits) -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "User Data Export"}}</h2>
+  </div>
+  <div class="card-body">
+    <p class="text-sm text-muted mb-4">{{t "Search any user and export their complete data as JSON (for regulatory or upstream provider audits). Pending-deletion accounts can also be exported below."}}</p>
+    <div class="flex gap-2 mb-4">
+      <label for="user-search" class="visually-hidden">{{t "Search by email or name..."}}</label>
+      <input type="text" id="user-search" class="form-input form-input-sm du-input du-input-bordered" style="width:220px" placeholder="{{t "Search by email or name..."}}" onkeydown="if(event.key==='Enter')searchUsers()" aria-label="{{t "Search by email or name..."}}">
+      <button class="btn btn-primary btn-sm" onclick="searchUsers()">{{t "Search"}}</button>
+    </div>
+    <div class="data-table-wrapper">
+      <table class="data-table du-table du-table-zebra">
+        <thead>
+          <tr>
+            <th>{{t "Email"}}</th>
+            <th>{{t "Name"}}</th>
+            <th>{{t "Role"}}</th>
+            <th>{{t "Status"}}</th>
+            <th>{{t "Actions"}}</th>
+          </tr>
+        </thead>
+        <tbody id="user-search-body">
+          <tr><td colspan="5" class="text-muted text-sm">{{t "Enter a search term"}}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Full Export Requests -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Full Export Requests"}}</h2>
+    <button class="btn btn-secondary" onclick="loadCompliance()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>{{t "Refresh"}}</button>
+  </div>
+  <div class="card-body">
+    <div class="data-table-wrapper">
+      <table class="data-table du-table du-table-zebra">
+        <thead>
+          <tr>
+            <th>{{t "Requested At"}}</th>
+            <th>{{t "User"}}</th>
+            <th>{{t "Delivery Email"}}</th>
+            <th>{{t "Status"}}</th>
+            <th>{{t "Processed At"}}</th>
+            <th>{{t "Actions"}}</th>
+          </tr>
+        </thead>
+        <tbody id="export-requests-body">
+          <tr><td colspan="6" class="text-muted text-sm">{{t "Loading..."}}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Pending Deletions -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Pending Deletions"}}</h2>
+    <span class="text-muted text-sm" id="retention-note"></span>
+  </div>
+  <div class="card-body">
+    <p class="text-sm text-muted mb-4">{{t "Accounts awaiting deferred erasure. Data can be exported for compliance audits until the retention window expires."}}</p>
+    <div class="data-table-wrapper">
+      <table class="data-table du-table du-table-zebra">
+        <thead>
+          <tr>
+            <th>{{t "Email"}}</th>
+            <th>{{t "Name"}}</th>
+            <th>{{t "Requested At"}}</th>
+            <th>{{t "Days Remaining"}}</th>
+            <th>{{t "Actions"}}</th>
+          </tr>
+        </thead>
+        <tbody id="pending-deletions-body">
+          <tr><td colspan="5" class="text-muted text-sm">{{t "Loading..."}}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Data Retention -->
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Data Retention"}}</h2>
+  </div>
+  <div class="card-body">
+    <ul class="text-sm list-disc list-inside">
+      <li>{{t "Portal-side retention cleanup runs at startup and every 24 hours with built-in per-table windows (e.g. audit_logs 7 years); set PORTAL_RETENTION_DAYS env to override all windows globally."}}</li>
+      <li>{{t "Deleted-account PII is erased after the gdpr_retention_days window (default 90 days), configurable under System Settings > Compliance."}}</li>
+      <li>{{t "Proxy-side request/response payload retention (RETENTION_ENABLED, RETENTION_MAX_AGE on ai-proxy-go) stores gzip JSONL on the proxy host for upstream provider audits."}}</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+function _fmtTime(t) { return formatDateTime(t); }
+function _esc(s) {
+  var d = document.createElement('div');
+  d.textContent = s == null ? '' : String(s);
+  return d.innerHTML;
+}
+
+async function loadCompliance() {
+  try {
+    var res = await fetch('/api/gdpr/admin/export-requests', { credentials: 'same-origin' });
+    var data = await res.json();
+    var reqs = data.requests || [];
+    var body = document.getElementById('export-requests-body');
+    if (reqs.length === 0) {
+      body.innerHTML = '<tr><td colspan="6" class="text-muted text-sm">' + _t('No export requests') + '</td></tr>';
+    } else {
+      body.innerHTML = reqs.map(function(r) {
+        var action = r.status === 'pending'
+          ? '<button class="btn btn-sm btn-primary" onclick="processExport(\'' + r.id + '\', this)">' + _t('Process') + '</button>'
+          : '<span class="text-muted text-sm">-</span>';
+        return '<tr>' +
+          '<td class="text-sm">' + _fmtTime(r.requested_at) + '</td>' +
+          '<td class="text-sm">' + _esc(r.user_email) + '</td>' +
+          '<td class="text-sm">' + _esc(r.email) + '</td>' +
+          '<td><span class="badge ' + (r.status === 'pending' ? 'badge-warning' : 'badge-success') + '">' + _esc(r.status) + '</span></td>' +
+          '<td class="text-sm">' + _fmtTime(r.processed_at) + '</td>' +
+          '<td>' + action + '</td>' +
+          '</tr>';
+      }).join('');
+    }
+  } catch (e) {
+    document.getElementById('export-requests-body').innerHTML =
+      '<tr><td colspan="6" class="text-error text-sm">' + _t('Load failed') + '</td></tr>';
+  }
+
+  try {
+    var res2 = await fetch('/api/gdpr/admin/pending-deletions', { credentials: 'same-origin' });
+    var data2 = await res2.json();
+    var items = data2.pending_deletions || [];
+    document.getElementById('retention-note').textContent =
+      _t('Retention window') + ': ' + (data2.retention_days || 90) + ' ' + _t('days');
+    var body2 = document.getElementById('pending-deletions-body');
+    if (items.length === 0) {
+      body2.innerHTML = '<tr><td colspan="5" class="text-muted text-sm">' + _t('No pending deletions') + '</td></tr>';
+    } else {
+      body2.innerHTML = items.map(function(u) {
+        return '<tr>' +
+          '<td class="text-sm">' + _esc(u.email) + '</td>' +
+          '<td class="text-sm">' + _esc(u.name) + '</td>' +
+          '<td class="text-sm">' + _fmtTime(u.requested_at) + '</td>' +
+          '<td class="text-sm">' + u.days_remaining + '</td>' +
+          '<td>' +
+            '<button class="btn btn-secondary" onclick="downloadExport(\'/api/gdpr/admin/users/' + u.user_id + '/export\', \'user-export-\' + (u.user_id || \'\').slice(0, 8) + \'.json\')">' + _t('Export Data') + '</button> ' +
+            '<button class="btn btn-sm btn-danger" onclick="anonymizeNow(\'' + u.user_id + '\', \'' + _esc(u.email) + '\', this)">' + _t('Anonymize Now') + '</button>' +
+          '</td>' +
+          '</tr>';
+      }).join('');
+    }
+  } catch (e) {
+    document.getElementById('pending-deletions-body').innerHTML =
+      '<tr><td colspan="5" class="text-error text-sm">' + _t('Load failed') + '</td></tr>';
+  }
+}
+
+async function searchUsers() {
+  var q = document.getElementById('user-search').value.trim();
+  if (!q) return;
+  var body = document.getElementById('user-search-body');
+  body.innerHTML = '<tr><td colspan="5" class="text-muted text-sm">' + _t('Loading...') + '</td></tr>';
+  try {
+    var res = await fetch('/api/admin/users?search=' + encodeURIComponent(q), { credentials: 'same-origin' });
+    var data = await res.json();
+    var users = data.users || [];
+    if (users.length === 0) {
+      body.innerHTML = '<tr><td colspan="5" class="text-muted text-sm">' + _t('No users found') + '</td></tr>';
+      return;
+    }
+    body.innerHTML = users.map(function(u) {
+      return '<tr>' +
+        '<td class="text-sm">' + _esc(u.email) + '</td>' +
+        '<td class="text-sm">' + _esc(u.name) + '</td>' +
+        '<td class="text-sm">' + _esc(u.role) + '</td>' +
+        '<td class="text-sm">' + _esc(u.status) + '</td>' +
+        '<td><button class="btn btn-secondary" onclick="downloadExport(\'/api/gdpr/admin/users/' + u.id + '/export\', \'user-export-\' + (u.id || \'\').slice(0, 8) + \'.json\')">' + _t('Export Data') + '</button></td>' +
+        '</tr>';
+    }).join('');
+  } catch (e) {
+    body.innerHTML = '<tr><td colspan="5" class="text-error text-sm">' + _t('Load failed') + '</td></tr>';
+  }
+}
+
+async function processExport(id, btn) {
+  btn.disabled = true;
+  try {
+    var res = await fetch('/api/gdpr/admin/export-requests/' + id + '/process', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    var data = await res.json();
+    if (data.success) { showToast('success', _t('Operation completed')); loadCompliance(); }
+    else { btn.disabled = false; showToast('error', (data.error && data.error.message) || _t('Operation failed')); }
+  } catch (e) { btn.disabled = false; showToast('error', e.message); }
+}
+
+async function anonymizeNow(userId, email, btn) {
+  if (!confirm(_t('Permanently erase this account now? This cannot be undone.') + '\n' + email)) return;
+  btn.disabled = true;
+  try {
+    var res = await fetch('/api/gdpr/admin/pending-deletions/' + userId + '/anonymize', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    var data = await res.json();
+    if (data.success) { showToast('success', _t('Operation completed')); loadCompliance(); }
+    else { btn.disabled = false; showToast('error', (data.error && data.error.message) || _t('Operation failed')); }
+  } catch (e) { btn.disabled = false; showToast('error', e.message); }
+}
+
+loadCompliance();
+</script>
+{{end}}

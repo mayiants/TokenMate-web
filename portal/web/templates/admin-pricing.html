@@ -1,0 +1,584 @@
+{{define "content"}}
+<div class="page-header">
+  <h1 class="page-title">{{t "Pricing Rules"}}</h1>
+  <p class="text-muted">{{t "Manage model pricing rules for billing calculation"}}</p>
+</div>
+
+<div class="stats-bar" id="pricing-stats">
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-primary">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value" id="stat-total-rules">-</div>
+      <div class="stat-label">{{t "Total Rules"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-success">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value" id="stat-active-rules">-</div>
+      <div class="stat-label">{{t "Active Rules"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-warning">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value" id="stat-disabled-rules">-</div>
+      <div class="stat-label">{{t "Disabled Rules"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-info">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value" id="stat-providers-count">-</div>
+      <div class="stat-label">{{t "Providers"}}</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <h2 class="card-title">{{t "Model Pricing Rules"}}</h2>
+    <div class="flex gap-2">
+      <button class="btn btn-primary btn-sm" onclick="openPricingEditDrawer()">{{t "Add Rule"}}</button>
+      <button class="btn btn-secondary" onclick="exportPricingCSV()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>{{t "Export CSV"}}</button>
+      <label class="btn btn-secondary" style="cursor:pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        {{t "Import CSV"}}
+        <input type="file" id="csv-import-input" accept=".csv" style="display:none" onchange="importPricingCSV(this)">
+      </label>
+    </div>
+  </div>
+
+  <div class="key-search-bar">
+    <label for="filter-provider" class="visually-hidden">{{t "Provider"}}</label>
+    <select id="filter-provider" class="form-select form-select-sm du-select du-select-bordered" style="width:160px" onchange="loadPricingRules()" aria-label="{{t "Provider"}}">
+      <option value="">{{t "All Providers"}}</option>
+    </select>
+    <label for="filter-search" class="visually-hidden">{{t "Search model / region"}}</label>
+    <input type="text" id="filter-search" class="form-input form-input-sm du-input du-input-bordered" placeholder='{{t "Search model / region"}}' style="width:220px" oninput="debounceSearch()" aria-label="{{t "Search model / region"}}">
+    <label for="filter-mode" class="visually-hidden">{{t "Billing Mode"}}</label>
+    <select id="filter-mode" class="form-select form-select-sm du-select du-select-bordered" style="width:140px" onchange="loadPricingRules()" aria-label="{{t "Billing Mode"}}">
+      <option value="">{{t "All Modes"}}</option>
+      <option value="flat">Flat</option>
+      <option value="tiered">Tiered</option>
+      <option value="tiered_context">Tiered (Context)</option>
+      <option value="time_based">Time-based</option>
+      <option value="media">Media</option>
+    </select>
+    <label for="filter-status" class="visually-hidden">{{t "Status"}}</label>
+    <select id="filter-status" class="form-select form-select-sm du-select du-select-bordered" style="width:120px" onchange="loadPricingRules()" aria-label="{{t "Status"}}">
+      <option value="">{{t "All Statuses"}}</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+    </select>
+    <span class="text-sm text-muted" id="result-count"></span>
+  </div>
+
+  <div class="data-table-wrapper">
+    <table class="data-table du-table du-table-zebra" id="pricing-table">
+      <thead>
+        <tr>
+          <th>{{t "Provider"}}</th>
+          <th>{{t "Region"}}</th>
+          <th>{{t "Model"}}</th>
+          <th>{{t "Mode"}}</th>
+          <th>{{t "Prices"}}</th>
+          <th>{{t "Priority"}}</th>
+          <th>{{t "Status"}}</th>
+          <th style="text-align:right">{{t "Actions"}}</th>
+        </tr>
+      </thead>
+      <tbody id="pricing-body">
+        <tr><td colspan="8" class="text-center text-muted py-4">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Edit Pricing Rule Drawer -->
+<div id="pricing-edit-backdrop" class="drawer-backdrop" onclick="closePricingEditDrawer()"></div>
+<div id="pricing-edit-drawer" class="drawer">
+  <div class="drawer-header">
+    <span class="drawer-title" id="pricing-edit-title">{{t "Add Pricing Rule"}}</span>
+    <button class="drawer-close" onclick="closePricingEditDrawer()">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <input type="hidden" id="pricing-edit-id">
+    <div class="form-row" style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="form-group" style="flex:1;min-width:140px"><label class="form-label" for="pricing-edit-provider">{{t "Provider"}}</label><input type="text" id="pricing-edit-provider" class="form-input du-input du-input-bordered" value="*"></div>
+      <div class="form-group" style="flex:1;min-width:140px"><label class="form-label" for="pricing-edit-region">{{t "Region"}}</label><input type="text" id="pricing-edit-region" class="form-input du-input du-input-bordered" value="*"></div>
+    </div>
+    <div class="form-row" style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="form-group" style="flex:1;min-width:200px"><label class="form-label" for="pricing-edit-product-id">{{t "Product ID"}}</label><input type="text" id="pricing-edit-product-id" class="form-input du-input du-input-bordered"></div>
+      <div class="form-group" style="flex:1;min-width:200px"><label class="form-label" for="pricing-edit-api-name">{{t "API Model Name"}}</label><input type="text" id="pricing-edit-api-name" class="form-input du-input du-input-bordered"></div>
+    </div>
+    <div class="form-row" style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="form-group" style="flex:1;min-width:150px"><label class="form-label" for="pricing-edit-mode">{{t "Billing Mode"}}</label><select id="pricing-edit-mode" class="form-select du-select du-select-bordered" onchange="onPricingModeChange()"><option value="flat">Flat</option><option value="tiered">Tiered</option><option value="tiered_context">Tiered (Context)</option><option value="time_based">Time-based</option><option value="media">Media</option></select></div>
+      <div class="form-group" style="flex:1;min-width:120px"><label class="form-label" for="pricing-edit-currency">{{t "Currency"}}</label><input type="text" id="pricing-edit-currency" class="form-input du-input du-input-bordered" value="USD"></div>
+      <div class="form-group" style="flex:1;min-width:120px"><label class="form-label" for="pricing-edit-timezone">{{t "Timezone"}}</label><input type="text" id="pricing-edit-timezone" class="form-input du-input du-input-bordered" value="UTC"></div>
+    </div>
+    <input type="hidden" id="pricing-edit-status">
+    <div class="form-row" style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="form-group" style="flex:1;min-width:120px">
+        <label class="form-label" for="pricing-edit-priority">{{t "Priority"}} <span class="text-muted" title="{{t "Higher number wins. Global fallback uses -100. Range -1000 ~ 1000."}}">(?)</span></label>
+        <input type="number" id="pricing-edit-priority" class="form-input du-input du-input-bordered" value="0" min="-1000" max="1000">
+      </div>
+      <div class="form-group" style="flex:1;min-width:200px">
+        <label class="form-label" for="pricing-edit-name">{{t "Rule Name"}} <span class="text-muted" title="{{t "Human-readable label, e.g. Global fallback or AWS us.gpt-4. Auto-generated if empty."}}">(?)</span></label>
+        <input type="text" id="pricing-edit-name" class="form-input du-input du-input-bordered">
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label" for="pricing-edit-note">{{t "Note"}}</label><input type="text" id="pricing-edit-note" class="form-input du-input du-input-bordered"></div>
+
+    <div id="pricing-flat-editor" class="pricing-editor">
+      <label class="form-label">{{t "Flat Prices ($/1M or $/request)"}}</label>
+      <div class="form-row" style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="form-group" style="flex:1;min-width:120px"><label class="text-xs" for="flat-input">Input</label><input type="number" id="flat-input" class="form-input du-input du-input-bordered" step="0.001"></div>
+        <div class="form-group" style="flex:1;min-width:120px"><label class="text-xs" for="flat-output">Output</label><input type="number" id="flat-output" class="form-input du-input du-input-bordered" step="0.001"></div>
+        <div class="form-group" style="flex:1;min-width:120px"><label class="text-xs" for="flat-cache-hit">Cache Hit</label><input type="number" id="flat-cache-hit" class="form-input du-input du-input-bordered" step="0.001"></div>
+      </div>
+      <div class="form-row" style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="form-group" style="flex:1;min-width:120px"><label class="text-xs" for="flat-cache-write">Cache Write</label><input type="number" id="flat-cache-write" class="form-input du-input du-input-bordered" step="0.001"></div>
+        <div class="form-group" style="flex:1;min-width:120px"><label class="text-xs" for="flat-reasoning">Reasoning</label><input type="number" id="flat-reasoning" class="form-input du-input du-input-bordered" step="0.001"></div>
+        <div class="form-group" style="flex:1;min-width:120px"><label class="text-xs" for="flat-fixed">Fixed/Req</label><input type="number" id="flat-fixed" class="form-input du-input du-input-bordered" step="0.001"></div>
+      </div>
+    </div>
+
+    <div id="pricing-tiered-editor" class="pricing-editor" style="display:none">
+      <label class="form-label">{{t "Token Tiers"}}</label>
+      <div id="tier-rows"></div>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="addTierRow()">{{t "Add Tier"}}</button>
+    </div>
+
+    <div id="pricing-time-editor" class="pricing-editor" style="display:none">
+      <label class="form-label">{{t "Time Windows"}}</label>
+      <div id="time-rows"></div>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="addTimeRow()">{{t "Add Time Window"}}</button>
+    </div>
+
+    <div id="pricing-media-editor" class="pricing-editor" style="display:none">
+      <label class="form-label">{{t "Media Variant Prices"}}</label>
+      <div class="form-row" style="display:flex;gap:12px;flex-wrap:wrap">
+        <div class="form-group" style="flex:1;min-width:140px">
+          <label class="text-xs" for="media-block-seconds">{{t "Block Seconds"}}</label>
+          <input type="number" id="media-block-seconds" class="form-input du-input du-input-bordered" step="1" min="1" placeholder="1">
+        </div>
+        <div class="form-group" style="flex:1;min-width:140px">
+          <label class="text-xs" for="media-fixed">{{t "Fixed/Req"}}</label>
+          <input type="number" id="media-fixed" class="form-input du-input du-input-bordered" step="0.001" value="0.001">
+        </div>
+      </div>
+      <div id="media-variant-rows"></div>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="addMediaVariantRow()">{{t "Add Variant"}}</button>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-secondary" onclick="closePricingEditDrawer()">{{t "Cancel"}}</button>
+    <button class="btn btn-primary" onclick="submitPricingEdit()">{{t "Save"}}</button>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="pricing-delete-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header"><span class="modal-title">{{t "Delete Rule"}}</span><button class="modal-close" onclick="closePricingDeleteModal()">&times;</button></div>
+    <div class="modal-body"><p>{{t "Delete this pricing rule?"}}</p></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closePricingDeleteModal()">{{t "Cancel"}}</button>
+      <button class="btn btn-danger" onclick="submitPricingDelete()">{{t "Delete"}}</button>
+    </div>
+  </div>
+</div>
+<div id="pricing-delete-backdrop" class="modal-backdrop" style="display:none" onclick="closePricingDeleteModal()"></div>
+
+<script>
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+function loadPricingRules(){
+  var params=new URLSearchParams();
+  var provider=document.getElementById('filter-provider').value;
+  var search=document.getElementById('filter-search').value;
+  var mode=document.getElementById('filter-mode').value;
+  var status=document.getElementById('filter-status').value;
+  if(provider)params.set('provider',provider);
+  if(search)params.set('model',search);
+  if(mode)params.set('billing_mode',mode);
+  if(status)params.set('status',status);
+  fetch('/api/admin/pricing?'+params.toString())
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var rules=data.rules||[];
+      var tbody=document.getElementById('pricing-body');
+      document.getElementById('result-count').textContent=rules.length+' rules';
+      updatePricingStats(rules);
+      populateProviderFilter(rules);
+      if(rules.length===0){tbody.innerHTML='<tr><td colspan="8" class="text-center text-muted py-4">{{t "No pricing rules"}}</td></tr>';return;}
+      tbody.innerHTML=rules.map(function(r){
+        var modelName=r.api_model_name||r.product_id||'*';
+        var pricesSummary='';
+        if(r.billing_mode==='media' && r.prices && r.prices.variants && r.prices.variants.length){pricesSummary=r.prices.variants.length+' variants';}
+        else if(r.prices){pricesSummary='In:'+(r.prices.input||0)+' Out:'+(r.prices.output||0)+' Fixed:'+(r.prices.fixed_request||0);}
+        if(r.tiers&&r.tiers.length){pricesSummary=r.tiers.length+' tiers';}
+        if(r.time_rules&&r.time_rules.length){pricesSummary=r.time_rules.length+' windows';}
+        var variantBadge='';
+        var cellTitle='';
+        if(r.billing_mode==='media' || (r.note && r.note.indexOf(':')!==-1)){
+          variantBadge=' <span class="badge badge-info" style="font-size:10px;font-weight:400">'+_t('Variants')+'</span>';
+          cellTitle=' title="'+esc(r.note||'')+'"';
+        }
+        return '<tr>'+
+          '<td>'+esc(r.provider||'')+'</td>'+
+          '<td>'+esc(r.region||'')+'</td>'+
+          '<td>'+esc(modelName)+'</td>'+
+          '<td><span class="badge badge-secondary">'+esc(r.billing_mode||'')+'</span></td>'+
+          '<td'+cellTitle+'>'+esc(pricesSummary)+variantBadge+'</td>'+
+          '<td>'+esc(r.priority)+'</td>'+
+          '<td>'+esc(r.status||'')+'</td>'+
+          '<td style="text-align:right"><div class="flex gap-1" style="justify-content:flex-end">'+
+            '<button class="btn btn-sm btn-secondary" onclick="openPricingEditDrawer(\''+r.id+'\')">{{t "Edit"}}</button>'+
+            '<button class="btn btn-sm '+(r.status==='active'?'btn-warning':'btn-success')+'" onclick="togglePricingStatus(\''+r.id+'\')">'+(r.status==='active'?'{{t "Deactivate"}}':'{{t "Activate"}}')+'</button>'+
+            '<button class="btn btn-sm btn-error btn-ghost" onclick="openPricingDeleteModal(\''+r.id+'\')">{{t "Delete"}}</button>'+
+          '</div></td></tr>';
+      }).join('');
+    });
+}
+var searchDebounce=null;
+function debounceSearch(){clearTimeout(searchDebounce);searchDebounce=setTimeout(loadPricingRules,400);}
+function updatePricingStats(rules){
+  var active=0,disabled=0,providers={};
+  rules.forEach(function(r){
+    if(r.status==='active')active++;else disabled++;
+    if(r.provider)providers[r.provider]=true;
+  });
+  document.getElementById('stat-total-rules').textContent=rules.length;
+  document.getElementById('stat-active-rules').textContent=active;
+  document.getElementById('stat-disabled-rules').textContent=disabled;
+  document.getElementById('stat-providers-count').textContent=Object.keys(providers).length;
+}
+var providerListLoaded=false;
+function populateProviderFilter(rules){
+  if(providerListLoaded)return;
+  providerListLoaded=true;
+  var sel=document.getElementById('filter-provider');
+  var seen={};
+  rules.forEach(function(r){if(r.provider&&!seen[r.provider]){seen[r.provider]=true;}});
+  Object.keys(seen).sort().forEach(function(p){
+    var opt=document.createElement('option');opt.value=p;opt.textContent=p;sel.appendChild(opt);
+  });
+}
+
+function onPricingModeChange(){
+  var mode=document.getElementById('pricing-edit-mode').value;
+  document.getElementById('pricing-flat-editor').style.display=(mode==='flat'||mode==='tiered_context')?'block':'none';
+  document.getElementById('pricing-tiered-editor').style.display=(mode==='tiered'||mode==='tiered_context')?'block':'none';
+  document.getElementById('pricing-time-editor').style.display=mode==='time_based'?'block':'none';
+  document.getElementById('pricing-media-editor').style.display=mode==='media'?'block':'none';
+}
+
+function openPricingEditDrawer(id){
+  var d=document.getElementById('pricing-edit-drawer'),b=document.getElementById('pricing-edit-backdrop');
+  if(d)d.classList.add('open');if(b)b.classList.add('open');
+  document.getElementById('pricing-edit-title').textContent=id?'{{t "Edit Pricing Rule"}}':'{{t "Add Pricing Rule"}}';
+  resetPricingForm();
+  // Identity fields (provider/product_id/api_model_name) are editable on create,
+  // readonly on edit — changing them on an existing rule risks decoupling it
+  // from the service_model it was created for.
+  var isEdit = !!id;
+  ['pricing-edit-provider','pricing-edit-product-id','pricing-edit-api-name'].forEach(function(fid){
+    var el = document.getElementById(fid);
+    if (isEdit) { el.setAttribute('readonly',''); el.style.background='var(--bg-muted)'; el.style.cursor='not-allowed'; }
+    else { el.removeAttribute('readonly'); el.style.background=''; el.style.cursor=''; }
+  });
+  document.getElementById('pricing-edit-id').value=id||'';
+  onPricingModeChange();
+  if(id){
+    fetch('/api/admin/pricing/'+id).then(function(r){return r.json();}).then(function(data){
+      var r=data.rule;if(!r)return;
+      document.getElementById('pricing-edit-provider').value=r.provider||'*';
+      document.getElementById('pricing-edit-region').value=r.region||'*';
+      document.getElementById('pricing-edit-product-id').value=r.product_id||'';
+      document.getElementById('pricing-edit-api-name').value=r.api_model_name||'';
+      document.getElementById('pricing-edit-mode').value=r.billing_mode||'flat';
+      document.getElementById('pricing-edit-currency').value=r.currency||'USD';
+      document.getElementById('pricing-edit-timezone').value=r.timezone||'UTC';
+      document.getElementById('pricing-edit-priority').value=r.priority||0;
+      document.getElementById('pricing-edit-status').value=r.status||'active';
+      document.getElementById('pricing-edit-name').value=r.rule_name||'';
+      document.getElementById('pricing-edit-note').value=r.note||'';
+      onPricingModeChange();
+      if(r.prices){
+        document.getElementById('flat-input').value=r.prices.input||'';
+        document.getElementById('flat-output').value=r.prices.output||'';
+        document.getElementById('flat-cache-hit').value=r.prices.cache_hit||'';
+        document.getElementById('flat-cache-write').value=r.prices.cache_write||'';
+        document.getElementById('flat-reasoning').value=r.prices.reasoning||'';
+        document.getElementById('flat-fixed').value=r.prices.fixed_request||'';
+        document.getElementById('media-fixed').value=r.prices.fixed_request||'0.001';
+        document.getElementById('media-block-seconds').value=r.block_seconds||'';
+        if(r.prices.variants){r.prices.variants.forEach(function(v){addMediaVariantRow(v);});}
+      }
+      if(r.tiers){r.tiers.forEach(function(t){addTierRow(t);});}
+      if(r.time_rules){r.time_rules.forEach(function(tr){addTimeRow(tr);});}
+    });
+  }
+}
+function closePricingEditDrawer(){
+  var d=document.getElementById('pricing-edit-drawer'),b=document.getElementById('pricing-edit-backdrop');
+  if(d)d.classList.remove('open');if(b)b.classList.remove('open');
+}
+function resetPricingForm(){
+  document.getElementById('pricing-edit-provider').value='*';
+  document.getElementById('pricing-edit-region').value='*';
+  document.getElementById('pricing-edit-product-id').value='';
+  document.getElementById('pricing-edit-api-name').value='';
+  document.getElementById('pricing-edit-mode').value='flat';
+  document.getElementById('pricing-edit-currency').value='USD';
+  document.getElementById('pricing-edit-timezone').value='UTC';
+  document.getElementById('pricing-edit-priority').value='0';
+  document.getElementById('pricing-edit-status').value='active';
+  document.getElementById('pricing-edit-name').value='';
+  document.getElementById('pricing-edit-note').value='';
+  document.getElementById('pricing-edit-id').value='';
+  ['flat-input','flat-output','flat-cache-hit','flat-cache-write','flat-reasoning','flat-fixed'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('media-fixed').value='0.001';
+  document.getElementById('media-block-seconds').value='';
+  document.getElementById('media-variant-rows').innerHTML='';
+  document.getElementById('tier-rows').innerHTML='';
+  document.getElementById('time-rows').innerHTML='';
+}
+
+function addTierRow(tier){
+  var container=document.getElementById('tier-rows');
+  var div=document.createElement('div');div.className='form-row tier-row mt-1';
+  div.style='display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end';
+  div.innerHTML='<div class="form-group" style="flex:1;min-width:120px"><label class="text-xs">Max Tokens</label><input type="number" class="form-input tier-max du-input du-input-bordered" step="1" placeholder="unlimited"></div>'+
+    '<div class="form-group" style="flex:1;min-width:80px"><label class="text-xs">Input</label><input type="number" class="form-input tier-input du-input du-input-bordered" step="0.001"></div>'+
+    '<div class="form-group" style="flex:1;min-width:80px"><label class="text-xs">Output</label><input type="number" class="form-input tier-output du-input du-input-bordered" step="0.001"></div>'+
+    '<div class="form-group" style="flex:1;min-width:80px"><label class="text-xs">CacheHit</label><input type="number" class="form-input tier-cache-hit du-input du-input-bordered" step="0.001"></div>'+
+    '<div class="form-group" style="flex:1;min-width:80px"><label class="text-xs">CacheWrite</label><input type="number" class="form-input tier-cache-write du-input du-input-bordered" step="0.001"></div>'+
+    '<div class="form-group" style="flex:1;min-width:80px"><label class="text-xs">Reason</label><input type="number" class="form-input tier-reasoning du-input du-input-bordered" step="0.001"></div>'+
+    '<div class="form-group" style="flex:1;min-width:80px"><label class="text-xs">Fixed/Req</label><input type="number" class="form-input tier-fixed du-input du-input-bordered" step="0.001"></div>'+
+    '<button type="button" class="btn btn-ghost btn-sm mb-2" onclick="this.parentNode.remove()">&times;</button>';
+  if(tier){
+    div.querySelector('.tier-max').value=tier.max_tokens!=null?tier.max_tokens:'';
+    if(tier.prices){
+      div.querySelector('.tier-input').value=tier.prices.input||'';
+      div.querySelector('.tier-output').value=tier.prices.output||'';
+      div.querySelector('.tier-cache-hit').value=tier.prices.cache_hit||'';
+      div.querySelector('.tier-cache-write').value=tier.prices.cache_write||'';
+      div.querySelector('.tier-reasoning').value=tier.prices.reasoning||'';
+      div.querySelector('.tier-fixed').value=tier.prices.fixed_request||'';
+    }
+  }
+  container.appendChild(div);
+}
+function collectTiers(){
+  var tiers=[];
+  document.querySelectorAll('.tier-row').forEach(function(row){
+    var max=row.querySelector('.tier-max').value;
+    var t={prices:{}};
+    if(max!=='')t.max_tokens=parseInt(max,10);
+    ['input','output','cache_hit','cache_write','reasoning'].forEach(function(k){
+      var v=row.querySelector('.tier-'+k.replace('_','-')).value;
+      if(v!=='')t.prices[k]=parseFloat(v);
+    });
+    // fixed_request lives on a differently-named input (.tier-fixed), collect it
+    // separately — the context-tier engine bills each tier with its own prices,
+    // so a missing fixed_request would silently drop the per-request floor.
+    var fx=row.querySelector('.tier-fixed').value;
+    if(fx!=='')t.prices.fixed_request=parseFloat(fx);
+    tiers.push(t);
+  });
+  return tiers;
+}
+
+function addTimeRow(tr){
+  var container=document.getElementById('time-rows');
+  var div=document.createElement('div');div.className='form-row time-row mt-2';
+  div.style='border:1px solid var(--border-color);border-radius:6px;padding:8px';
+  div.innerHTML=
+    '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">'+
+      '<div class="form-group" style="flex:2;min-width:180px"><label class="text-xs">Days (0=Sun, 6=Sat, comma separated)</label><input type="text" class="form-input time-days du-input du-input-bordered" placeholder="1,2,3,4,5" pattern="[0-6,\\s]*"></div>'+
+      '<div class="form-group" style="flex:1;min-width:110px"><label class="text-xs">Start</label><input type="time" class="form-input time-start du-input du-input-bordered" required></div>'+
+      '<div class="form-group" style="flex:1;min-width:110px"><label class="text-xs">End</label><input type="time" class="form-input time-end du-input du-input-bordered" required></div>'+
+      '<button type="button" class="btn btn-ghost btn-sm mb-2" onclick="this.parentNode.parentNode.remove()">&times;</button>'+
+    '</div>'+
+    '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-top:6px">'+
+      '<div class="form-group" style="flex:1;min-width:80px"><label class="text-xs">Input</label><input type="number" class="form-input time-input du-input du-input-bordered" step="0.001"></div>'+
+      '<div class="form-group" style="flex:1;min-width:80px"><label class="text-xs">Output</label><input type="number" class="form-input time-output du-input du-input-bordered" step="0.001"></div>'+
+      '<div class="form-group" style="flex:1;min-width:80px"><label class="text-xs">CacheHit</label><input type="number" class="form-input time-cache-hit du-input du-input-bordered" step="0.001"></div>'+
+      '<div class="form-group" style="flex:1;min-width:80px"><label class="text-xs">CacheWrite</label><input type="number" class="form-input time-cache-write du-input du-input-bordered" step="0.001"></div>'+
+      '<div class="form-group" style="flex:1;min-width:80px"><label class="text-xs">Reason</label><input type="number" class="form-input time-reasoning du-input du-input-bordered" step="0.001"></div>'+
+    '</div>';
+  if(tr){
+    if(tr.days)div.querySelector('.time-days').value=tr.days.join(',');
+    div.querySelector('.time-start').value=tr.start||'';
+    div.querySelector('.time-end').value=tr.end||'';
+    if(tr.prices){
+      div.querySelector('.time-input').value=tr.prices.input||'';
+      div.querySelector('.time-output').value=tr.prices.output||'';
+      div.querySelector('.time-cache-hit').value=tr.prices.cache_hit||'';
+      div.querySelector('.time-cache-write').value=tr.prices.cache_write||'';
+      div.querySelector('.time-reasoning').value=tr.prices.reasoning||'';
+    }
+  }
+  container.appendChild(div);
+}
+function collectTimeRules(){
+  var rules=[];
+  document.querySelectorAll('.time-row').forEach(function(row){
+    var daysStr=row.querySelector('.time-days').value;
+    var days=[];
+    if(daysStr){daysStr.split(',').forEach(function(s){var n=parseInt(s.trim(),10);if(!isNaN(n))days.push(n);});}
+    var r={days:days,start:row.querySelector('.time-start').value,end:row.querySelector('.time-end').value,prices:{}};
+    ['input','output','cache_hit','cache_write','reasoning'].forEach(function(k){
+      var v=row.querySelector('.time-'+k.replace('_','-')).value;
+      if(v!=='')r.prices[k]=parseFloat(v);
+    });
+    rules.push(r);
+  });
+  return rules;
+}
+
+function addMediaVariantRow(variant){
+  var container=document.getElementById('media-variant-rows');
+  var div=document.createElement('div');div.className='form-row media-variant-row mt-1';
+  div.style='display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end';
+  div.innerHTML='<div class="form-group" style="flex:3;min-width:160px"><label class="text-xs">'+_t('Label')+'</label><input type="text" class="form-input variant-label du-input du-input-bordered" placeholder="e.g. 1024x1024 / 5s"></div>'+
+    '<div class="form-group" style="flex:1;min-width:100px"><label class="text-xs">'+_t('Unit')+'</label><select class="form-select variant-unit du-select du-select-bordered"><option value="image">image</option><option value="second">second</option><option value="block">block</option><option value="request">request</option></select></div>'+
+    '<div class="form-group" style="flex:1;min-width:100px"><label class="text-xs">'+_t('Price')+'</label><input type="number" class="form-input variant-price du-input du-input-bordered" step="0.000001" min="0"></div>'+
+    '<button type="button" class="btn btn-ghost btn-sm mb-2" onclick="this.parentNode.remove()">&times;</button>';
+  if(variant){
+    div.querySelector('.variant-label').value=variant.label||'';
+    div.querySelector('.variant-unit').value=variant.unit||'request';
+    div.querySelector('.variant-price').value=variant.price||'';
+  }
+  container.appendChild(div);
+}
+function collectMediaVariants(){
+  var variants=[];
+  document.querySelectorAll('.media-variant-row').forEach(function(row){
+    var label=row.querySelector('.variant-label').value.trim();
+    var unit=row.querySelector('.variant-unit').value;
+    var price=row.querySelector('.variant-price').value;
+    if(label===''||price==='')return;
+    variants.push({label:label,unit:unit,price:parseFloat(price)});
+  });
+  return variants;
+}
+
+function getFlatPrices(){
+  return {
+    input: parseFloat(document.getElementById('flat-input').value)||0,
+    output: parseFloat(document.getElementById('flat-output').value)||0,
+    cache_hit: parseFloat(document.getElementById('flat-cache-hit').value)||0,
+    cache_write: parseFloat(document.getElementById('flat-cache-write').value)||0,
+    reasoning: parseFloat(document.getElementById('flat-reasoning').value)||0,
+    fixed_request: parseFloat(document.getElementById('flat-fixed').value)||0
+  };
+}
+
+function validateTimeRules(){
+  var rows=document.querySelectorAll('.time-row');
+  if(rows.length===0){showMessage('Error','{{t "At least one time window is required"}}');return false;}
+  for(var i=0;i<rows.length;i++){
+    var days=rows[i].querySelector('.time-days').value;
+    if(!/^[0-6,\s]*$/.test(days)||days.replace(/[,\s]/g,'').length===0){
+      showMessage('Error','{{t "Days must be comma-separated numbers 0-6"}}');return false;
+    }
+    if(!rows[i].querySelector('.time-start').value||!rows[i].querySelector('.time-end').value){
+      showMessage('Error','{{t "Start and end time are required"}}');return false;
+    }
+  }
+  return true;
+}
+
+function submitPricingEdit(){
+  var id=document.getElementById('pricing-edit-id').value;
+  var mode=document.getElementById('pricing-edit-mode').value;
+  if(mode==='time_based'&&!validateTimeRules()){return;}
+  var payload={
+    provider: document.getElementById('pricing-edit-provider').value||'*',
+    region: document.getElementById('pricing-edit-region').value||'*',
+    product_id: document.getElementById('pricing-edit-product-id').value||null,
+    api_model_name: document.getElementById('pricing-edit-api-name').value||null,
+    billing_mode: mode,
+    currency: document.getElementById('pricing-edit-currency').value||'USD',
+    timezone: document.getElementById('pricing-edit-timezone').value||'UTC',
+    priority: parseInt(document.getElementById('pricing-edit-priority').value,10)||0,
+    status: document.getElementById('pricing-edit-status').value,
+    rule_name: document.getElementById('pricing-edit-name').value||null,
+    note: document.getElementById('pricing-edit-note').value||null
+  };
+  if(mode==='flat'){payload.prices=getFlatPrices();}
+  else if(mode==='tiered'){payload.tiers=collectTiers();}
+  else if(mode==='tiered_context'){payload.prices=getFlatPrices();payload.tiers=collectTiers();}
+  else if(mode==='time_based'){payload.time_rules=collectTimeRules();}
+  else if(mode==='media'){
+    payload.prices={fixed_request:parseFloat(document.getElementById('media-fixed').value)||0.001,variants:collectMediaVariants()};
+    payload.block_seconds=parseInt(document.getElementById('media-block-seconds').value,10)||1;
+  }
+
+  var url='/api/admin/pricing'+(id?'/'+id:'');
+  var method=id?'PATCH':'POST';
+  fetch(url,{method:method,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.success){closePricingEditDrawer();loadPricingRules();}
+      else{showMessage('Error',data.error&&data.error.message||'Save failed');}
+    });
+}
+
+function togglePricingStatus(id){
+  if(!id){showMessage('Error','No rule ID');return;}
+  fetch('/api/admin/pricing/'+id+'/toggle',{method:'POST'})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.success){loadPricingRules();}
+      else{showMessage('Error',data.error&&data.error.message||'Toggle failed');}
+    })
+    .catch(function(e){showMessage('Error','Request failed: '+e.message);});
+}
+
+var deleteRuleId;
+function openPricingDeleteModal(id){deleteRuleId=id;document.getElementById('pricing-delete-modal').style.display='flex';document.getElementById('pricing-delete-backdrop').style.display='block';}
+function closePricingDeleteModal(){document.getElementById('pricing-delete-modal').style.display='none';document.getElementById('pricing-delete-backdrop').style.display='none';}
+function submitPricingDelete(){
+  fetch('/api/admin/pricing/'+deleteRuleId,{method:'DELETE'})
+    .then(function(r){return r.json();})
+    .then(function(){closePricingDeleteModal();loadPricingRules();});
+}
+
+function exportPricingCSV(){
+  var params=new URLSearchParams();
+  var provider=document.getElementById('filter-provider').value;
+  var search=document.getElementById('filter-search').value;
+  var mode=document.getElementById('filter-mode').value;
+  var status=document.getElementById('filter-status').value;
+  if(provider)params.set('provider',provider);
+  if(search)params.set('model',search);
+  if(mode)params.set('billing_mode',mode);
+  if(status)params.set('status',status);
+  downloadExport('/api/admin/pricing/export/csv?'+params.toString(), 'pricing-' + formatExportTimestamp() + '.csv');
+}
+function importPricingCSV(input){
+  var file=input.files[0];if(!file)return;
+  var form=new FormData();form.append('file',file);
+  fetch('/api/admin/pricing/import/csv',{method:'POST',body:form})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      showMessage('Import',(data.message||'')+' created:'+(data.created||0)+' updated:'+(data.updated||0)+' errors:'+(data.errors||0));
+      loadPricingRules();
+    });
+}
+
+loadPricingRules();
+</script>
+{{end}}

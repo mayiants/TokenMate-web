@@ -1,0 +1,85 @@
+services:
+  # Proxy 专用 Redis（生产环境必须与 Portal Redis 分离）
+  redis-proxy:
+    image: redis:7-alpine
+    container_name: ai-proxy-redis
+    restart: always
+    mem_limit: 128m
+    command: redis-server --requirepass "${PROXY_REDIS_PASSWORD:-${REDIS_PASSWORD}}"
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - redis-proxy-data:/data
+    networks:
+      - ai-platform-net
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a '${PROXY_REDIS_PASSWORD:-${REDIS_PASSWORD}}' ping | grep PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Go Proxy 服务（连接 Proxy 自有 Redis）
+  proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APK_MIRROR: ${APK_MIRROR:-dl-cdn.alpinelinux.org}
+        GOPROXY: ${GOPROXY:-https://proxy.golang.org,direct}
+    container_name: ai-proxy-go
+    restart: always
+    mem_limit: 768m
+    environment:
+      PORT: 8080
+      GIN_MODE: release
+      SERVER_ID: "${SERVER_ID:-}"
+      SERVER_REGION: "${SERVER_REGION:-}"
+      PORTAL_URL: ${PORTAL_URL}
+      PORTAL_DEV_MODE: "${PORTAL_DEV_MODE:-false}"
+      PORTAL_SYNC_SECRET: ${PROXY_SYNC_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
+      RATE_LIMIT_ENABLED: "true"
+      RATE_LIMIT_DEFAULT_RPM: 60
+      REDIS_HOST: redis-proxy
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${PROXY_REDIS_PASSWORD:-${REDIS_PASSWORD}}
+      REDIS_DB: 0
+      REDIS_TLS: ${REDIS_TLS:-false}
+      REDIS_TLS_SKIP_VERIFY: ${REDIS_TLS_SKIP_VERIFY:-false}
+      ADMIN_SECRET: ${ADMIN_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      SIMULATE_ENABLED: "${SIMULATE_ENABLED:-false}"
+      SIMULATE_LATENCY_MS: "${SIMULATE_LATENCY_MS:-100}"
+      # Upstream-provider compliance: retain request/response payloads (gzip JSONL) for 90 days
+      RETENTION_ENABLED: "${RETENTION_ENABLED:-true}"
+      RETENTION_DIRECTORY: "/data/retention"
+      RETENTION_MAX_AGE: "${RETENTION_MAX_AGE:-2160h}"
+      # GeoIP geolocation database (MaxMind GeoLite2 Country MMDB)
+      GEOIP_DB_PATH: "${GEOIP_DB_PATH:-/data/geoip/GeoLite2-Country.mmdb}"
+      # Providers that bill async media tasks at dispatch time regardless of
+      # task outcome (TokenRouter charges at task creation). Comma-separated.
+      ASYNC_CHARGE_ON_DISPATCH_PROVIDERS: "${ASYNC_CHARGE_ON_DISPATCH_PROVIDERS:-tokenrouter}"
+    ports:
+      - "0.0.0.0:8080:8080"
+    volumes:
+      - proxy-retention-data:/data/retention
+      - ./data/geoip:/data/geoip:ro
+    networks:
+      - ai-platform-net
+    depends_on:
+      redis-proxy:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+networks:
+  ai-platform-net:
+    external: true
+    name: ai-platform-net
+
+volumes:
+  redis-proxy-data:
+  proxy-retention-data:

@@ -1,0 +1,567 @@
+{{template "layout.html" .}}
+{{define "content"}}
+<div class="page-header">
+  <h1 class="page-title">{{t "Upstream Provider Reconciliation"}}</h1>
+  <p class="text-muted">{{t "Compare upstream provider usage with downstream billing"}}</p>
+</div>
+
+<!-- Summary Cards -->
+<div class="stats-bar" id="summary-cards">
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-primary"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+    <div class="stat-content"><div class="stat-value" id="sum-upstream-requests">0</div><div class="stat-label">{{t "Upstream Requests"}}</div></div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-success"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+    <div class="stat-content"><div class="stat-value" id="sum-billed-requests">0</div><div class="stat-label">{{t "Billed Requests"}}</div></div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-success"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+    <div class="stat-content">
+      <div class="stat-value" id="sum-billed-cost">$0.0000</div>
+      <div class="stat-label">{{t "Billed Cost"}}</div>
+      <div class="text-xs text-muted mt-1" id="sum-cost-breakdown" style="line-height:1.4"></div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-primary"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+    <div class="stat-content">
+      <div class="stat-value" id="sum-est-cost">$0.0000</div>
+      <div class="stat-label">{{t "Est Upstream Cost"}}</div>
+      <div class="text-xs text-muted mt-1" id="sum-upstream-breakdown" style="line-height:1.4"></div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-warning"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div>
+    <div class="stat-content"><div class="stat-value" id="sum-cost-diff">$0.0000</div><div class="stat-label">{{t "Cost Diff"}}</div></div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-info"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+    <div class="stat-content"><div class="stat-value" id="sum-gross-margin">0.00%</div><div class="stat-label">{{t "Gross Margin"}}</div></div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-primary"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+    <div class="stat-content"><div class="stat-value" id="sum-error-rate">0%</div><div class="stat-label">{{t "Upstream Error Rate"}}</div></div>
+  </div>
+</div>
+
+<!-- Controls: period dropdown + date range + auto refresh -->
+<div class="flex justify-between items-center flex-wrap gap-2 mt-4">
+  <div class="flex gap-2 items-center flex-wrap">
+    <select id="reconPeriod" class="form-select form-select-sm du-select du-select-bordered" style="width:110px" onchange="changePeriod()" aria-label="{{t "Period"}}">
+      <option value="1d" selected>{{t "1day"}}</option>
+      <option value="7d">{{t "7days"}}</option>
+      <option value="15d">{{t "15days"}}</option>
+      <option value="30d">{{t "30days"}}</option>
+      <option value="quarter">{{t "quarter"}}</option>
+      <option value="custom">{{t "Custom"}}</option>
+    </select>
+    <span id="custom-date-wrap" style="display:none" class="flex gap-2 items-center">
+      <input type="hidden" id="recon-date-from">
+      <input type="hidden" id="recon-date-to">
+      <input type="text" class="form-input fp-range form-input-sm du-input du-input-bordered" style="width:220px" data-from="recon-date-from" data-to="recon-date-to" data-onchange="changePeriod" placeholder='{{t "Start Date ~ End Date"}}' readonly aria-label="Input">
+    </span>
+  </div>
+  <div class="flex gap-2 items-center">
+    <label class="flex items-center gap-2 text-sm text-muted" style="cursor:pointer">
+      <input type="checkbox" id="auto-refresh" onchange="toggleAutoRefresh()" aria-label="Auto Refresh">
+      <span>{{t "Auto Refresh"}}</span>
+    </label>
+    <button class="btn btn-secondary" onclick="loadAll()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>{{t "Refresh"}}
+    </button>
+  </div>
+</div>
+
+<!-- Trend -->
+<div class="card mt-4">
+  <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <h2 class="card-title">{{t "Upstream vs Billed Trend"}}</h2>
+    <div class="flex gap-2 items-center">
+      <input type="month" id="trend-month" class="form-select form-select-sm du-select du-select-bordered" style="width:auto" onchange="loadTrend()" aria-label="Trend Month">
+      <select id="trend-metric" class="form-select form-select-sm du-select du-select-bordered" style="width:140px" onchange="loadTrend()" aria-label="Trend Metric">
+        <option value="requests">{{t "Requests"}}</option>
+        <option value="tokens">{{t "Tokens"}}</option>
+        <option value="cost">{{t "Cost"}}</option>
+        <option value="error_rate">{{t "Error Rate"}}</option>
+      </select>
+    </div>
+  </div>
+  <div class="card-body">
+    <div id="trend-chart" class="chart-canvas">
+      <div class="text-center text-muted py-8">{{t "Loading..."}}</div>
+    </div>
+    <div class="flex gap-4 justify-center mt-2 text-sm">
+    </div>
+  </div>
+</div>
+
+<!-- Detail Filters -->
+<div class="mt-4">
+  <div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <h2 class="card-title">{{t "Reconciliation Detail"}}</h2>
+      <button class="btn btn-secondary" onclick="exportReconciliation()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>{{t "Export"}}
+      </button>
+    </div>
+    <div style="padding:0 16px 12px">
+      <div class="flex gap-2 flex-wrap items-center">
+        <select id="filter-provider" class="form-select form-select-sm du-select du-select-bordered" style="width:160px" onchange="resetPageAndLoad()" aria-label="{{t "Filter"}}">
+          <option value="">{{t "All Providers"}}</option>
+        </select>
+        <input type="text" id="filter-search" class="form-input form-input-sm du-input du-input-bordered" placeholder='{{t "Search model / key"}}' style="width:200px" oninput="debounceSearch()" aria-label="Filter Search">
+        <input type="number" id="filter-diff" class="form-input form-input-sm du-input du-input-bordered" placeholder='{{t "Diff threshold"}}' style="width:130px" onchange="resetPageAndLoad()" aria-label="Filter Diff">
+      </div>
+    </div>
+    <div class="data-table-wrapper" tabindex="0" role="region" aria-label='{{t "Data table"}}'>
+      <table class="data-table du-table" id="detail-table">
+        <thead>
+          <tr>
+            <th style="width:30px"></th>
+            <th>{{t "Provider"}}</th>
+            <th>{{t "Model"}}</th>
+            <th>{{t "Key"}}</th>
+            <th class="text-right">{{t "Requests"}}</th>
+            <th class="text-right">{{t "Input Tokens"}}</th>
+            <th class="text-right">{{t "Output Tokens"}}</th>
+            <th class="text-right">{{t "Billed Cost"}}</th>
+            <th class="text-right">{{t "Upstream Cost"}}</th>
+            <th class="text-right">{{t "Cost Diff"}}</th>
+            <th class="text-right">{{t "Gross Margin"}}</th>
+            <th class="text-right">{{t "Error Rate"}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="12" class="text-center text-muted py-8">{{t "Loading..."}}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="detail-pagination" class="pagination" style="display:none">
+      <button class="btn btn-sm btn-secondary" data-page="prev"></button>
+      <span class="pagination-info"></span>
+      <span class="page-numbers"></span>
+      <button class="btn btn-sm btn-secondary" data-page="next"></button>
+    </div>
+  </div>
+</div>
+
+<style>
+.trend-svg { width: 100%; height: 100%; overflow: visible; }
+.trend-line-upstream { fill: none; stroke: var(--primary); stroke-width: 2; }
+.trend-line-billed { fill: none; stroke: var(--success-text); stroke-width: 2; }
+.trend-dot { r: 3; fill: #fff; stroke-width: 2; }
+.trend-axis { stroke: var(--border); stroke-width: 1; }
+.trend-grid { stroke: var(--border); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.5; }
+.trend-label { font-size: 10px; fill: var(--text-muted); }
+.diff-positive { color: var(--warning-text); }
+.diff-negative { color: var(--success-text); }
+.diff-zero { color: var(--text-muted); }
+.expand-row { cursor: pointer; }
+/* #detail-table interleaves a hidden .detail-row after each .expand-row, so
+   daisyUI du-table-zebra (nth-child(2n)) would stripe the hidden rows. Stripe
+   the visible expand rows directly instead (they sit at tr 1,3,5,...). */
+#detail-table tbody tr.expand-row:nth-of-type(4n+3) > td { background: var(--bg-hover); }
+.expand-chevron { color: var(--text-muted); font-size: 12px; }
+.expand-row:hover .expand-chevron { color: var(--primary); }
+.cost-bar { display: flex; height: 4px; border-radius: 2px; overflow: hidden; margin-top: 4px; max-width: 120px; margin-left: auto; }
+.cost-bar span { display: inline-block; height: 100%; }
+.compare-main { font-size: 13px; }
+.compare-sep { color: var(--text-muted); margin: 0 2px; }
+.compare-diff { font-size: 11px; margin-top: 2px; }
+.detail-panel { padding: 16px; background: var(--bg-hover); border-radius: var(--radius); }
+.detail-section-title { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.detail-item { display: flex; flex-direction: column; gap: 2px; }
+.detail-label { font-size: 11px; color: var(--text-muted); }
+.detail-value { font-size: 13px; font-weight: 500; }
+/* The 12-column comparison table scrolls horizontally inside its wrapper;
+   pin the chevron and provider columns so each row stays identifiable.
+   The chevron cell's padding is tightened so the second column's sticky
+   offset matches the declared 30px width. */
+#detail-table { min-width: 900px; }
+#detail-table th:first-child,
+#detail-table tbody td:first-child:not([colspan]) {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--bg-card);
+  padding-left: 8px;
+  padding-right: 8px;
+}
+#detail-table th:nth-child(2),
+#detail-table tbody td:nth-child(2) {
+  position: sticky;
+  left: 30px;
+  z-index: 1;
+  background: var(--bg-card);
+}
+</style>
+
+<script>
+let currentPeriod = '1d';
+let currentPage = 1;
+let autoRefreshTimer = null;
+let searchDebounce = null;
+
+function escapeHtml(str) {
+  if (!str) return '';
+  var d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+function fmtN(n) {
+  return Number(n || 0).toLocaleString();
+}
+function fmtUSD(n) {
+  var v = Number(n || 0);
+  var sign = v < 0 ? '-' : '';
+  return sign + '$' + Math.abs(v).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+function diffClass(n) {
+  if (Number(n) > 0) return 'diff-positive';
+  if (Number(n) < 0) return 'diff-negative';
+  return 'diff-zero';
+}
+
+function changePeriod() {
+  currentPeriod = document.getElementById('reconPeriod').value;
+  currentPage = 1;
+  var customWrap = document.getElementById('custom-date-wrap');
+  if (currentPeriod === 'custom') {
+    customWrap.style.display = '';
+  } else {
+    customWrap.style.display = 'none';
+  }
+  loadAll();
+}
+
+function getPeriodParams() {
+  var params = new URLSearchParams();
+  var p = document.getElementById('reconPeriod').value;
+  params.set('period', p);
+  if (p === 'custom') {
+    params.set('date_from', document.getElementById('recon-date-from').value);
+    params.set('date_to', document.getElementById('recon-date-to').value);
+  }
+  return params;
+}
+
+function buildParams(extra) {
+  var params = getPeriodParams();
+  if (extra) {
+    Object.keys(extra).forEach(function(k) {
+      if (extra[k] !== '' && extra[k] !== null && extra[k] !== undefined) params.set(k, extra[k]);
+    });
+  }
+  return params;
+}
+
+function loadAll() {
+  loadSummary();
+  loadTrend();
+  loadDetail();
+}
+
+// --- Summary ---
+async function loadSummary() {
+  try {
+    var res = await fetch('/api/admin/reconciliation-ops/summary?' + getPeriodParams().toString());
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || 'load failed');
+    document.getElementById('sum-upstream-requests').textContent = fmtN(data.upstream_requests);
+    document.getElementById('sum-billed-requests').textContent = fmtN(data.billed_requests);
+    document.getElementById('sum-error-rate').textContent = (data.error_rate || 0).toFixed(2) + '%';
+    document.getElementById('sum-billed-cost').textContent = fmtUSD(data.billed_cost_usd);
+    document.getElementById('sum-est-cost').textContent = fmtUSD(data.estimated_upstream_cost_usd);
+    document.getElementById('sum-cost-diff').textContent = fmtUSD(data.cost_diff_usd);
+    document.getElementById('sum-cost-diff').className = 'stat-value ' + diffClass(data.cost_diff_usd);
+    document.getElementById('sum-gross-margin').textContent = (data.gross_margin_pct || 0).toFixed(2) + '%';
+    var breakdown = [];
+    if (data.billed_input_cost_usd) breakdown.push('In ' + fmtUSD(data.billed_input_cost_usd));
+    if (data.billed_output_cost_usd) breakdown.push('Out ' + fmtUSD(data.billed_output_cost_usd));
+    if (data.billed_cache_cost_usd) breakdown.push('Cache ' + fmtUSD(data.billed_cache_cost_usd));
+    if (data.billed_reasoning_cost_usd) breakdown.push('Reason ' + fmtUSD(data.billed_reasoning_cost_usd));
+    if (data.billed_fixed_cost_usd) breakdown.push('Fixed ' + fmtUSD(data.billed_fixed_cost_usd));
+    document.getElementById('sum-cost-breakdown').textContent = breakdown.length ? breakdown.join(' · ') : '';
+    var upstreamBreakdown = [];
+    if (data.upstream_input_cost_usd) upstreamBreakdown.push('In ' + fmtUSD(data.upstream_input_cost_usd));
+    if (data.upstream_output_cost_usd) upstreamBreakdown.push('Out ' + fmtUSD(data.upstream_output_cost_usd));
+    if (data.upstream_cache_cost_usd) upstreamBreakdown.push('Cache ' + fmtUSD(data.upstream_cache_cost_usd));
+    if (data.upstream_cache_write_cost_usd) upstreamBreakdown.push('Write ' + fmtUSD(data.upstream_cache_write_cost_usd));
+    if (data.upstream_fixed_cost_usd) upstreamBreakdown.push('Fixed ' + fmtUSD(data.upstream_fixed_cost_usd));
+    document.getElementById('sum-upstream-breakdown').textContent = upstreamBreakdown.length ? upstreamBreakdown.join(' · ') : '';
+  } catch (e) {
+    console.error('loadSummary failed', e);
+  }
+}
+
+// --- Trend ---
+async function loadTrend() {
+  var metric = document.getElementById('trend-metric').value;
+  var monthEl = document.getElementById('trend-month');
+  if (!monthEl.value) {
+    var now = new Date();
+    monthEl.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  }
+  var parts = monthEl.value.split('-');
+  var year = parseInt(parts[0]), month = parseInt(parts[1]);
+  var dateFrom = monthEl.value + '-01';
+  var lastDay = new Date(year, month, 0).getDate();
+  var dateTo = monthEl.value + '-' + String(lastDay).padStart(2,'0');
+
+  var container = document.getElementById('trend-chart');
+  container.innerHTML = '<div class="text-center text-muted py-8">{{t "Loading..."}}</div>';
+  try {
+    var params = new URLSearchParams({period:'custom', date_from:dateFrom, date_to:dateTo, metric:metric});
+    var prov = document.getElementById('filter-provider');
+    if (prov && prov.value) params.set('provider', prov.value);
+    var res = await fetch('/api/admin/reconciliation-ops/trend?' + params.toString());
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || 'load failed');
+    renderTrend(container, data);
+  } catch (e) {
+    console.error('loadTrend failed', e);
+    container.innerHTML = '<div class="text-center text-muted py-8">{{t "Failed to load trend"}}</div>';
+  }
+}
+
+var trendChartInstance = null;
+function renderTrend(container, data) {
+  if (!data.labels || data.labels.length === 0) {
+    container.innerHTML = '<div class="empty-state"><svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><p class="empty-state-title">' + _t('No data') + '</p></div>';
+    return;
+  }
+  // Destroy previous chart
+  if (trendChartInstance) { trendChartInstance.destroy(); trendChartInstance = null; }
+  container.innerHTML = '<canvas id="trend-canvas" style="width:100%;height:100%"></canvas>';
+  var ctx = document.getElementById('trend-canvas');
+  var metric = document.getElementById('trend-metric').value;
+  var fmtVal = function(v) {
+    if (metric === 'cost') return '$' + v.toFixed(4);
+    if (metric === 'error_rate') return v.toFixed(1) + '%';
+    return v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v;
+  };
+  trendChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.labels,
+      datasets: [
+        { label: 'Upstream', data: data.upstream, backgroundColor: chartColor('--primary'), borderRadius: 2, barPercentage: 0.6 },
+        { label: 'Billed', data: data.billed, backgroundColor: chartColor('--success'), borderRadius: 2, barPercentage: 0.6 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            title: function(c) { return c[0].label; },
+            label: function(c) { return c.dataset.label + ': ' + fmtVal(c.raw); }
+          }
+        }
+      },
+      scales: {
+        y: { ticks: { callback: function(v) { return fmtVal(v); } } },
+        x: { ticks: { maxTicksLimit: 5, font: { size: 9 } } }
+      }
+    }
+  });
+}
+
+// --- Provider dropdown ---
+async function loadProviders() {
+  try {
+    // Get providers that actually have reconciliation data (not all providers)
+    var res = await fetch('/api/admin/reconciliation-ops/detail?period=90d&limit=500');
+    var data = await res.json();
+    var sel = document.getElementById('filter-provider');
+    var cur = sel.value;
+    var seen = {};
+    sel.innerHTML = '<option value="">{{t "All Providers"}}</option>';
+    (data.rows || []).forEach(function(r) {
+      var p = r.provider;
+      if (!p || seen[p]) return;
+      seen[p] = true;
+      sel.innerHTML += '<option value="' + escapeHtml(p) + '">' + escapeHtml(p) + '</option>';
+    });
+    sel.value = cur;
+  } catch (e) {
+    console.error('loadProviders failed', e);
+  }
+}
+
+// --- Detail Table ---
+function getFilters() {
+  return {
+    provider: document.getElementById('filter-provider').value,
+    search: document.getElementById('filter-search').value,
+    diff_threshold: document.getElementById('filter-diff').value
+  };
+}
+
+async function loadDetail() {
+  var tbody = document.querySelector('#detail-table tbody');
+  tbody.innerHTML = '<tr><td colspan="12" class="text-center text-muted py-8">{{t "Loading..."}}</td></tr>';
+  try {
+    var params = buildParams(getFilters());
+    params.set('page', currentPage);
+    params.set('limit', 20);
+    var res = await fetch('/api/admin/reconciliation-ops/detail?' + params.toString());
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || 'load failed');
+    renderDetail(tbody, data.rows);
+    updatePager(data);
+  } catch (e) {
+    console.error('loadDetail failed', e);
+    tbody.innerHTML = '<tr><td colspan="12" class="text-center text-muted py-8">{{t "Failed to load detail"}}</td></tr>';
+  }
+}
+
+function fmtCompareCell(up, billed, diff) {
+  return '<div class="compare-main">' + fmtN(up) + ' <span class="compare-sep">/</span> ' + fmtN(billed) + '</div>' +
+    '<div class="compare-diff ' + diffClass(diff) + '">' + (diff > 0 ? '+' : '') + fmtN(diff) + '</div>';
+}
+
+function renderDetail(tbody, rows) {
+  if (!rows || rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="12" class="text-center text-muted py-8">{{t "No data"}}</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(function(r, idx) {
+    var modelCell = escapeHtml(r.upstream_model || r.model);
+    if (r.upstream_model && r.upstream_model !== r.model) {
+      modelCell += '<div class="text-xs text-muted">' + escapeHtml(r.model) + '</div>';
+    }
+    var costComponents = [
+      {k: 'Input', v: r.billed_input_cost_usd || 0, c: '#3b82f6'},
+      {k: 'Output', v: r.billed_output_cost_usd || 0, c: '#8b5cf6'},
+      {k: 'Cache', v: r.billed_cache_cost_usd || 0, c: '#10b981'},
+      {k: 'Reasoning', v: r.billed_reasoning_cost_usd || 0, c: '#f59e0b'},
+      {k: 'Fixed', v: r.billed_fixed_cost_usd || 0, c: '#6b7280'}
+    ];
+    var totalComp = costComponents.reduce(function(s, x) { return s + x.v; }, 0);
+    var miniBar = '';
+    if (totalComp > 0) {
+      miniBar = '<div class="cost-bar" title="' + costComponents.map(function(x) { return x.k + ': ' + fmtUSD(x.v); }).join(' | ') + '">' +
+        costComponents.map(function(x) {
+          if (x.v <= 0) return '';
+          return '<span style="width:' + Math.max(1, Math.round(x.v / totalComp * 100)) + '%;background:' + x.c + '"></span>';
+        }).join('') +
+      '</div>';
+    }
+    var marginClass = diffClass(-(r.gross_margin_usd || 0)); // positive margin = success
+    return '<tr class="expand-row" onclick="toggleReconDetail(' + idx + ')">' +
+      '<td class="text-center"><span class="expand-chevron" id="chevron-' + idx + '">▸</span></td>' +
+      '<td>' + escapeHtml(r.provider) + '</td>' +
+      '<td>' + modelCell + '</td>' +
+      '<td><code class="text-xs code-cell code-cell-sm" title="' + escapeHtml(r.key_preview || r.upstream_key_id) + '">' + escapeHtml(r.key_preview || r.upstream_key_id) + '</code></td>' +
+      '<td class="text-right">' + fmtCompareCell(r.upstream_requests, r.billed_requests, r.request_diff) + '</td>' +
+      '<td class="text-right">' + fmtCompareCell(r.upstream_input_tokens, r.billed_input_tokens, r.input_token_diff) + '</td>' +
+      '<td class="text-right">' + fmtCompareCell(r.upstream_output_tokens, r.billed_output_tokens, r.output_token_diff) + '</td>' +
+      '<td class="text-right">' + fmtUSD(r.billed_cost_usd) + miniBar + '</td>' +
+      '<td class="text-right">' + fmtUSD(r.upstream_cost_usd) + '</td>' +
+      '<td class="text-right ' + diffClass(r.cost_diff_usd) + '">' + (r.cost_diff_usd > 0 ? '+' : '') + fmtUSD(r.cost_diff_usd) + '</td>' +
+      '<td class="text-right ' + marginClass + '">' + fmtUSD(r.gross_margin_usd || 0) + ' (' + (r.gross_margin_pct || 0).toFixed(2) + '%)</td>' +
+      '<td class="text-right">' + (r.error_rate || 0).toFixed(2) + '%</td>' +
+    '</tr>' +
+    '<tr class="detail-row" id="recon-detail-' + idx + '" style="display:none"><td colspan="12">' +
+      '<div class="detail-panel">' +
+        '<div class="detail-section-title">{{t "Token Breakdown"}}</div>' +
+        '<div class="detail-grid">' +
+          '<div class="detail-item"><div class="detail-label">{{t "Upstream Input"}}</div><div class="detail-value">' + fmtN(r.upstream_input_tokens || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Billed Input"}}</div><div class="detail-value">' + fmtN(r.billed_input_tokens || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Input Diff"}}</div><div class="detail-value ' + diffClass(r.input_token_diff) + '">' + (r.input_token_diff > 0 ? '+' : '') + fmtN(r.input_token_diff) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Upstream Output"}}</div><div class="detail-value">' + fmtN(r.upstream_output_tokens || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Billed Output"}}</div><div class="detail-value">' + fmtN(r.billed_output_tokens || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Output Diff"}}</div><div class="detail-value ' + diffClass(r.output_token_diff) + '">' + (r.output_token_diff > 0 ? '+' : '') + fmtN(r.output_token_diff) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Cache Read"}}</div><div class="detail-value">' + fmtN(r.upstream_cache_read_tokens || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Upstream Cache Write"}}</div><div class="detail-value">' + fmtN(r.upstream_cache_write_tokens || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Billed Cached Input"}}</div><div class="detail-value">' + fmtN(r.billed_cached_input_tokens || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Billed Reasoning Tokens"}}</div><div class="detail-value">' + fmtN(r.billed_reasoning_tokens || 0) + '</div></div>' +
+        '</div>' +
+        '<div class="detail-section-title" style="margin-top:16px">{{t "Upstream Cost Breakdown"}}</div>' +
+        '<div class="detail-grid">' +
+          '<div class="detail-item"><div class="detail-label">{{t "Input Cost"}}</div><div class="detail-value">' + fmtUSD(r.upstream_input_cost_usd || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Output Cost"}}</div><div class="detail-value">' + fmtUSD(r.upstream_output_cost_usd || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Cache Read Cost"}}</div><div class="detail-value">' + fmtUSD(r.upstream_cache_cost_usd || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Cache Write Cost"}}</div><div class="detail-value">' + fmtUSD(r.upstream_cache_write_cost_usd || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Fixed Cost"}}</div><div class="detail-value">' + fmtUSD(r.upstream_fixed_cost_usd || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Total Upstream Cost"}}</div><div class="detail-value">' + fmtUSD(r.upstream_cost_usd || 0) + '</div></div>' +
+        '</div>' +
+        '<div class="detail-section-title" style="margin-top:16px">{{t "Billed Cost Breakdown"}}</div>' +
+        '<div class="detail-grid">' +
+          '<div class="detail-item"><div class="detail-label">{{t "Input Cost"}}</div><div class="detail-value">' + fmtUSD(r.billed_input_cost_usd || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Output Cost"}}</div><div class="detail-value">' + fmtUSD(r.billed_output_cost_usd || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Cache Cost"}}</div><div class="detail-value">' + fmtUSD(r.billed_cache_cost_usd || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Reasoning Cost"}}</div><div class="detail-value">' + fmtUSD(r.billed_reasoning_cost_usd || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Fixed Cost"}}</div><div class="detail-value">' + fmtUSD(r.billed_fixed_cost_usd || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="detail-label">{{t "Billed Cost"}}</div><div class="detail-value">' + fmtUSD(r.billed_cost_usd || 0) + '</div></div>' +
+        '</div>' +
+      '</div>' +
+    '</td></tr>';
+  }).join('');
+}
+
+function toggleReconDetail(idx) {
+  var row = document.getElementById('recon-detail-' + idx);
+  var chevron = document.getElementById('chevron-' + idx);
+  if (row) {
+    row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+  }
+  if (chevron) {
+    chevron.textContent = chevron.textContent === '▸' ? '▾' : '▸';
+  }
+}
+
+function updatePager(data) {
+  renderPagination({
+    wrapId: 'detail-pagination',
+    page: data.page,
+    totalPages: data.total_pages || 1,
+    total: data.total || 0,
+    onPage: goPage
+  });
+}
+
+function goPage(p) {
+  currentPage = p;
+  loadDetail();
+}
+
+// Debounced search
+function debounceSearch() {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(resetPageAndLoad, 400);
+}
+
+function resetPageAndLoad() {
+  currentPage = 1;
+  loadDetail();
+  loadTrend();
+}
+
+// --- Export ---
+function exportReconciliation() {
+  var params = buildParams(getFilters());
+  downloadExport('/api/admin/reconciliation-ops/export?' + params.toString(), 'upstream-reconciliation-' + formatExportTimestamp() + '.csv');
+}
+
+// --- Auto-refresh ---
+function toggleAutoRefresh() {
+  if (autoRefreshTimer) {
+    clearInterval(autoRefreshTimer);
+    autoRefreshTimer = null;
+  }
+  if (document.getElementById('auto-refresh').checked) {
+    autoRefreshTimer = setInterval(loadAll, 30000);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  loadProviders();
+  loadAll();
+});
+</script>
+{{end}}

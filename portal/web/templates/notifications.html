@@ -1,0 +1,109 @@
+{{define "content"}}
+<div class="page-header">
+  <h1 class="page-title">{{t "Notifications"}}</h1>
+  <p class="text-muted">{{t "System, enterprise and account notices in one place"}}</p>
+  <div style="margin-top:8px">
+    <button class="btn btn-secondary btn-sm" id="mark-all-read">{{t "Mark all read"}}</button>
+  </div>
+</div>
+
+<div class="card" id="notif-card">
+  <div class="card-body" id="notif-list">
+    <div class="text-muted" style="padding:24px;text-align:center">{{t "Loading..."}}</div>
+  </div>
+  <div class="card-footer" id="notif-pagination" style="display:none"></div>
+</div>
+
+<script>
+(function() {
+  var listEl = document.getElementById('notif-list');
+  var pageEl = document.getElementById('notif-pagination');
+  var currentPage = 1;
+
+  function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+
+  // Absolute timestamp via the notif.time.format i18n key (same format as
+  // the bell dropdown): "yyyy年MM月dd日 HH:mm:ss" (zh) / "yyyy-MM-dd HH:mm:ss".
+  function fmtTime(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    var fmt = '{{t "notif.time.format"}}';
+    return fmt
+      .replace('yyyy', d.getFullYear())
+      .replace('MM', p(d.getMonth() + 1))
+      .replace('dd', p(d.getDate()))
+      .replace('HH', p(d.getHours()))
+      .replace('mm', p(d.getMinutes()))
+      .replace('ss', p(d.getSeconds()));
+  }
+
+  function render(items) {
+    if (!items.length) {
+      listEl.innerHTML = '<div class="text-muted" style="padding:24px;text-align:center">{{t "No notifications"}}</div>';
+      pageEl.style.display = 'none';
+      return;
+    }
+    var html = '';
+    items.forEach(function(n) {
+      var unread = !n.read_at;
+      html += '<div class="notif-row' + (unread ? ' notif-unread' : '') + '" data-id="' + esc(n.id) + '" data-link="' + esc(n.link || '') + '" style="padding:12px 16px;border-bottom:1px solid var(--border);cursor:' + (n.link ? 'pointer' : 'default') + '">';
+      html += '<div style="display:flex;justify-content:space-between;gap:12px">';
+      html += '<div style="flex:1">';
+      html += '<div style="font-weight:' + (unread ? '600' : '400') + '">' + esc(n.title) + '</div>';
+      if (n.body) html += '<div class="text-muted" style="font-size:13px;margin-top:4px">' + esc(n.body) + '</div>';
+      html += '</div>';
+      html += '<div class="text-muted" style="font-size:12px;white-space:nowrap">' + esc(fmtTime(n.created_at)) + '</div>';
+      html += '</div></div>';
+    });
+    listEl.innerHTML = html;
+    Array.prototype.forEach.call(listEl.querySelectorAll('.notif-row'), function(row) {
+      row.addEventListener('click', function() {
+        var id = row.getAttribute('data-id');
+        var link = row.getAttribute('data-link');
+        fetch('/api/notifications/' + encodeURIComponent(id) + '/read', { method: 'POST', headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content') } })
+          .finally(function() {
+            if (link) { window.location.href = link; } else { load(currentPage); }
+          });
+      });
+    });
+  }
+
+  function load(page) {
+    currentPage = page || 1;
+    fetch('/api/notifications?page=' + currentPage)
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        render(d.items || []);
+        // Simple prev/next pager
+        if ((d.items || []).length === 20) {
+          pageEl.style.display = 'block';
+          pageEl.innerHTML = '<div style="display:flex;justify-content:space-between;padding:8px 16px">' +
+            '<button class="btn btn-secondary btn-sm" id="notif-prev" ' + (currentPage <= 1 ? 'disabled' : '') + '>&larr; {{t "Previous"}}</button>' +
+            '<button class="btn btn-secondary btn-sm" id="notif-next">{{t "Next"}} &rarr;</button></div>';
+          var prev = document.getElementById('notif-prev');
+          var next = document.getElementById('notif-next');
+          if (prev) prev.addEventListener('click', function() { load(currentPage - 1); });
+          if (next) next.addEventListener('click', function() { load(currentPage + 1); });
+        } else {
+          pageEl.style.display = 'none';
+        }
+      })
+      .catch(function() {
+        listEl.innerHTML = '<div class="flash flash-error">{{t "Failed to load notifications"}}</div>';
+      });
+  }
+
+  document.getElementById('mark-all-read').addEventListener('click', function() {
+    fetch('/api/notifications/read-all', { method: 'POST', headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content') } })
+      .finally(function() { load(1); });
+  });
+
+  load(1);
+})();
+</script>
+{{end}}

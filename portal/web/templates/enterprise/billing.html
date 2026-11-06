@@ -1,0 +1,462 @@
+{{define "content"}}
+{{$d := .Data}}
+{{if and $d.DisplayCurrency (ne $d.DisplayCurrency "USD")}}
+<script>
+window.userCurrency = {{$d.DisplayCurrency | json}};
+window.exchangeRate = {{$d.ExchangeRate | json}};
+</script>
+{{end}}
+<div class="page-header">
+  <h1 class="page-title">{{t "Billing Management"}}</h1>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-primary">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{if $d}}{{fmtNum $d.QuotaTotal}}{{else}}--{{end}}</div>
+      <div class="stat-label">{{t "Total Quota"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-warning">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{if $d}}{{fmtNum $d.QuotaUsed}}{{else}}--{{end}}</div>
+      <div class="stat-label">{{t "Quota Used"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-success">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value text-primary">{{if $d}}{{fmtNum $d.QuotaRemaining}}{{else}}--{{end}}</div>
+      <div class="stat-label">{{t "Remaining Quota"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-indigo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{if and $d $d.NextResetAt}}{{formatDateTime $d.NextResetAt $.Timezone}}{{else}}--{{end}}</div>
+      <div class="stat-label">{{t "Next Reset"}}</div>
+    </div>
+  </div>
+</div>
+
+{{if $d.CreditTotal}}
+<div class="card mt-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Credit Limit Overview"}}</h2>
+    <span class="text-sm text-muted">{{t "Pricing Ratio"}}: {{printf "%.2f" $d.PricingRatio}}x · {{t "Billing Cycle"}}: {{$d.BillingCycle}}</span>
+  </div>
+  <div class="credit-gauge mt-4">
+    <div class="credit-gauge-header">
+      <span class="credit-gauge-label">{{t "Used"}} {{printf "%.1f" $d.CreditPercent}}%</span>
+      <span class="credit-gauge-value">
+        ${{printf "%.2f" $d.CreditUsedUSD}} / ${{printf "%.2f" $d.CreditTotalUSD}}
+        {{if and $d.DisplayCurrency (ne $d.DisplayCurrency "USD") (gt $d.ExchangeRate 0)}}
+        <span class="text-sm text-muted">· {{$d.DisplayCurrency}} {{printf "%.2f" $d.CreditUsedLocal}} / {{printf "%.2f" $d.CreditTotalLocal}}</span>
+        {{end}}
+      </span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill {{if gt $d.CreditPercent 90.0}}high{{else if gt $d.CreditPercent 70.0}}medium{{else}}low{{end}}" style="width:{{printf "%.0f" $d.CreditPercent}}%"></div>
+    </div>
+    <div class="stats-bar compact mt-4">
+      <div class="stat-item">
+        <div class="stat-icon stat-icon-primary">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">${{printf "%.2f" $d.CreditTotalUSD}}</div>
+          <div class="stat-label">{{t "Total Amount"}}</div>
+          {{if and $d.DisplayCurrency (ne $d.DisplayCurrency "USD") (gt $d.ExchangeRate 0)}}
+          <div class="text-xs text-muted">{{$d.DisplayCurrency}} {{printf "%.2f" $d.CreditTotalLocal}}</div>
+          {{end}}
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon stat-icon-error">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value text-error">${{printf "%.2f" $d.CreditUsedUSD}}</div>
+          <div class="stat-label">{{t "Consumed"}}</div>
+          {{if and $d.DisplayCurrency (ne $d.DisplayCurrency "USD") (gt $d.ExchangeRate 0)}}
+          <div class="text-xs text-muted">{{$d.DisplayCurrency}} {{printf "%.2f" $d.CreditUsedLocal}}</div>
+          {{end}}
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon stat-icon-success">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value text-success">${{printf "%.2f" $d.CreditRemainingUSD}}</div>
+          <div class="stat-label">{{t "Remaining"}}</div>
+          {{if and $d.DisplayCurrency (ne $d.DisplayCurrency "USD") (gt $d.ExchangeRate 0)}}
+          <div class="text-xs text-muted">{{$d.DisplayCurrency}} {{printf "%.2f" $d.CreditRemainingLocal}}</div>
+          {{end}}
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon stat-icon-warning">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{printf "%.1f" $d.CreditPercent}}%</div>
+          <div class="stat-label">{{t "Usage Rate"}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+
+<div class="card mt-4">
+  <div class="tabs">
+    <button type="button" class="tab-btn active" data-tab="billing-tab-transactions" onclick="switchBillingTab(this)">{{t "Transactions"}}</button>
+    <button type="button" class="tab-btn" data-tab="billing-tab-history" onclick="switchBillingTab(this)">{{t "Billing History"}}</button>
+    <button type="button" class="tab-btn" data-tab="billing-tab-requests" onclick="switchBillingTab(this)">{{t "Invoice Requests"}}</button>
+  </div>
+
+  <!-- Transactions -->
+  <div id="billing-tab-transactions" class="tab-pane active">
+    {{if $d.Statements}}
+    <h3 class="card-title" style="font-size:15px;margin-bottom:8px">{{t "Monthly Statements"}}</h3>
+    <p class="text-sm text-muted" style="margin-bottom:8px">
+      {{t "Postpaid eligible to invoice"}}: <strong class="text-success">${{printf "%.2f" (div $d.PostpaidEligibleCents 100)}}</strong>
+      <span class="text-xs">({{t "global net of all non-rejected requests, including requests without a period"}})</span>
+    </p>
+    <div class="data-table-wrapper">
+      <table class="data-table du-table du-table-zebra">
+        <thead>
+          <tr>
+            <th>{{t "Period"}}</th>
+            <th>{{t "Postpaid Consumption"}}</th>
+            <th>{{t "Quota Used"}}</th>
+            <th>{{t "Invoiced (this period)"}}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range $d.Statements}}
+          <tr>
+            <td class="text-sm font-medium">{{.Period}}</td>
+            <td class="text-sm">${{printf "%.2f" .CreditUsedUSD}}</td>
+            <td class="text-sm text-muted">{{.QuotaUsed}}</td>
+            <td class="text-sm">{{if gt .InvoicedCents 0}}${{printf "%.2f" (div .InvoicedCents 100)}}{{else}}-{{end}}</td>
+            <td class="text-sm">
+              {{if and $d.IsEnterpriseAdmin (gt $d.PostpaidEligibleCents 0)}}
+              <button class="btn btn-secondary btn-xs" onclick="showInvoiceRequestModal('postpaid', '{{.Period}}')">{{t "Request Invoice"}}</button>
+              {{end}}
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{end}}
+
+    {{if $d.Transactions}}
+    <div class="data-table-wrapper">
+      <table class="data-table du-table du-table-zebra">
+        <thead>
+          <tr>
+            <th>{{t "Time"}}</th>
+            <th>{{t "Type"}}</th>
+            <th>{{t "Description"}}</th>
+            <th>{{t "Amount"}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range $d.Transactions}}
+          <tr>
+            <td class="text-sm">{{formatDateTime .CreatedAt $.Timezone}}</td>
+            <td>
+              <span class="badge badge-{{if eq .Type "topup"}}success{{else if eq .Type "invoice"}}warning{{else if eq .Type "reset"}}info{{else}}muted{{end}}">
+                {{if eq .Type "topup"}}{{t "Credit Top-up"}}
+                {{else if eq .Type "quota_topup"}}{{t "Quota Top-up"}}
+                {{else if eq .Type "reset"}}{{t "Monthly Reset"}}
+                {{else if eq .Type "invoice"}}{{t "Invoice"}}
+                {{else if eq .Type "refund"}}{{t "Refund"}}
+                {{else}}{{.Type}}{{end}}
+              </span>
+            </td>
+            <td class="text-sm">{{.Description}}</td>
+            <td class="text-sm {{if gt .AmountUSD 0.0}}text-success{{else if lt .AmountUSD 0.0}}text-error{{else}}text-muted{{end}}">
+              {{if ne .Type "quota_topup"}}{{if gt .AmountUSD 0.0}}+{{end}}${{printf "%.2f" .AmountUSD}}{{else}}-{{end}}
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <div class="empty-state-sm">
+      <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <p class="empty-state-title">{{t "No data"}}</p>
+    </div>
+    {{end}}
+  </div>
+
+  <!-- Billing History -->
+  <div id="billing-tab-history" class="tab-pane">
+    {{if $d.Invoices}}
+    <div class="data-table-wrapper">
+      <table class="data-table du-table du-table-zebra">
+        <thead>
+          <tr>
+            <th>{{t "Invoice No."}}</th>
+            <th>{{t "Amount"}}</th>
+            <th>{{t "Status"}}</th>
+            <th>{{t "Created At"}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range $d.Invoices}}
+          <tr>
+            <td class="text-sm font-mono">{{if .InvoiceNumber}}{{.InvoiceNumber}}{{else}}{{.ID}}{{end}}</td>
+            <td>
+              ${{printf "%.2f" .AmountUSD}}
+              {{if and $d.DisplayCurrency (ne $d.DisplayCurrency "USD") (gt .AmountLocal 0)}}
+              <span class="text-muted"> / {{$d.DisplayCurrency}} {{printf "%.2f" .AmountLocal}}</span>
+              {{end}}
+            </td>
+            <td>
+              <span class="badge badge-{{if eq .Status "paid"}}success{{else}}warning{{end}}">{{.Status}}</span>
+              {{if eq .Source "uploaded"}}<span class="badge badge-info" style="margin-left:4px">{{t "Uploaded"}}</span>{{end}}
+            </td>
+            <td>{{formatDateTime .CreatedAt $.Timezone}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <div class="empty-state-sm">
+      <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <p class="empty-state-title">{{t "No data"}}</p>
+    </div>
+    {{end}}
+  </div>
+
+  <!-- Invoice Requests -->
+  <div id="billing-tab-requests" class="tab-pane">
+    <div class="card-header" style="padding-left:0;padding-right:0;padding-top:0">
+      <h2 class="card-title">{{t "Invoice Requests"}}</h2>
+      <div class="flex items-center gap-4">
+        <span class="text-sm text-muted">{{t "Eligible"}}: <strong style="cursor:pointer;text-decoration:underline dotted" onclick="showBreakdown()">${{printf "%.2f" (div $d.InvoiceEligible 100)}}</strong>
+          <span class="text-xs">({{t "postpaid"}} ${{printf "%.2f" (div $d.PostpaidEligibleCents 100)}} · {{t "prepaid"}} ${{printf "%.2f" (div $d.PrepaidEligibleCents 100)}})</span>
+        </span>
+        {{if $d.IsEnterpriseAdmin}}<button class="btn btn-secondary btn-sm" onclick="showInvoiceRequestModal('postpaid','')">{{t "Request Invoice"}}</button>{{end}}
+      </div>
+    </div>
+  <div class="notice-bar mt-3" style="background:var(--bg-hover);padding:10px 14px;border-radius:var(--radius);font-size:.85rem;color:var(--text-muted);display:flex;align-items:center;gap:8px">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    <span>{{t "Invoice requests are reviewed and issued manually by administrators, with a processing time of approximately 1-3 business days"}}</span>
+  </div>
+  <div class="data-table-wrapper mt-4">
+    <table class="data-table du-table du-table-zebra">
+      <thead>
+        <tr>
+          <th>{{t "Title"}}</th>
+          <th>{{t "Amount"}}</th>
+          <th>{{t "Status"}}</th>
+          <th>{{t "Invoice"}}</th>
+          <th>{{t "Created At"}}</th>
+        </tr>
+      </thead>
+      <tbody id="invoice-requests-tbody">
+        <tr><td colspan="5" class="text-center text-muted py-4">{{t "Loading..."}}</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- Invoice Request Modal -->
+<div id="invoice-request-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">{{t "Request Invoice"}}</span>
+      <button class="modal-close" onclick="closeInvoiceRequestModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">{{t "Invoice Pool"}}</label>
+        <div style="display:flex;gap:16px;align-items:center">
+          <label style="display:flex;align-items:center;gap:6px"><input type="radio" name="inv-pool" value="postpaid" checked onchange="onPoolChange()"> {{t "Postpaid (monthly statements)"}}</label>
+          <label style="display:flex;align-items:center;gap:6px"><input type="radio" name="inv-pool" value="prepaid" onchange="onPoolChange()"> {{t "Prepaid (wallet consumption)"}}</label>
+        </div>
+      </div>
+      <div class="form-group" id="inv-type-group">
+        <label class="form-label">{{t "Invoice Type"}}</label>
+        <select id="inv-type" class="form-select du-select du-select-bordered">
+          <option value="normal">{{t "General value-added tax invoice (enterprise)"}}</option>
+          <option value="special">{{t "Special value-added tax invoice (enterprise)"}}</option>
+          <option value="proforma">{{t "Proforma Invoice (International)"}}</option>
+        </select>
+      </div>
+      <div class="form-group" id="inv-period-group">
+        <label class="form-label">{{t "Statement Period"}}</label>
+        <select id="inv-period" class="form-select du-select du-select-bordered" onchange="onPeriodChange()">
+          <option value="">{{t "All un-invoiced periods"}}</option>
+          {{range $d.Statements}}<option value="{{.Period}}">{{.Period}} — {{t "consumption"}} ${{printf "%.2f" .CreditUsedUSD}}</option>{{end}}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Title"}}</label>
+        <input type="text" id="inv-title" class="form-input du-input du-input-bordered" value="{{$d.EnterpriseName}}" readonly aria-label="Inv Title">
+        <span class="form-hint">{{t "Uses enterprise registered name"}}</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Amount"}} *</label>
+        <input type="number" id="inv-amount" class="form-input du-input du-input-bordered" min="0" step="0.01" placeholder="{{t "Amount (USD)"}}">
+        <span class="form-hint" id="inv-eligible-hint"></span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Delivery Email"}}</label>
+        <input type="email" id="inv-email" class="form-input du-input du-input-bordered" placeholder="{{t "Email to receive invoice"}}">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeInvoiceRequestModal()">{{t "Cancel"}}</button>
+      <button class="btn btn-primary" onclick="submitInvoiceRequest()">{{t "Submit"}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invoice Breakdown Modal -->
+<div id="breakdown-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <span class="modal-title">{{t "Invoice Eligibility Breakdown"}}</span>
+      <button class="modal-close" onclick="document.getElementById('breakdown-modal').style.display='none'">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">{{t "Postpaid (monthly statements)"}}</div>
+      <table style="width:100%;font-size:14px;line-height:2">
+        <tr><td class="text-muted">{{t "Statement Consumption"}}</td><td style="text-align:right;font-weight:600">${{printf "%.2f" (div $d.PostpaidEligibleCents 100)}}</td></tr>
+      </table>
+      <div style="font-size:13px;font-weight:600;margin:10px 0 4px">{{t "Prepaid (wallet consumption)"}}</div>
+      <table style="width:100%;font-size:14px;line-height:2">
+        <tr><td class="text-muted">{{t "Prepaid Consumption"}}</td><td style="text-align:right;font-weight:600">${{printf "%.2f" (div $d.PrepaidEligibleCents 100)}}</td></tr>
+      </table>
+      <table style="width:100%;font-size:14px;line-height:2;margin-top:8px;border-top:1px solid var(--border)">
+        <tr><td><strong>{{t "Total Eligible"}}</strong></td><td style="text-align:right;font-weight:700;font-size:16px">${{printf "%.2f" (div $d.InvoiceEligible 100)}}</td></tr>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('breakdown-modal').style.display='none'">{{t "Close"}}</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchBillingTab(btn) {
+  var tabId = btn.getAttribute('data-tab');
+  var nav = btn.closest('.tabs');
+  nav.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.toggle('active', b === btn); });
+  var panes = btn.closest('.card').querySelectorAll('.tab-pane');
+  panes.forEach(function(p) { p.classList.toggle('active', p.id === tabId); });
+}
+function showBreakdown() { document.getElementById('breakdown-modal').style.display = 'flex'; }
+
+// Header/invoice type display names (personal/normal/special/proforma).
+var invoiceTypeNames = {
+  'personal': _t('Personal Invoice'),
+  'normal': _t('VAT Normal Invoice'),
+  'special': _t('VAT Special Invoice'),
+  'proforma': _t('Proforma Invoice')
+};
+
+// Global pool nets (cents) for client-side validation. Postpaid is the
+// statement total minus ALL non-rejected requests — per-period figures are
+// indicative only (see the statements table note).
+var postpaidEligibleTotal = {{$d.PostpaidEligibleCents}};
+var prepaidEligibleTotal = {{$d.PrepaidEligibleCents}};
+
+function currentPool() {
+  var r = document.querySelector('input[name="inv-pool"]:checked');
+  return r ? r.value : 'postpaid';
+}
+function currentPoolEligible() {
+  // Postpaid always validates against the global net — per-period figures
+  // ignore period-less requests and would let duplicates through.
+  if (currentPool() === 'prepaid') return prepaidEligibleTotal;
+  return postpaidEligibleTotal;
+}
+function onPoolChange() {
+  var isPostpaid = currentPool() === 'postpaid';
+  document.getElementById('inv-period-group').style.display = isPostpaid ? '' : 'none';
+  updateEligibleHint();
+}
+function onPeriodChange() { updateEligibleHint(); }
+function updateEligibleHint() {
+  var el = document.getElementById('inv-eligible-hint');
+  el.textContent = _t('Eligible') + ': $' + (currentPoolEligible() / 100).toFixed(2);
+}
+function showInvoiceRequestModal(pool, period) {
+  if (pool) {
+    var radio = document.querySelector('input[name="inv-pool"][value="' + pool + '"]');
+    if (radio) radio.checked = true;
+  }
+  document.getElementById('inv-period').value = period || '';
+  onPoolChange();
+  document.getElementById('invoice-request-modal').style.display = 'flex';
+}
+async function loadInvoiceRequests() {
+  try {
+    var res = await fetch('/api/invoices/requests?scope=enterprise');
+    var data = await res.json();
+    var tbody = document.getElementById('invoice-requests-tbody');
+    var requests = data.requests || [];
+    if (requests.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">' + _t('No data') + '</td></tr>'; return; }
+    var statusMap = {'pending':'warning','processing':'primary','completed':'success','rejected':'danger'};
+    tbody.innerHTML = requests.map(function(r) {
+      var detail = '';
+      if (r.invoice_type && r.invoice_type !== 'normal') { detail = '<span class="badge badge-info" style="margin-left:4px">' + (invoiceTypeNames[r.invoice_type] || r.invoice_type) + '</span>'; }
+      if (r.status === 'completed' && r.invoice_number) { detail += '<div class="text-xs text-muted">' + _t('Invoice No.') + ': ' + r.invoice_number + '</div>'; }
+      if (r.status === 'rejected' && r.rejection_reason) { detail += '<div class="text-xs text-muted">' + _t('Rejection Reason') + ': ' + r.rejection_reason + '</div>'; }
+      var invoiceCell = (r.status === 'completed' && r.has_pdf)
+        ? '<a href="/api/invoices/requests/' + r.id + '/download" class="text-primary" style="text-decoration:underline">' + _t('Download') + '</a>'
+        : '<span class="text-muted">—</span>';
+      return '<tr><td>' + (r.title||'-') + '</td><td>$' + ((r.amount_cents||r.amount||0)/100).toFixed(2) + '</td><td><span class="badge badge-' + (statusMap[r.status]||'muted') + '">' + r.status + '</span>' + detail + '</td><td class="text-sm">' + invoiceCell + '</td><td class="text-sm">' + (r.created_at||'').substring(0,10) + '</td></tr>';
+    }).join('');
+  } catch(e) {
+    document.getElementById('invoice-requests-tbody').innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">-</td></tr>';
+  }
+}
+function showInvoiceRequestModal() { document.getElementById('invoice-request-modal').style.display = 'flex'; }
+function closeInvoiceRequestModal() { document.getElementById('invoice-request-modal').style.display = 'none'; }
+async function submitInvoiceRequest() {
+  var title = document.getElementById('inv-title').value.trim();
+  var amountUSD = parseFloat(document.getElementById('inv-amount').value) || 0;
+  var amountCents = Math.round(amountUSD * 100);
+  var email = document.getElementById('inv-email').value.trim();
+  if (!title || amountCents <= 0) { showMessage(_t('Error'), _t('Title and amount are required')); return; }
+  var pool = currentPool();
+  var period = pool === 'postpaid' ? document.getElementById('inv-period').value : '';
+  var eligible = currentPoolEligible();
+  if (amountCents > eligible) { showMessage(_t('Error'), _t('Amount exceeds eligible invoice amount')); return; }
+  var csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  try {
+    var res = await fetch('/api/invoices/requests', {
+      method: 'POST', headers: {'Content-Type':'application/json','X-CSRF-Token': csrf},
+      body: JSON.stringify({title: title, amount_cents: amountCents, delivery_email: email, pool: pool, period: period, invoice_type: document.getElementById('inv-type').value})
+    });
+    var data = await res.json();
+    if (data.success || res.ok) { closeInvoiceRequestModal(); showMessage(_t('Done'), _t('Invoice request submitted')); loadInvoiceRequests(); }
+    else { showMessage(_t('Error'), data.error?.message || _t('Failed')); }
+  } catch(e) { showMessage(_t('Error'), _t('Network error')); }
+}
+document.addEventListener('DOMContentLoaded', loadInvoiceRequests);
+</script>
+{{end}}

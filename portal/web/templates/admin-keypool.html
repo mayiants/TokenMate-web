@@ -1,0 +1,868 @@
+{{define "content"}}
+{{$d := .Data}}{{$items := $d.Items}}
+<div class="page-header">
+  <h1 class="page-title">{{t "Key Management"}}</h1>
+</div>
+
+<!-- Key Pool Stats -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-primary">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{$d.Total}}</div>
+      <div class="stat-label">{{t "Total Keys"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-success">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{if $items}}{{$items.ActiveCount}}{{else}}0{{end}}</div>
+      <div class="stat-label">{{t "Active Keys"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-error">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{if $items}}{{$items.DisabledCount}}{{else}}0{{end}}</div>
+      <div class="stat-label">{{t "Disabled Keys"}}</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon stat-icon-success">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
+    <div class="stat-content">
+      <div class="stat-value">{{if $items}}{{$items.ValidCount}}{{else}}0{{end}}</div>
+      <div class="stat-label">{{t "Verified"}}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Search Bar + Actions -->
+<div class="key-search-bar">
+  <label for="provider-filter" class="visually-hidden">{{t "Filter by provider"}}</label>
+  <select id="provider-filter" class="form-select form-select-sm du-select du-select-bordered" style="width:150px" onchange="filterKeys()" aria-label="{{t "Filter by provider"}}">
+    <option value="">{{t "All Providers"}}</option>
+    {{range $items.Providers}}
+    <option value="{{.ID}}">{{.Name}}</option>
+    {{end}}
+    <option value="other">{{t "Other"}}</option>
+  </select>
+  <div style="flex:1"></div>
+  <button class="btn btn-secondary btn-sm" onclick="validateAllKeys()">{{t "Batch Verify"}}</button>
+  <button class="btn btn-secondary btn-sm" onclick="openImportDrawer()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>{{t "Batch Import"}}</button>
+  <button class="btn btn-secondary btn-sm" onclick="exportKeys()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>{{t "Export"}}</button>
+  <button class="btn btn-primary btn-sm" onclick="openCreateKeyDrawer()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{{t "New"}}</button>
+</div>
+
+<!-- Key Table -->
+{{if $items.Keys}}
+<div class="card">
+  <div class="data-table-wrapper">
+    <table class="data-table du-table du-table-zebra" id="keys-table">
+      <thead>
+        <tr>
+          <th>{{t "Provider"}}</th>
+          <th>{{t "Preview"}}</th>
+          <th>{{t "RPM Limit"}}</th>
+          <th>{{t "TPM Limit"}}</th>
+          <th>{{t "Model Limits"}}</th>
+          <th>{{t "Status"}}</th>
+          <th>{{t "Verification Status"}}</th>
+          <th>{{t "Created At"}}</th>
+          <th style="text-align:right">{{t "Actions"}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range $items.Keys}}
+        <tr data-provider="{{.Provider}}">
+          <td>
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full {{if eq .Provider "openai"}}bg-green-500{{else if eq .Provider "anthropic"}}bg-orange-500{{else if eq .Provider "google"}}bg-blue-500{{else}}bg-gray-500{{end}}"></span>
+              <span>{{.Provider}}</span>
+            </div>
+          </td>
+          <td><code class="font-mono code-cell code-cell-sm" title="{{.Preview}}">{{.Preview}}</code></td>
+          <td>{{if .RpmLimit}}{{.RpmLimit}}{{else}}--{{end}}</td>
+          <td>{{if .TpmLimit}}{{.TpmLimit}}{{else}}--{{end}}</td>
+          <td>{{if .ModelLimits}}<code class="font-mono text-xs code-cell" title="{{.ModelLimits}}">{{.ModelLimits}}</code>{{else}}--{{end}}</td>
+          <td>
+            <span class="badge badge-{{if .Enabled}}success{{else}}error{{end}}">
+              {{if .Enabled}}{{t "Active"}}{{else}}{{t "Inactive"}}{{end}}
+            </span>
+          </td>
+          <td>
+            <span class="badge badge-{{if eq .ValidationStatus "valid"}}success{{else if eq .ValidationStatus "invalid"}}error{{else if eq .ValidationStatus "rate_limited"}}warning{{else}}info{{end}}">
+              {{if .ValidationStatus}}{{.ValidationStatus}}{{else}}pending{{end}}
+            </span>
+          </td>
+          <td>{{formatDate .CreatedAt $.Timezone}}</td>
+          <td>
+            <div class="flex gap-1" style="justify-content:flex-end">
+              <button class="btn btn-sm btn-ghost" onclick="validateKey('{{.ID}}')">{{t "Re-validate"}}</button>
+              <button class="btn btn-sm btn-secondary" onclick="openEditKeyDrawer('{{.ID}}', '{{.Provider}}', {{.RpmLimit}}, {{.TpmLimit}}, {{.QuotaLimit}}, '{{.Tier}}', '{{.BaseURL}}')">{{t "Edit"}}</button>
+              <button class="btn btn-sm btn-secondary" onclick="toggleKey('{{.ID}}', {{if .Enabled}}false{{else}}true{{end}})">{{if .Enabled}}{{t "Disable"}}{{else}}{{t "Enable"}}{{end}}</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteKey('{{.ID}}')">{{t "Delete"}}</button>
+            </div>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{if gt $d.TotalPages 1}}
+  <div class="pagination">
+    {{if gt $d.Page 1}}
+    <a class="btn btn-sm btn-secondary" href="/admin/keypool?page={{int (sub $d.Page 1)}}">{{t "Previous"}}</a>
+    {{end}}
+      <span class="pagination-info">{{t "page_info" (dict "Total" $d.Total "Page" $d.Page "TotalPages" $d.TotalPages)}}</span>
+      {{if lt $d.Page $d.TotalPages}}
+    <a class="btn btn-sm btn-secondary" href="/admin/keypool?page={{int (add $d.Page 1)}}">{{t "Next"}}</a>
+    {{end}}
+    </div>
+  {{end}}
+</div>
+{{else}}
+<div class="card">
+  <p class="text-muted text-center mt-4">{{t "No data"}}</p>
+</div>
+{{end}}
+
+<!-- Create Key Drawer -->
+<div id="create-key-drawer" class="drawer">
+  <div class="drawer-header">
+    <span class="drawer-title">{{t "Add Upstream Key"}}</span>
+    <button class="drawer-close" onclick="closeCreateKeyDrawer()">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <form id="add-key-form">
+      <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+      <div class="form-group">
+        <label class="form-label">{{t "Provider"}}</label>
+        <select name="provider" id="key-provider" class="form-select du-select du-select-bordered" required onchange="updateDefaultBaseUrl()" aria-label="Key Provider">
+          <option value="">{{t "Select Provider"}}</option>
+          {{range $items.Providers}}
+          <option value="{{.ID}}">{{.Name}}</option>
+          {{end}}
+          <option value="other">{{t "Other"}}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">API Key</label>
+        <input type="text" name="api_key" id="key-api-key" class="form-input du-input du-input-bordered" required placeholder="sk-...">
+        <p class="text-xs text-muted mt-1" id="key-api-key-hint">{{t "Keys will be encrypted at rest"}}</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "RPM limit (optional)"}}</label>
+        <input type="number" name="rpm_limit" class="form-input du-input du-input-bordered" placeholder="60" min="1">
+        <p class="text-xs text-muted mt-1">{{t "Requests per minute limit"}}</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "TPM limit (optional)"}}</label>
+        <input type="number" name="tpm_limit" class="form-input du-input du-input-bordered" placeholder="100000" min="1">
+        <p class="text-xs text-muted mt-1">{{t "Tokens per minute limit"}}</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Quota Total (optional)"}}</label>
+        <input type="number" name="quota_limit" class="form-input du-input du-input-bordered" placeholder="{{t "Leave empty = unlimited"}}" min="0">
+        <p class="text-xs text-muted mt-1">{{t "Total token quota limit for this key"}}</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Tier Level"}}</label>
+        <select name="tier" class="form-select du-select du-select-bordered" aria-label="{{t "Tier"}}">
+          <option value="default">{{t "Default (Standard)"}}</option>
+          <option value="premium">{{t "Premium"}}</option>
+          <option value="enterprise">{{t "Enterprise"}}</option>
+          <option value="economy">{{t "Economy"}}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Base URL (optional)"}}</label>
+        <input type="text" name="base_url" id="key-base-url" class="form-input du-input du-input-bordered" placeholder="https://api.example.com/v1">
+        <p class="text-xs text-muted mt-1">{{t "Leave empty for default URL"}}</p>
+      </div>
+    </form>
+  </div>
+  <div class="drawer-footer">
+    <button type="button" class="btn btn-secondary" onclick="closeCreateKeyDrawer()">{{t "Cancel"}}</button>
+    <button type="button" class="btn btn-primary" onclick="submitAddKey()">{{t "Add"}}</button>
+  </div>
+</div>
+<div id="create-key-backdrop" class="drawer-backdrop" onclick="closeCreateKeyDrawer()"></div>
+
+<!-- Edit Key Drawer -->
+<div id="edit-key-drawer" class="drawer">
+  <div class="drawer-header">
+    <span class="drawer-title">{{t "Edit Upstream Key"}}</span>
+    <button class="drawer-close" onclick="closeEditKeyDrawer()">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <form id="edit-key-form">
+      <input type="hidden" id="edit-key-id">
+      <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+      <div class="form-group">
+        <label class="form-label">{{t "Provider"}}</label>
+        <input type="text" id="edit-provider" class="form-input du-input du-input-bordered" aria-label="Edit Provider">
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Tier Level"}}</label>
+        <select id="edit-tier" class="form-select du-select du-select-bordered" aria-label="{{t "Tier"}}">
+          <option value="default">{{t "Default (Standard)"}}</option>
+          <option value="premium">{{t "Premium"}}</option>
+          <option value="enterprise">{{t "Enterprise"}}</option>
+          <option value="economy">{{t "Economy"}}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "RPM Limit"}}</label>
+        <input type="number" id="edit-rpm" class="form-input du-input du-input-bordered" placeholder="60" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "TPM Limit"}}</label>
+        <input type="number" id="edit-tpm" class="form-input du-input du-input-bordered" placeholder="100000" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Model Limits (JSON)"}}</label>
+        <textarea id="edit-mlimits" rows="3" class="form-input du-input du-input-bordered font-mono" placeholder='{"*": {"rpm": 14}}' aria-label="{{t "Model Limits (JSON)"}}"></textarea>
+        <p class="text-xs text-muted mt-1">{{t "Per-model rate limit override; * applies to all models. Empty = no override."}}</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Total Quota (0=no limit)"}}</label>
+        <input type="number" id="edit-quota" class="form-input du-input du-input-bordered" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Base URL</label>
+        <input type="text" id="edit-baseurl" class="form-input du-input du-input-bordered" placeholder="https://api.example.com/v1">
+      </div>
+    </form>
+  </div>
+  <div class="drawer-footer">
+    <button type="button" class="btn btn-secondary" onclick="closeEditKeyDrawer()">{{t "Cancel"}}</button>
+    <button type="button" class="btn btn-primary" onclick="submitEditKey()">{{t "Save"}}</button>
+  </div>
+</div>
+<div id="edit-key-backdrop" class="drawer-backdrop" onclick="closeEditKeyDrawer()"></div>
+
+<!-- Import Drawer -->
+<div id="import-backdrop" class="drawer-backdrop" onclick="closeImportDrawer()"></div>
+<div id="import-drawer" class="drawer drawer-lg">
+  <div class="drawer-header">
+    <span class="drawer-title">{{t "Import Keys"}}</span>
+    <button class="drawer-close" onclick="closeImportDrawer()">&times;</button>
+  </div>
+  <div class="drawer-body">
+    <form id="import-form" onsubmit="submitImport(event)">
+      <div class="form-group">
+        <label class="form-label">{{t "Import method"}}</label>
+        <select name="import_mode" id="import-mode" class="form-select du-select du-select-bordered" onchange="toggleImportMode()" aria-label="Import Mode">
+          <option value="single">{{t "Single-provider Batch Import (efficient)"}}</option>
+          <option value="mixed">{{t "Mixed-provider Import (migration)"}}</option>
+        </select>
+      </div>
+
+      <!-- Single provider mode -->
+      <div id="single-provider-fields">
+        <div class="form-group">
+          <label class="form-label">{{t "Provider"}}</label>
+          <select name="single_provider" id="import-provider" class="form-select du-select du-select-bordered" onchange="updateImportBaseUrl()" aria-label="{{t "Provider"}}">
+            <option value="">{{t "Select Provider"}}</option>
+            {{range $items.Providers}}
+            <option value="{{.ID}}">{{.Name}}</option>
+            {{end}}
+            <option value="other">{{t "Other"}}</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="form-group">
+            <label class="form-label">{{t "RPM limit (optional)"}}</label>
+            <input type="number" name="single_rpm" class="form-input du-input du-input-bordered" placeholder="60">
+          </div>
+          <div class="form-group">
+            <label class="form-label">{{t "TPM limits (optional)"}}</label>
+            <input type="number" name="single_tpm" class="form-input du-input du-input-bordered" placeholder="100000">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{t "Base URL (optional)"}}</label>
+          <input type="text" name="single_base_url" id="import-base-url" class="form-input du-input du-input-bordered" placeholder="{{t "Leave empty for default URL"}}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{t "API Keys (one per line, up to 100 lines)"}}</label>
+          <textarea name="single_keys" id="single-keys-textarea" class="form-input du-input du-input-bordered" rows="8" placeholder="sk-xxxxx
+sk-yyyyy
+sk-zzzzz" oninput="checkLineLimit(this, 100)"></textarea>
+          <p class="text-xs text-muted mt-1">{{t "Each line has one Key. If there are more than 100 lines, please use file upload."}}</p>
+        </div>
+      </div>
+
+      <!-- Mixed provider mode -->
+      <div id="mixed-provider-fields" style="display:none">
+        <div class="form-group">
+          <label class="form-label">{{t "Key Data (max 100 lines)"}}</label>
+          <p class="text-xs text-muted mb-2">{{t "Format: Provider,Key,Base URL,RPM Limit,TPM Limit,Enabled"}}</p>
+          <textarea name="mixed_keys" id="mixed-keys-textarea" class="form-input du-input du-input-bordered" rows="8" placeholder="openai,sk-xxxxx,https://api.openai.com/v1,60,100000,true
+anthropic,sk-ant-yyyyy,,,500,,false" oninput="checkLineLimit(this, 100)"></textarea>
+          <p class="text-xs text-muted mt-1">{{t "If there are more than 100 lines, please use file upload."}}</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{t "Or upload file (unlimited)"}}</label>
+        <input type="file" name="keys_file" class="form-input du-input du-input-bordered" accept=".txt,.csv" onchange="loadImportFile(event)" aria-label="Key File">
+      </div>
+    </form>
+  </div>
+  <div class="drawer-footer">
+    <button type="button" class="btn btn-secondary" onclick="downloadTemplate()">{{t "Download Template"}}</button>
+    <button type="button" class="btn btn-secondary" onclick="closeImportDrawer()">{{t "Cancel"}}</button>
+    <button type="submit" class="btn btn-primary" form="import-form">{{t "Import"}}</button>
+  </div>
+</div>
+
+<!-- Delete Key Modal -->
+<div id="delete-key-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">{{t "Delete Key"}}</span>
+      <button class="modal-close" onclick="document.getElementById('delete-key-modal').style.display='none'">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-muted">{{t "Delete key? This cannot be undone."}}</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('delete-key-modal').style.display='none'">{{t "Cancel"}}</button>
+      <button class="btn btn-danger" id="delete-key-confirm-btn">{{t "Delete"}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export Keys Password Modal -->
+<div id="export-keys-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">{{t "Export"}}</span>
+      <button class="modal-close" onclick="document.getElementById('export-keys-modal').style.display='none'">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-sm text-muted mb-4">{{t "To protect the security of your data, password verification is required before exporting."}}</p>
+      <div class="form-group">
+        <label class="form-label">{{t "Current Password"}}</label>
+        <input type="password" id="export-keys-password" class="form-input du-input du-input-bordered" placeholder="{{t "Enter login password"}}">
+      </div>
+      <div id="export-keys-result"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('export-keys-modal').style.display='none'">{{t "Cancel"}}</button>
+      <button class="btn btn-primary" onclick="confirmExportKeys()">{{t "Export"}}</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Drawer helpers (must be first) ──
+function openCreateKeyDrawer(){
+  var d=document.getElementById('create-key-drawer'),b=document.getElementById('create-key-backdrop');
+  if(d)d.classList.add('open');if(b)b.classList.add('open');
+  var f=document.getElementById('add-key-form');if(f)f.reset();
+}
+function closeCreateKeyDrawer(){
+  var d=document.getElementById('create-key-drawer'),b=document.getElementById('create-key-backdrop');
+  if(d)d.classList.remove('open');if(b)b.classList.remove('open');
+}
+// Per-key model_limits overrides keyed by upstream key ID; missing keys have
+// no override. Rendered via the json helper so values are safe to embed.
+var keyModelLimits = {{json $items.ModelLimitsByKey}};
+function openEditKeyDrawer(keyId, provider, rpm, tpm, quota, tier, baseUrl){
+  var d=document.getElementById('edit-key-drawer'),b=document.getElementById('edit-key-backdrop');
+  if(d)d.classList.add('open');if(b)b.classList.add('open');
+  if(!keyId)return;
+  document.getElementById('edit-key-id').value=keyId;
+  document.getElementById('edit-provider').value=provider||'';
+  document.getElementById('edit-tier').value=tier||'default';
+  document.getElementById('edit-rpm').value=rpm||'';
+  document.getElementById('edit-tpm').value=tpm||'';
+  document.getElementById('edit-quota').value=quota||0;
+  document.getElementById('edit-baseurl').value=baseUrl||'';
+  var ml = (typeof keyModelLimits !== 'undefined') ? keyModelLimits[keyId] : null;
+  document.getElementById('edit-mlimits').value = ml ? JSON.stringify(ml, null, 2) : '';
+}
+function closeEditKeyDrawer(){
+  var d=document.getElementById('edit-key-drawer'),b=document.getElementById('edit-key-backdrop');
+  if(d)d.classList.remove('open');if(b)b.classList.remove('open');
+}
+// ── Page logic ──
+// Provider default base URLs - matches all 20 supported providers
+var providerBaseUrls = {
+  'openai': 'https://api.openai.com/v1',
+  'anthropic': 'https://api.anthropic.com/v1',
+  'google': 'https://generativelanguage.googleapis.com/v1beta',
+  'deepseek': 'https://api.deepseek.com/v1',
+  'moonshot': 'https://api.moonshot.cn/v1',
+  'zhipu': 'https://open.bigmodel.cn/api/paas/v4',
+  'alibaba': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+  'baidu': 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop',
+  'minimax': 'https://api.minimax.chat/v1',
+  'xai': 'https://api.x.ai/v1',
+  'mistral': 'https://api.mistral.ai/v1',
+  'cohere': 'https://api.cohere.ai/v1',
+  'perplexity': 'https://api.perplexity.ai',
+  'amazon': 'https://bedrock-runtime.us-east-1.amazonaws.com',
+  'amazon-us-west-2': 'https://bedrock-runtime.us-west-2.amazonaws.com',
+  'amazon-eu-west-1': 'https://bedrock-runtime.eu-west-1.amazonaws.com',
+  'bytedance': 'https://ark.cn-beijing.volces.com/api/v3',
+  'meta': 'https://llama-api.meta.com/v1',
+  'microsoft': 'https://azure-openai.azure.com',
+  'tencent': 'https://hunyuan.tencentcloudapi.com',
+  'groq': 'https://api.groq.com/openai/v1',
+  'xiaomi': 'https://api.xiaomimimo.com/v1'
+};
+
+function openImportDrawer() {
+  document.getElementById('import-form').reset();
+  var d=document.getElementById('import-drawer'),b=document.getElementById('import-backdrop');
+  if(d)d.classList.add('open');if(b)b.classList.add('open');
+}
+
+function updateDefaultBaseUrl() {
+  var provider = document.getElementById('key-provider').value;
+  var baseUrlInput = document.getElementById('key-base-url');
+  var apiKeyHint = document.getElementById('key-api-key-hint');
+  var apiKeyInput = document.getElementById('key-api-key');
+
+  // AWS Bedrock Runtime: AK/SK format (SigV4). Mantle: standard Bearer token.
+  var isAWSRuntime = provider === 'amazon' || (provider.startsWith('amazon-') && !provider.startsWith('amazon-mantle-'));
+  if (isAWSRuntime) {
+    apiKeyHint.textContent = _t('AWS format: access_key_id:secret_access_key or a Bedrock API key (ABSK...) — encrypted at rest');
+    apiKeyInput.placeholder = 'AKIA...:secret...  or  ABSK...';
+  } else {
+    apiKeyHint.textContent = _t('Keys will be encrypted at rest');
+    apiKeyInput.placeholder = 'sk-...';
+  }
+
+  if (provider && providerBaseUrls[provider]) {
+    // Auto-fill the default URL
+    baseUrlInput.value = providerBaseUrls[provider];
+    baseUrlInput.placeholder = providerBaseUrls[provider] + ' (' + _t('Default') + ')';
+  } else {
+    baseUrlInput.value = '';
+    baseUrlInput.placeholder = 'https://api.example.com/v1';
+  }
+}
+
+// Alias to use layout.html's global confirm modal
+var executeConfirm = executeGlobalConfirm;
+
+function showSuccess(message) {
+  showMessage(_t('Success'), message);
+}
+
+function showError(message) {
+  showMessage(_t('Error'), message);
+}
+
+function closeImportDrawer() {
+  var d=document.getElementById('import-drawer'),b=document.getElementById('import-backdrop');
+  if(d)d.classList.remove('open');if(b)b.classList.remove('open');
+}
+
+function filterKeys() {
+  var provider = document.getElementById('provider-filter').value;
+  var rows = document.querySelectorAll('#keys-table tbody tr');
+
+  rows.forEach(function(row) {
+    var rowProvider = row.getAttribute('data-provider') || '';
+    var match = !provider || rowProvider === provider;
+    row.style.display = match ? '' : 'none';
+  });
+}
+
+function submitAddKey() {
+  var form = document.getElementById('add-key-form');
+  var data = new FormData(form);
+
+  // Validate key format based on provider type
+  var provider = data.get('provider');
+  var apiKey = data.get('api_key');
+  var isAWSRuntime = provider === 'amazon' || (provider.startsWith('amazon-') && !provider.startsWith('amazon-mantle-'));
+  // AWS runtime accepts either an AK/SK pair ("access_key:secret_key") or a
+  // Bedrock API key (ABSK... bearer token, no ':'); the proxy Bearer-auths the
+  // latter. Reject only values that are neither.
+  var isBedrockBearer = apiKey.indexOf(':') === -1 && (apiKey.indexOf('ABSK') === 0 || apiKey.indexOf('bedrock-api-key-') === 0);
+  if (isAWSRuntime && apiKey.indexOf(':') === -1 && !isBedrockBearer) {
+    showMessage(_t('Format error'), _t('AWS Bedrock Runtime requires AK/SK format (ACCESS_KEY_ID:SECRET_ACCESS_KEY) or a Bedrock API key (ABSK...)'));
+    return;
+  }
+
+  var quotaStr = data.get('quota_limit');
+  fetch('/api/admin/keypool', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      provider: data.get('provider'),
+      key: data.get('api_key'),
+      rpm_limit: data.get('rpm_limit') ? parseInt(data.get('rpm_limit')) : null,
+      tpm_limit: data.get('tpm_limit') ? parseInt(data.get('tpm_limit')) : null,
+      quota_limit: quotaStr ? parseInt(quotaStr) : null,
+      tier: data.get('tier') || 'default',
+      base_url: data.get('base_url') || ''
+    })
+  })
+    .then(r => r.json())
+    .then(data => {
+      closeCreateKeyDrawer();
+      if (data.error) {
+        showMessage(_t('Add failed'), data.error.message || _t('Add failed'));
+      } else {
+        showMessage(_t('Added'), _t('Key added'), function() { window.location.reload(); });
+      }
+    })
+    .catch(function(e) {
+      closeCreateKeyDrawer();
+      showMessage(_t('Add failed'), e.message);
+    });
+}
+
+function submitEditKey() {
+  var keyId = document.getElementById('edit-key-id').value;
+  // model_limits: parse the JSON textarea; empty input clears the override
+  // (the API ignores explicit null, so an empty object is sent to clear).
+  var mlRaw = document.getElementById('edit-mlimits').value.trim();
+  var modelLimits = {};
+  if (mlRaw) {
+    try {
+      modelLimits = JSON.parse(mlRaw);
+    } catch (e) {
+      showError(_t('Invalid model_limits JSON'));
+      return;
+    }
+  }
+  var body = {
+    provider: document.getElementById('edit-provider').value || null,
+    tier: document.getElementById('edit-tier').value || null,
+    rpm_limit: document.getElementById('edit-rpm').value ? parseInt(document.getElementById('edit-rpm').value) : null,
+    tpm_limit: document.getElementById('edit-tpm').value ? parseInt(document.getElementById('edit-tpm').value) : null,
+    model_limits: modelLimits,
+    quota_limit: document.getElementById('edit-quota').value ? parseInt(document.getElementById('edit-quota').value) : 0,
+    base_url: document.getElementById('edit-baseurl').value || null
+  };
+  fetch('/api/admin/keypool/' + keyId, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+    .then(r => r.json())
+    .then(data => {
+      closeEditKeyDrawer();
+      if (data.error) {
+        showMessage(_t('Edit failed'), data.error.message || _t('Edit failed'));
+      } else {
+        window.location.reload();
+      }
+    })
+    .catch(function(e) {
+      closeEditKeyDrawer();
+      showMessage(_t('Edit failed'), e.message);
+    });
+}
+
+function deleteKey(keyId) {
+  showConfirm(_t('Delete Key'), _t('Are you sure you want to delete this key?'), function() {
+    fetch('/api/admin/keypool/' + keyId, { method: 'DELETE' })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+      if (result.success) {
+        showMessage(_t('Deleted'), _t('Key deleted'));
+        setTimeout(function() { window.location.reload(); }, 1000);
+      } else {
+        showMessage(_t('Delete failed'), result.error ? result.error.message : _t('Unknown error'));
+      }
+    })
+    .catch(function(e) { showMessage(_t('Request failed'), e.message); });
+  });
+}
+
+function toggleKey(keyId, enable) {
+  var action = enable ? _t('Activate') : _t('Disable');
+  showConfirm(action + ' Key', _t('Are you sure you want to {action} this key?').replace('{action}', action), function() {
+    fetch('/api/admin/keypool/' + keyId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: enable })
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success || data.error === undefined) {
+          window.location.reload();
+        } else {
+          showError(_t('{action} failed: {error}').replace('{action}', action).replace('{error}', JSON.stringify(data.error)));
+        }
+      })
+      .catch(e => showError(_t('{action} failed: {message}').replace('{action}', action).replace('{message}', e.message)));
+  });
+}
+
+function validateKey(keyId) {
+  showMessage(_t('Verifying'), _t('Verifying key...'));
+  fetch('/api/admin/keypool/' + keyId + '/validate', { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'valid') {
+        showSuccess(_t('Key verified successfully! Status: {status}').replace('{status}', data.status) + (data.models ? _t(', Models: {count}').replace('{count}', data.models.length) : ''));
+      } else {
+        showError(_t('Key verification result: {status}').replace('{status}', data.status));
+      }
+      setTimeout(function() { window.location.reload(); }, 2000);
+    })
+    .catch(e => showError(_t('Verification failed: {message}').replace('{message}', e.message)));
+}
+
+function validateAllKeys() {
+  showConfirm(_t('Batch Verification'), _t('Are you sure you want to verify all keys?'), function() {
+    showMessage(_t('Verifying'), _t('Batch verifying keys...'));
+    fetch('/api/admin/keypool/validate-batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ limit: 100 })
+    })
+      .then(r => r.json())
+      .then(data => {
+        showSuccess(_t('Verification complete! Valid: {validated}, Invalid: {invalid}').replace('{validated}', data.validated).replace('{invalid}', data.invalid));
+        setTimeout(function() { window.location.reload(); }, 2000);
+      })
+      .catch(e => showError(_t('Verification failed: {message}').replace('{message}', e.message)));
+  });
+}
+
+function loadImportFile(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(evt) {
+    var mode = document.getElementById('import-mode').value;
+    if (mode === 'single') {
+      document.querySelector('textarea[name="single_keys"]').value = evt.target.result;
+    } else {
+      document.querySelector('textarea[name="mixed_keys"]').value = evt.target.result;
+    }
+  };
+  reader.readAsText(file);
+}
+
+function checkLineLimit(textarea, maxLines) {
+  var lines = textarea.value.split('\n');
+  if (lines.length > maxLines) {
+    showError(_t('Exceeded {maxLines} line limit, please use file upload').replace('{maxLines}', maxLines));
+    textarea.value = lines.slice(0, maxLines).join('\n');
+  }
+}
+
+function toggleImportMode() {
+  var mode = document.getElementById('import-mode').value;
+  document.getElementById('single-provider-fields').style.display = mode === 'single' ? 'block' : 'none';
+  document.getElementById('mixed-provider-fields').style.display = mode === 'mixed' ? 'block' : 'none';
+}
+
+function updateImportBaseUrl() {
+  var provider = document.getElementById('import-provider').value;
+  var baseUrlInput = document.getElementById('import-base-url');
+  if (provider && providerBaseUrls[provider]) {
+    // Auto-fill the default URL
+    baseUrlInput.value = providerBaseUrls[provider];
+    baseUrlInput.placeholder = providerBaseUrls[provider] + ' (' + _t('Default') + ')';
+  } else {
+    baseUrlInput.value = '';
+    baseUrlInput.placeholder = 'https://api.example.com/v1';
+  }
+}
+
+function downloadTemplate() {
+  var mode = document.getElementById('import-mode').value;
+  var csv = '';
+
+  if (mode === 'single') {
+    csv = '# ' + _t('Single-provider import template') + '\n';
+    csv += '# ' + _t('One key per line, no other information needed') + '\n';
+    csv += 'sk-your-key-1\n';
+    csv += 'sk-your-key-2\n';
+    csv += 'sk-your-key-3\n';
+  } else {
+    csv = '# ' + _t('Mixed-provider import template') + '\n';
+    csv += '# ' + _t('Format: Provider,Key,Base URL,RPM Limit,TPM Limit,Active Status') + '\n';
+    csv += 'provider,key,base_url,rpm_limit,tpm_limit,enabled\n';
+    csv += 'openai,sk-your-openai-key,https://api.openai.com/v1,60,100000,true\n';
+    csv += 'anthropic,sk-ant-your-key,,,500,true\n';
+    csv += 'deepseek,sk-ds-your-key,https://api.deepseek.com/v1,,,false\n';
+  }
+
+  var blob = new Blob([csv], { type: 'text/csv' });
+  saveBlobAs(blob, mode === 'single' ? 'keypool_import_single.csv' : 'keypool_import_mixed.csv');
+}
+
+function submitImport(e) {
+  e.preventDefault();
+  console.log('submitImport called');
+  var form = e.target;
+  var mode = document.getElementById('import-mode').value;
+  console.log('mode:', mode);
+
+  if (mode === 'single') {
+    // Single provider mode
+    var provider = document.getElementById('import-provider').value;
+    var rpmLimit = parseInt(document.querySelector('input[name="single_rpm"]').value) || 0;
+    var tpmLimit = parseInt(document.querySelector('input[name="single_tpm"]').value) || 0;
+    var baseUrl = document.querySelector('input[name="single_base_url"]').value || '';
+    var keysText = document.querySelector('textarea[name="single_keys"]').value;
+    console.log('provider:', provider, 'keysText:', keysText);
+
+    if (!provider) {
+      showError(_t('Please select a provider'));
+      return;
+    }
+    if (!keysText || !keysText.trim()) {
+      showError(_t('Please enter keys to import'));
+      return;
+    }
+
+    var keys = keysText.trim().split('\n').map(function(k) {
+      return k.trim();
+    }).filter(function(k) {
+      return k.length > 0;
+    });
+
+    if (keys.length === 0) {
+      showError(_t('No valid keys'));
+      return;
+    }
+
+    console.log('Sending request with keys:', keys.length);
+    fetch('/api/admin/keypool/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: provider,
+        keys: keys,
+        base_url: baseUrl,
+        rpm_limit: rpmLimit,
+        tpm_limit: tpmLimit
+      })
+    })
+      .then(r => r.json())
+      .then(data => {
+        closeImportDrawer();
+        if (data.error) {
+          showError(_t('Import failed: {message}').replace('{message}', data.error.message || JSON.stringify(data.error)));
+        } else {
+          showMessage(_t('Success'), _t('Import successful! Added ') + (data.imported || 0) + _t(' keys, skipped ') + (data.skipped || 0) + _t('items'), function() {
+            window.location.reload();
+          });
+        }
+      })
+      .catch(e => showError(_t('Import failed: {message}').replace('{message}', e.message)));
+
+  } else {
+    // Mixed provider mode
+    var keysData = document.querySelector('textarea[name="mixed_keys"]').value;
+
+    if (!keysData || !keysData.trim()) {
+      showError(_t('Please enter key data to import'));
+      return;
+    }
+
+    var keys = [];
+    var lines = keysData.trim().split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (!line || line.startsWith('#') || line.startsWith('provider')) continue;  // Skip header
+      var parts = line.split(',');
+      if (parts.length < 2) {
+        showError(_t('Line {line} format error, expected: Provider,Key').replace('{line}', i + 1));
+        return;
+      }
+      var rpmVal = parts[3] ? parseInt(parts[3].trim()) : 0;
+      var tpmVal = parts[4] ? parseInt(parts[4].trim()) : 0;
+      keys.push({
+        provider: parts[0].trim(),
+        key: parts[1].trim(),
+        base_url: parts[2] ? parts[2].trim() : '',
+        rpm_limit: rpmVal > 0 ? rpmVal : 0,
+        tpm_limit: tpmVal > 0 ? tpmVal : 0,
+        enabled: parts[5] ? parts[5].trim() === 'true' : true
+      });
+    }
+
+    if (keys.length === 0) {
+      showError(_t('No valid key data'));
+      return;
+    }
+
+    console.log('Parsed keys:', keys.length);
+    fetch('/api/admin/keypool/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keys: keys })
+    })
+      .then(r => r.json())
+      .then(data => {
+        closeImportDrawer();
+        if (data.error) {
+          showError(_t('Import failed: {message}').replace('{message}', data.error.message || JSON.stringify(data.error)));
+        } else {
+          showMessage(_t('Success'), _t('Import successful! Added ') + (data.imported || 0) + _t(' keys, skipped ') + (data.skipped || 0) + _t('items'), function() {
+            window.location.reload();
+          });
+        }
+      })
+      .catch(e => showError(_t('Import failed: {message}').replace('{message}', e.message)));
+  }
+}
+
+function exportKeys() {
+  document.getElementById('export-keys-password').value = '';
+  document.getElementById('export-keys-result').innerHTML = '';
+  document.getElementById('export-keys-modal').style.display = 'flex';
+}
+
+function confirmExportKeys() {
+  var password = document.getElementById('export-keys-password').value;
+  if (!password) {
+    document.getElementById('export-keys-result').innerHTML = '<div class="flash flash-error text-sm">' + _t('Enter password') + '</div>';
+    return;
+  }
+
+  fetch('/api/admin/keypool/export', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: password })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        document.getElementById('export-keys-result').innerHTML = '<div class="flash flash-error text-sm">' + _t('Export failed: {message}').replace('{message}', data.error.message || JSON.stringify(data.error)) + '</div>';
+      } else if (data.keys && data.keys.length > 0) {
+        // Build CSV content
+        var csv = 'provider,key,base_url,rpm_limit,tpm_limit,enabled\n';
+        data.keys.forEach(function(k) {
+          csv += (k.provider || '') + ',' + (k.key || '') + ',' + (k.base_url || '') + ',' + (k.rpm_limit || '') + ',' + (k.tpm_limit || '') + ',' + (k.enabled ? 'true' : 'false') + '\n';
+        });
+
+        // Download file
+        var blob = new Blob([csv], { type: 'text/csv' });
+        saveBlobAs(blob, 'keypool-export-' + formatExportTimestamp() + '.csv').then(function(saved) {
+          if (saved) document.getElementById('export-keys-modal').style.display = 'none';
+        });
+      } else {
+        document.getElementById('export-keys-result').innerHTML = '<div class="flash flash-error text-sm">' + _t('No keys to export') + '</div>';
+      }
+    })
+    .catch(e => document.getElementById('export-keys-result').innerHTML = '<div class="flash flash-error text-sm">' + _t('Export failed: {message}').replace('{message}', e.message) + '</div>');
+}
+</script>
+{{end}}

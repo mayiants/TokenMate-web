@@ -1,0 +1,1031 @@
+{{define "content"}}
+{{$p := .Data}}
+
+<!-- Profile Header -->
+<div class="card">
+  <div class="flex items-center gap-4">
+    <div class="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold" style="background:var(--primary-light);color:var(--primary)">
+      {{if $p.Name}}{{slice $p.Name 0 1}}{{else}}{{slice $p.Email 0 1}}{{end}}
+    </div>
+    <div class="flex-1">
+      <h1 class="text-lg font-bold">{{if $p.Name}}{{$p.Name}}{{else}}{{$p.Email}}{{end}}</h1>
+      <div class="flex items-center gap-2 mt-1">
+        {{if eq $p.Role "super_admin"}}{{t "Super Admin"}}{{else if eq $p.Role "system_admin"}}{{t "System Admin"}}{{else if eq $p.Role "enterprise_admin"}}{{t "Enterprise Admin"}}{{else}}{{t "User"}}{{end}}
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button class="btn btn-secondary btn-sm" onclick="openPasswordModal()">{{t "Change Password"}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Preferences -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Preferences"}}</h2>
+  </div>
+  <div class="flex items-center justify-between mt-4 preference-row">
+    <div class="flex items-center gap-4">
+      <span class="text-sm font-medium text-muted">{{t "Theme"}}</span>
+      <div class="flex gap-1" x-data="themeForm()">
+        <button class="btn btn-sm" :class="theme === 'light' ? 'btn-primary' : 'btn-outline'" @click="setTheme('light')">{{t "Bright"}}</button>
+        <button class="btn btn-sm" :class="theme === 'dark' ? 'btn-primary' : 'btn-outline'" @click="setTheme('dark')">{{t "Dark"}}</button>
+        <button class="btn btn-sm" :class="theme === 'system' ? 'btn-primary' : 'btn-outline'" @click="setTheme('system')">{{t "System"}}</button>
+      </div>
+    </div>
+    <div class="flex items-center gap-2" x-data="langForm()">
+      <span class="text-sm font-medium text-muted">{{t "Language"}}</span>
+      <select class="form-select form-select-sm du-select du-select-bordered" style="width:auto" x-model="locale" @change="submit()" aria-label="Select">
+        <option value="zh">{{t "Chinese"}}</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+    <div class="flex items-center gap-2" x-data="currencyForm()">
+      <span class="text-sm font-medium text-muted">{{t "Currency"}}</span>
+      <select class="form-select form-select-sm du-select du-select-bordered" style="width:auto" x-model="currency" @change="submit()" aria-label="Select">
+        <option value="USD">USD ($)</option>
+        <option value="CNY">CNY (¥)</option>
+        <option value="EUR">EUR (€)</option>
+        <option value="GBP">GBP (£)</option>
+        <option value="JPY">JPY (¥)</option>
+        <option value="SGD">SGD (S$)</option>
+        <option value="KRW">KRW (₩)</option>
+        <option value="MYR">MYR (RM)</option>
+        <option value="IDR">IDR (Rp)</option>
+        <option value="THB">THB (฿)</option>
+        <option value="VND">VND (₫)</option>
+        <option value="TWD">TWD (NT$)</option>
+        <option value="HKD">HKD (HK$)</option>
+        <option value="MOP">MOP (MOP$)</option>
+        <option value="AUD">AUD (A$)</option>
+        <option value="NZD">NZD (NZ$)</option>
+        <option value="RUB">RUB (₽)</option>
+      </select>
+    </div>
+    <div class="flex items-center gap-2" x-data="timezoneForm()">
+      <span class="text-sm font-medium text-muted">{{t "Timezone"}}</span>
+      <select class="form-select form-select-sm du-select du-select-bordered" style="width:auto" x-model="timezone" @change="submit()" aria-label="Select">
+        <option value="UTC">UTC</option>
+        <option value="Asia/Shanghai">Asia/Shanghai</option>
+        <option value="America/New_York">America/New_York</option>
+        <option value="Europe/London">Europe/London</option>
+        <option value="Asia/Tokyo">Asia/Tokyo</option>
+        <option value="Australia/Sydney">Australia/Sydney</option>
+        <option value="America/Los_Angeles">America/Los_Angeles</option>
+        <option value="Europe/Berlin">Europe/Berlin</option>
+        <option value="Asia/Singapore">Asia/Singapore</option>
+        <option value="Asia/Dubai">Asia/Dubai</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Basic Info + Contact -->
+<div class="grid gap-4 mt-4 profile-grid">
+
+  <!-- Basic Info -->
+  <div class="card" x-data="profileForm()">
+    <div class="card-header">
+      <h2 class="card-title">{{t "Basic information"}}</h2>
+    </div>
+    <div class="mt-4 space-y-4">
+      <div class="form-group">
+        <label class="form-label">{{t "Name"}}</label>
+        <input type="text" class="form-input du-input du-input-bordered" x-model="name" value="{{$p.Name}}" placeholder="{{t "Your Name"}}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Company"}}</label>
+        <input type="text" class="form-input du-input du-input-bordered" x-model="company" value="{{$p.Company}}" placeholder="{{t "Company Name"}}" autocomplete="off">
+      </div>
+      <div class="flex items-center justify-between">
+        <div id="profile-result"></div>
+        <button class="btn btn-primary btn-sm" @click="submit()">{{t "Save"}}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact Info -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">{{t "Contact information"}}</h2>
+    </div>
+
+    <div class="mt-4 space-y-3">
+      <!-- Email -->
+      <div class="flex items-center justify-between py-2 border-b contact-info-row" style="border-color:var(--border)">
+        <div>
+          <span class="text-xs text-muted">{{t "Email"}}</span>
+          <div class="text-sm font-medium">{{$p.Email}}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openContactModal('email')">{{t "Edit"}}</button>
+      </div>
+
+      <!-- Backup Email -->
+      <div class="flex items-center justify-between py-2 border-b contact-info-row" style="border-color:var(--border)">
+        <div>
+          <span class="text-xs text-muted">{{t "Alternate email"}}</span>
+          <div class="text-sm font-medium">{{if $p.SecondEmail}}{{$p.SecondEmail}}{{else}}<span class="text-muted">{{t "Not Set"}}</span>{{end}}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openContactModal('backup_email')">{{if $p.SecondEmail}}{{t "Edit"}}{{else}}{{t "Add"}}{{end}}</button>
+      </div>
+
+      <!-- Phone -->
+      <div class="flex items-center justify-between py-2 contact-info-row">
+        <div>
+          <span class="text-xs text-muted">{{t "Phone Number"}}</span>
+          <div class="text-sm font-medium">{{if $p.Phone}}{{$p.Phone}}{{else}}<span class="text-muted">{{t "Not Set"}}</span>{{end}}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" disabled title="{{t "Phone verification is not available yet"}}">{{if $p.Phone}}{{t "Edit"}}{{else}}{{t "Add"}}{{end}}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Security: two-factor authentication (TOTP) -->
+<div class="card mt-4" id="security">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Security"}}</h2>
+  </div>
+  <div class="card-body">
+    <h3 class="font-medium text-sm">{{t "Two-factor authentication"}}</h3>
+    <p class="text-muted text-sm mt-1">{{t "Add a second step to sign-in using an authenticator app such as Google Authenticator, 1Password or Authy."}}</p>
+    <div id="mfa-required-note" class="flash flash-error text-sm mt-2" style="display:none" role="alert">{{t "Your organisation requires two-factor authentication. Set it up now to continue using the portal."}}</div>
+    <p class="text-sm mt-2" aria-live="polite">{{t "Status"}}: <strong id="mfa-status">-</strong> <span class="text-xs text-muted" id="mfa-codes-left"></span></p>
+
+    <div id="mfa-actions" class="flex items-center gap-2 mt-3" style="flex-wrap:wrap">
+      <button type="button" class="btn btn-primary btn-sm" id="mfa-btn-setup" style="display:none" onclick="mfaStartSetup()">{{t "Enable two-factor authentication"}}</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="mfa-btn-regen" style="display:none" onclick="mfaOpenSensitive('regen')">{{t "Regenerate recovery codes"}}</button>
+      <button type="button" class="btn btn-danger btn-sm" id="mfa-btn-disable" style="display:none" onclick="mfaOpenSensitive('disable')">{{t "Disable two-factor authentication"}}</button>
+    </div>
+
+    <!-- Enrolment step -->
+    <div id="mfa-setup-box" class="mt-4" style="display:none">
+      <p class="text-sm">{{t "Add this account to your authenticator app by entering the secret key (or opening the setup link on your phone), then type the 6-digit code it shows."}}</p>
+      <div class="form-group mt-2">
+        <label class="form-label" for="mfa-secret">{{t "Secret key"}}</label>
+        <input type="text" id="mfa-secret" class="form-input du-input du-input-bordered" readonly autocomplete="off" style="font-family:monospace">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mfa-uri">{{t "Setup link"}}</label>
+        <input type="text" id="mfa-uri" class="form-input du-input du-input-bordered" readonly autocomplete="off" style="font-family:monospace">
+        <p class="text-xs text-muted mt-1">{{t "A QR code is not shown on this page; enter the secret key or copy the setup link into your authenticator app."}}</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mfa-confirm-code">{{t "Authenticator code"}}</label>
+        <input type="text" id="mfa-confirm-code" class="form-input du-input du-input-bordered" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="123456" style="max-width:200px">
+      </div>
+      <div class="flex items-center gap-2">
+        <button type="button" class="btn btn-primary btn-sm" onclick="mfaConfirmEnable()">{{t "Confirm and enable"}}</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="mfaCancelSetup()">{{t "Cancel"}}</button>
+      </div>
+    </div>
+
+    <!-- Sensitive change (disable / regenerate) -->
+    <div id="mfa-sensitive-box" class="mt-4" style="display:none">
+      <p class="text-sm" id="mfa-sensitive-hint"></p>
+      <div class="form-group mt-2">
+        <label class="form-label" for="mfa-password">{{t "Current Password"}}</label>
+        <input type="password" id="mfa-password" class="form-input du-input du-input-bordered" autocomplete="current-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mfa-sensitive-code">{{t "Authenticator code"}}</label>
+        <input type="text" id="mfa-sensitive-code" class="form-input du-input du-input-bordered" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="123456" style="max-width:200px">
+      </div>
+      <div class="form-group" id="mfa-recovery-group">
+        <label class="form-label" for="mfa-sensitive-recovery">{{t "Or a recovery code"}}</label>
+        <input type="text" id="mfa-sensitive-recovery" class="form-input du-input du-input-bordered" autocomplete="off" maxlength="32" style="max-width:260px;font-family:monospace">
+      </div>
+      <div class="flex items-center gap-2">
+        <button type="button" class="btn btn-primary btn-sm" onclick="mfaSubmitSensitive()">{{t "Confirm"}}</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="mfaCloseSensitive()">{{t "Cancel"}}</button>
+      </div>
+    </div>
+
+    <!-- Recovery codes are displayed exactly once -->
+    <div id="mfa-codes-box" class="mt-4" style="display:none" role="region" aria-labelledby="mfa-codes-title">
+      <h3 class="font-medium text-sm" id="mfa-codes-title">{{t "Recovery codes"}}</h3>
+      <p class="text-sm text-warning mt-1">{{t "Save these codes now. Each works once and they will not be shown again."}}</p>
+      <pre id="mfa-codes-list" class="text-sm mt-2" style="font-family:monospace;user-select:all"></pre>
+      <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="mfaDismissCodes()">{{t "I have saved my recovery codes"}}</button>
+    </div>
+    <div id="mfa-result" class="mt-2" aria-live="polite"></div>
+  </div>
+</div>
+
+<!-- Notification preferences -->
+<div class="card mt-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Notification Settings"}}</h2>
+  </div>
+  <div class="card-body">
+    <p class="text-muted text-sm" style="margin-bottom:12px">{{t "Choose which events notify you. Disabling a type stops both inbox notices and emails for it."}}</p>
+    <div id="notif-pref-list" style="display:flex;flex-direction:column;gap:8px"></div>
+
+    {{if or (eq $p.Role "system_admin") (eq $p.Role "super_admin")}}
+    <div class="dropdown-divider" style="margin:16px 0"></div>
+    <h3 class="card-title" style="font-size:15px">{{t "IM Channels (admin alerts)"}}</h3>
+    <p class="text-muted text-sm" style="margin:6px 0 12px">{{t "High-priority system-admin notices are pushed to the configured group bots."}}</p>
+    <div id="notif-channel-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select id="notif-ch-type" class="form-select form-select-sm du-select du-select-bordered" style="width:auto">
+        <option value="feishu">{{t "Feishu"}}</option>
+        <option value="dingtalk">{{t "DingTalk"}}</option>
+        <option value="wecom">{{t "WeCom"}}</option>
+      </select>
+      <input id="notif-ch-url" class="form-input du-input du-input-bordered" style="flex:1;min-width:220px" placeholder="{{t "Webhook URL"}}">
+      <input id="notif-ch-secret" class="form-input du-input du-input-bordered" style="width:180px" placeholder="{{t "Secret (optional)"}}">
+      <button class="btn btn-primary btn-sm" onclick="notifAddChannel()">{{t "Add"}}</button>
+    </div>
+    {{end}}
+  </div>
+</div>
+
+<!-- Danger Zone -->
+<div class="card mt-4" style="border-color: var(--error-text)">
+  <div class="card-header">
+    <h2 class="card-title text-error">{{t "Dangerous operation"}}</h2>
+  </div>
+
+  <div class="space-y-3 mt-4">
+    <div class="p-4 rounded flex items-center justify-between danger-zone-row" style="background: var(--bg-hover)">
+      <div>
+        <h3 class="font-medium text-sm">{{t "Export personal data (GDPR)"}}</h3>
+        <p class="text-xs text-muted mt-1">{{t "Download your recent data (last 90 days). For a complete history, request a full export."}}</p>
+        <div id="full-export-status" class="mt-2"></div>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-secondary" onclick="openExportModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>{{t "Export"}}</button>
+        <button class="btn btn-secondary" onclick="openFullExportModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>{{t "Request Full Export"}}</button>
+      </div>
+    </div>
+
+    <div class="p-4 rounded flex items-center justify-between danger-zone-row" style="background: var(--bg-hover)">
+      <div>
+        <h3 class="font-medium text-sm">{{t "Request to delete data (GDPR)"}}</h3>
+        <p class="text-xs text-muted mt-1">{{t "Your account is deactivated immediately; data is permanently erased after the retention period."}}</p>
+      </div>
+      <button class="btn btn-warning btn-sm" style="min-width:150px" onclick="openGDPRDeleteModal()">{{t "Request Deletion"}}</button>
+    </div>
+
+    <div class="p-4 rounded flex items-center justify-between danger-zone-row" style="background: rgba(220,53,69,0.08)">
+      <div>
+        <h3 class="font-medium text-error text-sm">{{t "Delete Account"}}</h3>
+        <p class="text-xs text-muted mt-1">{{t "Account deletion is permanent and irrevocable."}}</p>
+      </div>
+      <button class="btn btn-danger btn-sm" style="min-width:150px" onclick="openDeleteAccountModal()">{{t "Delete Account"}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Password Modal -->
+<div id="password-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <span class="modal-title">{{t "Change Password"}}</span>
+      <button class="modal-close" onclick="document.getElementById('password-modal').style.display='none'">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="p-3 rounded mb-4" style="background: var(--bg-hover); border-left: 3px solid var(--primary)">
+        <p class="text-xs font-medium">{{t "Password requirements:"}}</p>
+        <ul class="text-xs text-muted mt-1 list-disc list-inside">
+          <li>{{t "At least 8 characters"}}</li>
+          <li>{{t "Contains uppercase letters (A-Z)"}}</li>
+          <li>{{t "Contains lowercase letters (a-z)"}}</li>
+          <li>{{t "Contains numbers (0-9)"}}</li>
+          <li>{{t "Contains special characters (!@#$%^&* etc.)"}}</li>
+        </ul>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Current Password"}}</label>
+        <input type="password" id="pw-current" class="form-input du-input du-input-bordered" placeholder="{{t "Enter current password"}}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "New Password"}}</label>
+        <input type="password" id="pw-new" class="form-input du-input du-input-bordered" placeholder="{{t "At least 8 digits"}}" oninput="checkPwMatch()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Confirm New Password"}}</label>
+        <input type="password" id="pw-confirm" class="form-input du-input du-input-bordered" placeholder="{{t "Enter new password again"}}" oninput="checkPwMatch()">
+        <p class="text-xs text-error mt-1" id="pw-match-hint" style="display:none">{{t "Two passwords are inconsistent"}}</p>
+      </div>
+      <div id="pw-result"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('password-modal').style.display='none'">{{t "Cancel"}}</button>
+      <button class="btn btn-primary" id="pw-submit-btn" onclick="submitPassword()" disabled>{{t "Save"}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Contact Edit Modal -->
+<div id="contact-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <span class="modal-title" id="contact-modal-title">{{t "Edit"}}</span>
+      <button class="modal-close" onclick="document.getElementById('contact-modal').style.display='none'">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label" id="contact-value-label">{{t "New Value"}}</label>
+        <div class="flex gap-2">
+          <input type="text" id="contact-value" class="form-input du-input du-input-bordered" style="flex:1" aria-label="Contact Value">
+          <button type="button" class="btn btn-secondary btn-sm" id="contact-send-code" onclick="sendContactCode()">{{t "Send Code"}}</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Verification code"}}</label>
+        <input type="text" id="contact-code" class="form-input du-input du-input-bordered" maxlength="6" placeholder="{{t "6-digit verification code"}}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Current Password"}}</label>
+        <input type="password" id="contact-password" class="form-input du-input du-input-bordered" placeholder="{{t "Enter login password to confirm"}}">
+      </div>
+      <div id="contact-result"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('contact-modal').style.display='none'">{{t "Cancel"}}</button>
+      <button class="btn btn-primary" onclick="submitContactChange()">{{t "Save"}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export Data Modal -->
+<div id="export-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <span class="modal-title">{{t "Export personal data"}}</span>
+      <button class="modal-close" onclick="document.getElementById('export-modal').style.display='none'">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-sm text-muted mb-4">{{t "To protect the security of your data, password verification is required before exporting."}}</p>
+      <div class="form-group">
+        <label class="form-label">{{t "Current Password"}}</label>
+        <input type="password" id="export-password" class="form-input du-input du-input-bordered" placeholder="{{t "Enter login password"}}">
+      </div>
+      <div id="export-result"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('export-modal').style.display='none'">{{t "Cancel"}}</button>
+      <button class="btn btn-primary" onclick="executeExport()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>{{t "Export"}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Full Export Request Modal -->
+<div id="full-export-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <span class="modal-title">{{t "Request Full Export"}}</span>
+      <button class="modal-close" onclick="document.getElementById('full-export-modal').style.display='none'">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="text-sm text-muted mb-4">{{t "A full export covers your entire history. An administrator will process it and you will be notified by email when it is ready for download."}}</p>
+      <div class="form-group">
+        <label class="form-label">{{t "Delivery email (leave blank to use your account email)"}}</label>
+        <input type="email" id="full-export-email" class="form-input du-input du-input-bordered" placeholder="{{$p.Email}}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Current Password"}}</label>
+        <input type="password" id="full-export-password" class="form-input du-input du-input-bordered" placeholder="{{t "Enter login password"}}">
+      </div>
+      <div id="full-export-result"></div>
+      <h3 class="font-medium text-sm mt-4 mb-2">{{t "Full Export Requests"}}</h3>
+      <div id="full-export-list" class="text-sm"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('full-export-modal').style.display='none'">{{t "Close"}}</button>
+      <button class="btn btn-primary" onclick="submitFullExportRequest()">{{t "Submit"}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- GDPR Delete Modal -->
+<div id="gdpr-delete-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header" style="background: rgba(220,53,69,0.08)">
+      <span class="modal-title text-error">{{t "Delete Data"}}</span>
+      <button class="modal-close" onclick="document.getElementById('gdpr-delete-modal').style.display='none'">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="p-3 rounded mb-4" style="background: rgba(220,53,69,0.08); border-left: 3px solid var(--error-text)">
+        <p class="text-xs"><strong class="text-error">{{t "This action will:"}}</strong></p>
+        <ul class="text-xs text-muted mt-1 list-disc list-inside">
+          <li>{{t "Deactivate all API keys"}}</li>
+          <li>{{t "Deactivate your account immediately"}}</li>
+          <li>{{t "Permanently erase your data after the retention period"}}</li>
+        </ul>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Enter"}}<code class="text-error">DELETE_MY_DATA</code></label>
+        <input type="text" id="gdpr-confirm" class="form-input du-input du-input-bordered" placeholder="DELETE_MY_DATA" autocomplete="off" oninput="checkGDPRReady()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Password"}}</label>
+        <input type="password" id="gdpr-password" class="form-input du-input du-input-bordered" oninput="checkGDPRReady()" aria-label="Gdpr Password">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('gdpr-delete-modal').style.display='none'">{{t "Cancel"}}</button>
+      <button class="btn btn-danger" id="gdpr-delete-btn" onclick="executeGDPRDelete()" disabled>{{t "Request Deletion"}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Account Modal -->
+<div id="delete-account-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header" style="background: rgba(220,53,69,0.08)">
+      <span class="modal-title text-error">{{t "Delete Account"}}</span>
+      <button class="modal-close" onclick="document.getElementById('delete-account-modal').style.display='none'">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="p-3 rounded mb-4" style="background: rgba(220,53,69,0.08); border-left: 3px solid var(--error-text)">
+        <p class="text-xs"><strong class="text-error">{{t "Warning:"}}</strong>{{t "Your account will be deactivated immediately and your data permanently erased after the retention period. This cannot be undone."}}</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Enter"}}<code class="text-error">DELETE</code></label>
+        <input type="text" id="delete-confirm" class="form-input du-input du-input-bordered" placeholder="DELETE" autocomplete="off" oninput="checkDeleteReady()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{t "Password"}}</label>
+        <input type="password" id="delete-password" class="form-input du-input du-input-bordered" oninput="checkDeleteReady()" aria-label="Delete Password">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('delete-account-modal').style.display='none'">{{t "Cancel"}}</button>
+      <button class="btn btn-danger" id="delete-account-btn" onclick="executeDeleteAccount()" disabled>{{t "Delete permanently"}}</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Theme form
+function themeForm() {
+  return {
+    theme: '{{.Theme}}',
+    async setTheme(t) {
+      this.theme = t;
+      applyTheme(t);
+      try {
+        await fetch('/profile/settings', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: 'csrf_token={{.CSRFToken}}&locale={{.Locale}}&theme=' + t + '&currency={{.Currency}}&timezone={{.Timezone}}'
+        });
+      } catch(e) { console.error('setTheme failed', e); }
+    }
+  }
+}
+
+// Language form
+function langForm() {
+  return {
+    locale: '{{.Locale}}',
+    async submit() {
+      try {
+        await fetch('/profile/settings', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: 'csrf_token={{.CSRFToken}}&locale=' + this.locale + '&theme={{.Theme}}&currency={{.Currency}}&timezone={{.Timezone}}'
+        });
+      } catch(e) { console.error('save locale failed', e); }
+      document.cookie = 'locale=' + this.locale + ';path=/;max-age=31536000';
+    }
+  }
+}
+
+// Currency form
+function currencyForm() {
+  return {
+    currency: '{{.Currency}}',
+    async submit() {
+      try {
+        await fetch('/profile/settings', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: 'csrf_token={{.CSRFToken}}&locale={{.Locale}}&theme={{.Theme}}&currency=' + this.currency + '&timezone={{.Timezone}}'
+        });
+      } catch(e) { console.error('save currency failed', e); }
+      document.cookie = 'currency=' + this.currency + ';path=/;max-age=31536000';
+    }
+  }
+}
+
+// Timezone form
+function timezoneForm() {
+  return {
+    timezone: '{{.Timezone}}',
+    async submit() {
+      try {
+        await fetch('/profile/settings', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: 'csrf_token={{.CSRFToken}}&locale={{.Locale}}&theme={{.Theme}}&currency={{.Currency}}&timezone=' + this.timezone
+        });
+      } catch(e) { console.error('save timezone failed', e); }
+      document.cookie = 'timezone=' + this.timezone + ';path=/;max-age=31536000';
+    }
+  }
+}
+
+// Profile form
+function profileForm() {
+  return {
+    name: '{{$p.Name}}',
+    company: '{{$p.Company}}',
+    async submit() {
+      try {
+        var resp = await fetch('/api/profile', {
+          method: 'PATCH',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({name: this.name, company: this.company})
+        });
+        var r = await resp.json();
+        document.getElementById('profile-result').innerHTML = r.success
+          ? '<span class="text-xs text-success">' + _t('Saved') + '</span>'
+          : '<span class="text-xs text-error">' + (r.error?.message || _t('Failed')) + '</span>';
+      } catch(e) {
+        document.getElementById('profile-result').innerHTML = '<span class="text-xs text-error">' + _t('Save failed') + '</span>';
+      }
+      setTimeout(() => document.getElementById('profile-result').innerHTML = '', 2000);
+    }
+  }
+}
+
+// Password modal
+function openPasswordModal() {
+  document.getElementById('pw-current').value = '';
+  document.getElementById('pw-new').value = '';
+  document.getElementById('pw-confirm').value = '';
+  document.getElementById('pw-result').innerHTML = '';
+  document.getElementById('pw-submit-btn').disabled = true;
+  document.getElementById('pw-match-hint').style.display = 'none';
+  document.getElementById('password-modal').style.display = 'flex';
+}
+
+function checkPwMatch() {
+  var pw = document.getElementById('pw-new').value;
+  var confirm = document.getElementById('pw-confirm').value;
+  var match = pw === confirm || confirm === '';
+  document.getElementById('pw-match-hint').style.display = match ? 'none' : 'block';
+  // Check: 8+ chars, uppercase, lowercase, number, special char
+  var hasUpper = /[A-Z]/.test(pw);
+  var hasLower = /[a-z]/.test(pw);
+  var hasNumber = /[0-9]/.test(pw);
+  var hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pw);
+  var valid = pw.length >= 8 && hasUpper && hasLower && hasNumber && hasSpecial && pw === confirm && document.getElementById('pw-current').value;
+  document.getElementById('pw-submit-btn').disabled = !valid;
+}
+
+async function submitPassword() {
+  try {
+    var resp = await fetch('/api/profile/password', {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        old_password: document.getElementById('pw-current').value,
+        new_password: document.getElementById('pw-new').value
+      })
+    });
+    var r = await resp.json();
+    if (r.success) {
+      document.getElementById('pw-result').innerHTML = '<div class="flash flash-success text-sm">' + _t('Password changed') + '</div>';
+      setTimeout(() => document.getElementById('password-modal').style.display = 'none', 1000);
+    } else {
+      document.getElementById('pw-result').innerHTML = '<div class="flash flash-error text-sm">' + (r.error?.message || _t('Save failed')) + '</div>';
+    }
+  } catch(e) {
+    document.getElementById('pw-result').innerHTML = '<div class="flash flash-error text-sm">' + _t('Request failed') + '</div>';
+  }
+}
+
+// Contact modal
+var contactType = '';
+var contactCooldown = 0;
+
+function openContactModal(type) {
+  contactType = type;
+  var title = document.getElementById('contact-modal-title');
+  var label = document.getElementById('contact-value-label');
+  var input = document.getElementById('contact-value');
+
+  document.getElementById('contact-code').value = '';
+  document.getElementById('contact-password').value = '';
+  document.getElementById('contact-result').innerHTML = '';
+
+  if (type === 'email') { title.textContent = _t('Email'); label.textContent = _t('New Email'); input.placeholder = 'new@example.com'; input.type = 'email'; }
+  else if (type === 'backup_email') { title.textContent = _t('Backup Email'); label.textContent = _t('Backup Email'); input.placeholder = 'backup@example.com'; input.type = 'email'; }
+  else { title.textContent = _t('Phone'); label.textContent = _t('Phone'); input.placeholder = '+86 138 0000 0000'; input.type = 'tel'; }
+
+  document.getElementById('contact-modal').style.display = 'flex';
+}
+
+async function sendContactCode() {
+  var value = document.getElementById('contact-value').value;
+  if (!value) return;
+  try {
+    var url, body;
+    if (contactType === 'backup_email') {
+      url = '/api/profile/send-backup-email-code';
+      body = {email: value};
+    } else {
+      url = '/api/profile/send-change-code';
+      body = {type: contactType === 'phone' ? 'phone' : 'email', value: value};
+    }
+    var resp = await fetch(url, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    var r = await resp.json();
+    if (r.success) {
+      contactCooldown = 60;
+      var btn = document.getElementById('contact-send-code');
+      btn.textContent = '60s'; btn.disabled = true;
+      var timer = setInterval(() => { contactCooldown--; btn.textContent = contactCooldown > 0 ? contactCooldown + 's' : _t('Send Code'); btn.disabled = contactCooldown > 0; if (contactCooldown <= 0) clearInterval(timer); }, 1000);
+    } else {
+      document.getElementById('contact-result').innerHTML = '<div class="flash flash-error text-sm">' + (r.error?.message || _t('Send failed')) + '</div>';
+    }
+  } catch(e) {
+    document.getElementById('contact-result').innerHTML = '<div class="flash flash-error text-sm">' + _t('Send failed') + '</div>';
+  }
+}
+
+async function submitContactChange() {
+  var value = document.getElementById('contact-value').value;
+  var code = document.getElementById('contact-code').value;
+  var password = document.getElementById('contact-password').value;
+  if (!value || !code || !password) { document.getElementById('contact-result').innerHTML = '<div class="flash flash-error text-sm">' + _t('Fill in all fields') + '</div>'; return; }
+
+  var endpoint = contactType === 'phone' ? '/api/profile/change-phone' : (contactType === 'backup_email' ? '/api/profile/change-backup-email' : '/api/profile/change-email');
+  var body = contactType === 'phone' ? {new_phone: value, verification_code: code, password: password} : {new_email: value, verification_code: code, password: password};
+
+  try {
+    var resp = await fetch(endpoint, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+    var r = await resp.json();
+    if (r.success) {
+      document.getElementById('contact-result').innerHTML = '<div class="flash flash-success text-sm">' + _t('Saved') + '</div>';
+      setTimeout(() => { document.getElementById('contact-modal').style.display = 'none'; location.reload(); }, 1000);
+    } else {
+      document.getElementById('contact-result').innerHTML = '<div class="flash flash-error text-sm">' + (r.error?.message || _t('Save failed')) + '</div>';
+    }
+  } catch(e) {
+    document.getElementById('contact-result').innerHTML = '<div class="flash flash-error text-sm">' + _t('Request failed') + '</div>';
+  }
+}
+
+// Export with password
+function openExportModal() {
+  document.getElementById('export-password').value = '';
+  document.getElementById('export-result').innerHTML = '';
+  document.getElementById('export-modal').style.display = 'flex';
+}
+
+async function executeExport() {
+  var password = document.getElementById('export-password').value;
+  if (!password) { document.getElementById('export-result').innerHTML = '<div class="flash flash-error text-sm">' + _t('Enter password') + '</div>'; return; }
+
+  try {
+    // Verify password
+    var verify = await fetch('/api/auth/login', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email: '{{$p.Email}}', password: password})
+    });
+    var vr = await verify.json();
+    if (!vr.token) { document.getElementById('export-result').innerHTML = '<div class="flash flash-error text-sm">' + _t('Incorrect password') + '</div>'; return; }
+
+    // Export
+    document.getElementById('export-result').innerHTML = '<div class="text-sm text-muted">' + _t('Exporting...') + '</div>';
+    var resp = await fetch('/api/gdpr/export');
+    var data = await resp.json();
+    var blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    var saved = await saveBlobAs(blob, 'my-data-' + new Date().toISOString().split('T')[0] + '.json');
+    if (saved) {
+      document.getElementById('export-result').innerHTML = '<div class="flash flash-success text-sm">' + _t('Export downloaded') + '</div>';
+    } else {
+      document.getElementById('export-result').innerHTML = '';
+    }
+  } catch(e) {
+    document.getElementById('export-result').innerHTML = '<div class="flash flash-error text-sm">' + _t('Export failed') + '</div>';
+  }
+}
+
+// GDPR delete
+function openFullExportModal() {
+  document.getElementById('full-export-email').value = '';
+  document.getElementById('full-export-password').value = '';
+  document.getElementById('full-export-result').innerHTML = '';
+  document.getElementById('full-export-modal').style.display = 'flex';
+  loadFullExportRequests();
+}
+
+async function loadFullExportRequests() {
+  try {
+    var resp = await fetch('/api/gdpr/export-requests');
+    var data = await resp.json();
+    var reqs = data.requests || [];
+    var el = document.getElementById('full-export-list');
+    if (reqs.length === 0) { el.innerHTML = '<span class="text-muted">' + _t('No export requests') + '</span>'; return; }
+    el.innerHTML = reqs.map(function(r) {
+      var statusHtml;
+      if (r.download_url) {
+        statusHtml = '<a class="btn btn-secondary btn-sm" href="' + r.download_url + '">' + _t('Download') + '</a>';
+      } else if (r.status === 'pending') {
+        statusHtml = '<span class="badge badge-warning">' + _t('Processing') + '</span>';
+      } else {
+        statusHtml = '<span class="badge">' + r.status + '</span>';
+      }
+      return '<div class="flex items-center justify-between py-1">' +
+        '<span class="text-muted">' + formatDate(r.requested_at) + ' · ' + r.email + '</span>' +
+        statusHtml + '</div>';
+    }).join('');
+    // Inline status in the danger zone row
+    var inline = document.getElementById('full-export-status');
+    if (inline) {
+      var pending = reqs.filter(function(r) { return r.status === 'pending'; });
+      var ready = reqs.filter(function(r) { return r.download_url; });
+      if (ready.length > 0) {
+        inline.innerHTML = '<a class="text-sm" href="' + ready[0].download_url + '">' + _t('Your full export is ready — download') + '</a>';
+      } else if (pending.length > 0) {
+        inline.innerHTML = '<span class="text-xs text-muted">' + _t('Full export request pending') + '</span>';
+      } else {
+        inline.innerHTML = '';
+      }
+    }
+  } catch (e) { /* ignore */ }
+}
+
+async function submitFullExportRequest() {
+  var email = document.getElementById('full-export-email').value.trim();
+  var password = document.getElementById('full-export-password').value;
+  if (!password) { document.getElementById('full-export-result').innerHTML = '<div class="flash flash-error text-sm">' + _t('Enter password') + '</div>'; return; }
+  try {
+    // Verify password
+    var verify = await fetch('/api/auth/login', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email: '{{$p.Email}}', password: password})
+    });
+    var vr = await verify.json();
+    if (!vr.token) { document.getElementById('full-export-result').innerHTML = '<div class="flash flash-error text-sm">' + _t('Incorrect password') + '</div>'; return; }
+
+    var resp = await fetch('/api/gdpr/export-requests', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email: email})
+    });
+    var r = await resp.json();
+    if (r.success) {
+      document.getElementById('full-export-result').innerHTML = '<div class="flash flash-success text-sm">' + _t('Request submitted') + '</div>';
+      loadFullExportRequests();
+    } else {
+      document.getElementById('full-export-result').innerHTML = '<div class="flash flash-error text-sm">' + (r.error?.message || _t('Request failed')) + '</div>';
+    }
+  } catch (e) {
+    document.getElementById('full-export-result').innerHTML = '<div class="flash flash-error text-sm">' + _t('Request failed') + '</div>';
+  }
+}
+
+loadFullExportRequests();
+
+function openGDPRDeleteModal() {
+  document.getElementById('gdpr-confirm').value = '';
+  document.getElementById('gdpr-password').value = '';
+  document.getElementById('gdpr-delete-btn').disabled = true;
+  document.getElementById('gdpr-delete-modal').style.display = 'flex';
+}
+
+function checkGDPRReady() {
+  document.getElementById('gdpr-delete-btn').disabled = !(document.getElementById('gdpr-confirm').value === 'DELETE_MY_DATA' && document.getElementById('gdpr-password').value.length > 0);
+}
+
+async function executeGDPRDelete() {
+  try {
+    var password = document.getElementById('gdpr-password').value;
+    var verify = await fetch('/api/auth/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({email: '{{$p.Email}}', password: password}) });
+    if (!(await verify.json()).token) { showToast('error', _t('Incorrect password')); return; }
+
+    var resp = await fetch('/api/gdpr/delete', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({confirm: 'DELETE_MY_DATA'}) });
+    var r = await resp.json();
+    if (r.ok) { showToast('success', _t('Data deleted')); window.location.href = '/login'; } else { showToast('error', r.error?.message || _t('Delete failed')); }
+  } catch(e) { showToast('error', _t('Request failed')); }
+}
+
+// Delete account
+function openDeleteAccountModal() {
+  document.getElementById('delete-confirm').value = '';
+  document.getElementById('delete-password').value = '';
+  document.getElementById('delete-account-btn').disabled = true;
+  document.getElementById('delete-account-modal').style.display = 'flex';
+}
+
+function checkDeleteReady() {
+  document.getElementById('delete-account-btn').disabled = !(document.getElementById('delete-confirm').value === 'DELETE' && document.getElementById('delete-password').value.length > 0);
+}
+
+async function executeDeleteAccount() {
+  try {
+    var password = document.getElementById('delete-password').value;
+    var verify = await fetch('/api/auth/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({email: '{{$p.Email}}', password: password}) });
+    if (!(await verify.json()).token) { showToast('error', _t('Incorrect password')); return; }
+
+    var resp = await fetch('/api/profile/account', {method: 'DELETE'});
+    var r = await resp.json();
+    if (r.success) { showToast('success', _t('Account deleted')); window.location.href = '/login'; } else { showToast('error', r.error?.message || _t('Delete failed')); }
+  } catch(e) { showToast('error', _t('Request failed')); }
+}
+
+// ---- Notification preferences + IM channels ----
+function notifCSRF() { return document.querySelector('meta[name="csrf-token"]').getAttribute('content'); }
+
+async function notifLoadPrefs() {
+  try {
+    var d = await (await fetch('/api/notifications/preferences')).json();
+    var labels = {
+      enterprise_member_joined: _t('New member joined'),
+      enterprise_member_pending_ea: _t('Member pending admin approval'),
+      enterprise_join_confirm: _t('Join requests needing confirmation'),
+      balance_low: _t('Balance low'),
+      quota_warning: _t('Quota warnings'),
+      enterprise_quota_warning: _t('Enterprise quota warnings'),
+      enterprise_quota_exceeded: _t('Enterprise quota exceeded'),
+      enterprise_credit_warning: _t('Enterprise credit warnings'),
+      enterprise_credit_exceeded: _t('Enterprise credit exceeded'),
+      invoice_request: _t('Invoice Requests'),
+      enterprise_invoice_request: _t('Enterprise invoice requests')
+    };
+    var groups = [
+      { name: _t('Membership'), types: ['enterprise_member_joined', 'enterprise_member_pending_ea', 'enterprise_join_confirm'] },
+      { name: _t('Billing & usage'), types: ['balance_low', 'quota_warning', 'enterprise_quota_warning', 'enterprise_quota_exceeded', 'enterprise_credit_warning', 'enterprise_credit_exceeded'] },
+      { name: _t('Invoices'), types: ['invoice_request', 'enterprise_invoice_request'] }
+    ];
+    var html = '';
+    groups.forEach(function(g) {
+      html += '<div class="text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin-top:10px">' + g.name + '</div>';
+      g.types.forEach(function(t) {
+        if ((d.types || []).indexOf(t) === -1) return;
+        var on = d.preferences && d.preferences[t] !== undefined ? d.preferences[t] : true;
+        html += '<label style="display:flex;align-items:center;gap:8px"><input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="notifSetPref(\'' + t + '\', this.checked)"> <span>' + (labels[t] || t) + '</span></label>';
+      });
+    });
+    document.getElementById('notif-pref-list').innerHTML = html || '<span class="text-muted text-sm">' + _t('No notifications') + '</span>';
+  } catch(e) {}
+}
+
+async function notifSetPref(type, enabled) {
+  await fetch('/api/notifications/preferences', { method: 'PUT', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': notifCSRF()}, body: JSON.stringify({type: type, enabled: enabled}) });
+  showToast('success', _t('Saved'));
+}
+
+async function notifLoadChannels() {
+  var el = document.getElementById('notif-channel-list');
+  if (!el) return;
+  try {
+    var d = await (await fetch('/api/notifications/channels')).json();
+    var items = d.items || [];
+    if (!items.length) { el.innerHTML = '<span class="text-muted text-sm">' + _t('No channels configured') + '</span>'; return; }
+    var html = '';
+    items.forEach(function(ch) {
+      var status = ch.last_test_status ? (ch.last_test_status === 'ok' ? '✅' : '❌') : '';
+      html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+      html += '<span class="badge">' + ch.type + '</span>';
+      html += '<code style="font-size:12px;overflow:hidden;text-overflow:ellipsis;max-width:340px">' + ch.webhook_url.replace(/^https?:\/\//, '').slice(0, 48) + '…</code>';
+      html += '<label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" ' + (ch.enabled ? 'checked' : '') + ' onchange="notifToggleChannel(\'' + ch.id + '\', this.checked)"> ' + _t('Enabled') + '</label>';
+      html += '<button class="btn btn-secondary btn-sm" onclick="notifTestChannel(\'' + ch.id + '\')">' + _t('Send test') + '</button> ' + status;
+      html += '<button class="btn btn-secondary btn-sm" style="color:var(--color-error)" onclick="notifDeleteChannel(\'' + ch.id + '\')">' + _t('Delete') + '</button>';
+      html += '</div>';
+    });
+    el.innerHTML = html;
+  } catch(e) {}
+}
+
+async function notifAddChannel() {
+  var body = { type: document.getElementById('notif-ch-type').value, webhook_url: document.getElementById('notif-ch-url').value, secret: document.getElementById('notif-ch-secret').value };
+  var r = await (await fetch('/api/notifications/channels', { method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': notifCSRF()}, body: JSON.stringify(body) })).json();
+  if (r.item) { showToast('success', _t('Saved')); document.getElementById('notif-ch-url').value = ''; document.getElementById('notif-ch-secret').value = ''; notifLoadChannels(); }
+  else showToast('error', (r.error && r.error.message) || _t('Request failed'));
+}
+
+async function notifToggleChannel(id, enabled) {
+  await fetch('/api/notifications/channels/' + id + '/toggle', { method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': notifCSRF()}, body: JSON.stringify({enabled: enabled}) });
+}
+
+async function notifTestChannel(id) {
+  var r = await (await fetch('/api/notifications/channels/' + id + '/test', { method: 'POST', headers: {'X-CSRF-Token': notifCSRF()} })).json();
+  showToast(r.ok ? 'success' : 'error', r.ok ? _t('Test message sent') : ((r.error && r.error.message) || _t('Request failed')));
+  notifLoadChannels();
+}
+
+async function notifDeleteChannel(id) {
+  await fetch('/api/notifications/channels/' + id, { method: 'DELETE', headers: {'X-CSRF-Token': notifCSRF()} });
+  notifLoadChannels();
+}
+
+notifLoadPrefs();
+notifLoadChannels();
+</script>
+
+<script>
+// ---- Two-factor authentication (TOTP) ----
+var mfaSensitiveMode = '';
+function mfaMsg(kind, text) {
+  var el = document.getElementById('mfa-result');
+  el.textContent = '';
+  var d = document.createElement('div');
+  d.className = 'flash flash-' + kind + ' text-sm';
+  d.textContent = text;
+  el.appendChild(d);
+}
+function mfaShow(id, on) { var e = document.getElementById(id); if (e) e.style.display = on ? '' : 'none'; }
+async function mfaCall(path, method, body) {
+  var res = await fetch('/api/profile/mfa/' + path, {
+    method: method,
+    headers: {'Content-Type': 'application/json'},
+    body: body ? JSON.stringify(body) : undefined
+  });
+  var data = {};
+  try { data = await res.json(); } catch (e) {}
+  return {ok: res.ok, data: data};
+}
+async function mfaLoad() {
+  try {
+    var r = await mfaCall('status', 'GET');
+    if (!r.ok) return;
+    var st = r.data;
+    document.getElementById('mfa-status').textContent = st.enabled ? _t('Enabled') : _t('Not enabled');
+    document.getElementById('mfa-codes-left').textContent = st.enabled ? ('(' + st.recovery_codes_remaining + ' ' + _t('recovery codes left') + ')') : '';
+    mfaShow('mfa-btn-setup', !st.enabled);
+    mfaShow('mfa-btn-regen', st.enabled);
+    // A policy-required user cannot switch MFA off (the server enforces this too).
+    mfaShow('mfa-btn-disable', st.enabled && !st.required);
+    mfaShow('mfa-required-note', st.required && !st.enabled);
+  } catch (e) { mfaMsg('error', _t('Request failed')); }
+}
+async function mfaStartSetup() {
+  var r = await mfaCall('setup', 'POST');
+  if (!r.ok) { mfaMsg('error', (r.data.error && r.data.error.message) || _t('Request failed')); return; }
+  document.getElementById('mfa-secret').value = r.data.secret;
+  document.getElementById('mfa-uri').value = r.data.otpauth_uri;
+  document.getElementById('mfa-confirm-code').value = '';
+  mfaShow('mfa-setup-box', true);
+  mfaShow('mfa-btn-setup', false);
+  document.getElementById('mfa-confirm-code').focus();
+}
+function mfaCancelSetup() {
+  mfaShow('mfa-setup-box', false);
+  document.getElementById('mfa-secret').value = '';
+  document.getElementById('mfa-uri').value = '';
+  mfaLoad();
+}
+function mfaShowCodes(codes) {
+  document.getElementById('mfa-codes-list').textContent = codes.join('\n');
+  mfaShow('mfa-codes-box', true);
+}
+function mfaDismissCodes() {
+  document.getElementById('mfa-codes-list').textContent = '';
+  mfaShow('mfa-codes-box', false);
+}
+async function mfaConfirmEnable() {
+  var r = await mfaCall('enable', 'POST', {code: document.getElementById('mfa-confirm-code').value});
+  if (!r.ok) { mfaMsg('error', (r.data.error && r.data.error.message) || _t('Request failed')); return; }
+  mfaCancelSetup();
+  mfaShowCodes(r.data.recovery_codes || []);
+  mfaMsg('success', _t('Two-factor authentication is now enabled. Other devices were signed out.'));
+}
+function mfaOpenSensitive(mode) {
+  mfaSensitiveMode = mode;
+  document.getElementById('mfa-password').value = '';
+  document.getElementById('mfa-sensitive-code').value = '';
+  document.getElementById('mfa-sensitive-recovery').value = '';
+  document.getElementById('mfa-sensitive-hint').textContent = mode === 'disable'
+    ? _t('Confirm your password and an authenticator code (or a recovery code) to disable two-factor authentication.')
+    : _t('Confirm your password and an authenticator code to generate new recovery codes. The old codes stop working.');
+  mfaShow('mfa-recovery-group', mode === 'disable');
+  mfaShow('mfa-sensitive-box', true);
+  document.getElementById('mfa-password').focus();
+}
+function mfaCloseSensitive() {
+  mfaShow('mfa-sensitive-box', false);
+  document.getElementById('mfa-password').value = '';
+}
+async function mfaSubmitSensitive() {
+  var pw = document.getElementById('mfa-password').value;
+  var code = document.getElementById('mfa-sensitive-code').value;
+  var rec = document.getElementById('mfa-sensitive-recovery').value;
+  var r;
+  if (mfaSensitiveMode === 'disable') {
+    var body = {password: pw};
+    if (rec) body.recovery_code = rec; else body.code = code;
+    r = await mfaCall('disable', 'POST', body);
+  } else {
+    r = await mfaCall('recovery-codes/regenerate', 'POST', {password: pw, code: code});
+  }
+  if (!r.ok) { mfaMsg('error', (r.data.error && r.data.error.message) || _t('Request failed')); return; }
+  mfaCloseSensitive();
+  if (mfaSensitiveMode === 'disable') { mfaMsg('success', _t('Two-factor authentication is disabled. Other devices were signed out.')); }
+  else { mfaShowCodes(r.data.recovery_codes || []); mfaMsg('success', _t('New recovery codes generated')); }
+  mfaLoad();
+}
+mfaLoad();
+</script>
+{{end}}
