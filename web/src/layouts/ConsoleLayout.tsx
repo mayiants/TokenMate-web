@@ -68,6 +68,7 @@ const ADMIN_ITEMS = [
   { itemKey: 'admin-overview', textKey: 'admin.nav.overview', path: '/console/admin', icon: <IconHistogram /> },
   { itemKey: 'admin-users', textKey: 'admin.nav.users', path: '/console/admin/users', icon: <IconUserGroup /> },
   { itemKey: 'admin-enterprises', textKey: 'admin.nav.enterprises', path: '/console/admin/enterprises', icon: <IconBriefcaseStroked /> },
+  { itemKey: 'admin-groups', textKey: 'admin.nav.groups', path: '/console/admin/groups', icon: <IconFolderStroked /> },
 ];
 
 export default function ConsoleLayout() {
