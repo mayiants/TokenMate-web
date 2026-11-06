@@ -29,6 +29,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useI18n } from '../i18n';
 import { useTheme } from '../utils/theme';
 import { getMyEnterprise } from '../api/enterprise';
+import { getAdminMode } from '../api/admin';
 
 const COLLAPSE_STORAGE_KEY = 'wg-console-sider';
 
@@ -61,6 +62,14 @@ const ENT_ITEMS = [
   { itemKey: 'ent-alerts', textKey: 'ent.nav.alerts', path: '/console/enterprise/alerts', icon: <IconBellStroked /> },
 ];
 
+// Platform administration — only rendered for system_admin / super_admin
+// (the backend 403s every /api/admin/* route for anyone else).
+const ADMIN_ITEMS = [
+  { itemKey: 'admin-overview', textKey: 'admin.nav.overview', path: '/console/admin', icon: <IconHistogram /> },
+  { itemKey: 'admin-users', textKey: 'admin.nav.users', path: '/console/admin/users', icon: <IconUserGroup /> },
+  { itemKey: 'admin-enterprises', textKey: 'admin.nav.enterprises', path: '/console/admin/enterprises', icon: <IconBriefcaseStroked /> },
+];
+
 export default function ConsoleLayout() {
   const { t, locale, setLocale } = useI18n();
   const { user, logout } = useAuth();
@@ -69,6 +78,7 @@ export default function ConsoleLayout() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_STORAGE_KEY) === '1');
   const [hasEnterprise, setHasEnterprise] = useState(false);
+  const [hasAdmin, setHasAdmin] = useState(false);
 
   // Enterprise nav group only renders for users that actually belong to an
   // enterprise (backend decides; non-members get 403 from /api/enterprise).
@@ -82,10 +92,26 @@ export default function ConsoleLayout() {
     };
   }, []);
 
+  // Platform-admin probe: the same 403 that hides the group is enforced by
+  // every /api/admin/* handler, so this is presentation only.
+  useEffect(() => {
+    let cancelled = false;
+    getAdminMode()
+      .then((mode) => {
+        if (!cancelled) {
+          setHasAdmin(mode.userRole === 'system_admin' || mode.userRole === 'super_admin');
+        }
+      })
+      .catch(() => !cancelled && setHasAdmin(false));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const selectedKey = useMemo(() => {
     // exact match or child-path match; longest-path-first so '/console/groups'
     // never shadows a future nested route and vice versa.
-    const match = [...ACC_ITEMS, ...ENT_ITEMS]
+    const match = [...ACC_ITEMS, ...ENT_ITEMS, ...ADMIN_ITEMS]
       .sort((a, b) => b.path.length - a.path.length)
       .find((i) => location.pathname === i.path || location.pathname.startsWith(i.path + '/'));
     if (match) return match.itemKey;
@@ -109,15 +135,24 @@ export default function ConsoleLayout() {
       style: { pointerEvents: 'none' as const, fontSize: 12, color: 'var(--wg-text-2)', marginTop: 8 },
     };
     const accItems = ACC_ITEMS.map((i) => ({ ...i, text: t(i.textKey) }));
-    if (!hasEnterprise) return [...base, accHeader, ...accItems];
-    return [
-      ...base,
-      accHeader,
-      ...accItems,
-      { itemKey: 'ent-header', text: t('ent.nav.group'), icon: <IconMailStroked />, disabled: false, style: { pointerEvents: 'none' as const, fontSize: 12, color: 'var(--wg-text-2)', marginTop: 8 } },
-      ...ENT_ITEMS.map((i) => ({ ...i, text: t(i.textKey) })),
-    ];
-  }, [hasEnterprise, t]);
+    const adminHeader = {
+      itemKey: 'admin-header',
+      text: t('admin.nav.group'),
+      icon: <IconSettingStroked />,
+      disabled: false,
+      style: { pointerEvents: 'none' as const, fontSize: 12, color: 'var(--wg-text-2)', marginTop: 8 },
+    };
+    const adminItems = ADMIN_ITEMS.map((i) => ({ ...i, text: t(i.textKey) }));
+    const items = [...base, accHeader, ...accItems];
+    if (hasEnterprise) {
+      items.push(
+        { itemKey: 'ent-header', text: t('ent.nav.group'), icon: <IconMailStroked />, disabled: false, style: { pointerEvents: 'none' as const, fontSize: 12, color: 'var(--wg-text-2)', marginTop: 8 } },
+        ...ENT_ITEMS.map((i) => ({ ...i, text: t(i.textKey) }))
+      );
+    }
+    if (hasAdmin) items.push(adminHeader, ...adminItems);
+    return items;
+  }, [hasEnterprise, hasAdmin, t]);
 
   const toggleCollapse = () => {
     setCollapsed((prev) => {
@@ -154,9 +189,12 @@ export default function ConsoleLayout() {
           selectedKeys={[selectedKey]}
           items={navItems}
           onSelect={(data) => {
-            const all = hasEnterprise
-              ? [...NAV_ITEMS, ...ACC_ITEMS, ...ENT_ITEMS]
-              : [...NAV_ITEMS, ...ACC_ITEMS];
+            const all = [
+              ...NAV_ITEMS,
+              ...ACC_ITEMS,
+              ...(hasEnterprise ? ENT_ITEMS : []),
+              ...(hasAdmin ? ADMIN_ITEMS : []),
+            ];
             const item = all.find((i) => i.itemKey === data.itemKey);
             if (item) navigate(item.path);
           }}

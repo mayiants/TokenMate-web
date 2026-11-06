@@ -2701,6 +2701,22 @@ body.theme-dark .wg-tint-violet {
   flex-direction: column;
   gap: 16px;
 }
+
+/* platform-admin overview todo rows */
+.wg-todo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.wg-todo-item > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .wg-page-loading {
   display: flex;
   align-items: center;
