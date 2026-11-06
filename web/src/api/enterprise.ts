@@ -362,3 +362,71 @@ export async function cancelInvitation(invitationId: string): Promise<void> {
 export async function resendInvitation(invitationId: string): Promise<void> {
   await request(`/api/enterprise/invitations/${invitationId}/resend`, { method: 'POST' });
 }
+
+// --- enterprise audit (admin) --------------------------------------------------
+// GET /api/enterprise/audit returns two row sets: role changes from
+// enterprise_member_role_log and unified events from enterprise_audit_log.
+// The endpoint only filters by `category` and caps each set at 50 rows, so
+// date/operator/change-type filtering and pagination happen client-side.
+
+export interface EnterpriseRoleAudit {
+  id: string;
+  user_id?: string;
+  old_role?: string;
+  new_role?: string;
+  changed_by?: string;
+  changed_by_email?: string;
+  changed_at: string;
+  reason?: string;
+}
+
+export interface EnterpriseAuditEvent {
+  id: string;
+  category: string;
+  change_type: string;
+  field_name?: string;
+  old_value?: number | null;
+  new_value?: number | null;
+  delta?: number | null;
+  reason?: string;
+  created_at: string;
+  /** Operator email, or the literal 'system' when the writer had no user. */
+  changed_by?: string;
+  user_id?: string;
+  user_email?: string;
+  user_name?: string;
+}
+
+export async function getEnterpriseAudit(category?: string): Promise<{
+  roles: EnterpriseRoleAudit[];
+  events: EnterpriseAuditEvent[];
+  category: string;
+}> {
+  const qs = category && category !== 'all' ? `?category=${encodeURIComponent(category)}` : '';
+  const res = await request<{
+    audit_log?: EnterpriseRoleAudit[];
+    credit_log?: EnterpriseAuditEvent[];
+    category?: string;
+  }>(`/api/enterprise/audit${qs}`);
+  return {
+    roles: res.audit_log ?? [],
+    events: res.credit_log ?? [],
+    category: res.category ?? '',
+  };
+}
+
+/** CSV export: type=credits honours category/from/to/operator/member/q; type=roles ignores them. */
+export function enterpriseAuditExportPath(params: {
+  type: 'credits' | 'roles';
+  category?: string;
+  from?: string;
+  to?: string;
+  operator?: string;
+}): string {
+  const q = new URLSearchParams({ type: params.type });
+  if (params.category && params.category !== 'all') q.set('category', params.category);
+  if (params.from) q.set('from', params.from);
+  if (params.to) q.set('to', params.to);
+  if (params.operator) q.set('operator', params.operator);
+  return `/api/enterprise/audit/export?${q.toString()}`;
+}

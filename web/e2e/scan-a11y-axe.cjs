@@ -32,6 +32,7 @@ const CONSOLE_PAGES = [
   '/console/enterprise/usage',
   '/console/enterprise/billing',
   '/console/enterprise/settings',
+  '/console/enterprise/audit',
 ];
 
 (async () => {

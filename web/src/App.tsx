@@ -31,6 +31,7 @@ const EntKeys = lazy(() => import('./pages/enterprise/Keys'));
 const EntUsage = lazy(() => import('./pages/enterprise/Usage'));
 const EntBilling = lazy(() => import('./pages/enterprise/Billing'));
 const EntSettings = lazy(() => import('./pages/enterprise/Settings'));
+const EntAudit = lazy(() => import('./pages/enterprise/Audit'));
 
 const lazyFallback = (
   <div style={{ display: 'flex', justifyContent: 'center', padding: 96 }}>
@@ -80,6 +81,7 @@ export default function App() {
           <Route path="usage" element={<Suspense fallback={lazyFallback}><EntUsage /></Suspense>} />
           <Route path="billing" element={<Suspense fallback={lazyFallback}><EntBilling /></Suspense>} />
           <Route path="settings" element={<Suspense fallback={lazyFallback}><EntSettings /></Suspense>} />
+          <Route path="audit" element={<Suspense fallback={lazyFallback}><EntAudit /></Suspense>} />
         </Route>
       </Route>
       <Route element={<PublicLayout />}>

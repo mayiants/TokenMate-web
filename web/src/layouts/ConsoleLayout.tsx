@@ -19,6 +19,7 @@ import {
   IconHistogram,
   IconFolderStroked,
   IconSettingStroked,
+  IconShieldStroked,
   IconUserGroup,
   IconLanguage,
   IconMailStroked,
@@ -56,6 +57,7 @@ const ENT_ITEMS = [
   { itemKey: 'ent-usage', textKey: 'ent.nav.usage', path: '/console/enterprise/usage', icon: <IconHistogram /> },
   { itemKey: 'ent-billing', textKey: 'ent.nav.billing', path: '/console/enterprise/billing', icon: <IconCreditCardStroked /> },
   { itemKey: 'ent-settings', textKey: 'ent.nav.settings', path: '/console/enterprise/settings', icon: <IconSettingStroked /> },
+  { itemKey: 'ent-audit', textKey: 'ent.nav.audit', path: '/console/enterprise/audit', icon: <IconShieldStroked /> },
 ];
 
 export default function ConsoleLayout() {
