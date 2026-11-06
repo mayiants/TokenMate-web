@@ -58,6 +58,7 @@ const ENT_ITEMS = [
   { itemKey: 'ent-billing', textKey: 'ent.nav.billing', path: '/console/enterprise/billing', icon: <IconCreditCardStroked /> },
   { itemKey: 'ent-settings', textKey: 'ent.nav.settings', path: '/console/enterprise/settings', icon: <IconSettingStroked /> },
   { itemKey: 'ent-audit', textKey: 'ent.nav.audit', path: '/console/enterprise/audit', icon: <IconShieldStroked /> },
+  { itemKey: 'ent-alerts', textKey: 'ent.nav.alerts', path: '/console/enterprise/alerts', icon: <IconBellStroked /> },
 ];
 
 export default function ConsoleLayout() {

@@ -13,7 +13,7 @@ const PAGES = [
   '/console/enterprise', '/console/enterprise/members', '/console/enterprise/groups',
   '/console/enterprise/keys', '/console/enterprise/usage', '/console/enterprise/billing',
   '/console/enterprise/settings',
-  '/console/enterprise/audit',
+  '/console/enterprise/audit', '/console/enterprise/alerts',
 ];
 
 (async () => {

@@ -32,6 +32,7 @@ const EntUsage = lazy(() => import('./pages/enterprise/Usage'));
 const EntBilling = lazy(() => import('./pages/enterprise/Billing'));
 const EntSettings = lazy(() => import('./pages/enterprise/Settings'));
 const EntAudit = lazy(() => import('./pages/enterprise/Audit'));
+const EntAlerts = lazy(() => import('./pages/enterprise/Alerts'));
 
 const lazyFallback = (
   <div style={{ display: 'flex', justifyContent: 'center', padding: 96 }}>
@@ -82,6 +83,7 @@ export default function App() {
           <Route path="billing" element={<Suspense fallback={lazyFallback}><EntBilling /></Suspense>} />
           <Route path="settings" element={<Suspense fallback={lazyFallback}><EntSettings /></Suspense>} />
           <Route path="audit" element={<Suspense fallback={lazyFallback}><EntAudit /></Suspense>} />
+          <Route path="alerts" element={<Suspense fallback={lazyFallback}><EntAlerts /></Suspense>} />
         </Route>
       </Route>
       <Route element={<PublicLayout />}>

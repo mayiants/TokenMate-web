@@ -2859,3 +2859,99 @@ body.theme-dark {
 .semi-datepicker input {
   border-radius: 8px !important;
 }
+
+/* ============================================================
+   E9 enterprise alerts — rule card grid
+   ============================================================ */
+.wg-alert-rules {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.wg-alert-rule {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px 18px;
+  background: var(--wg-surface);
+  border: 1px solid var(--wg-border);
+  border-radius: 12px;
+}
+
+body[theme-mode='dark'] .wg-alert-rule {
+  background: #232529;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.wg-alert-rule-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wg-alert-rule-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--wg-text);
+}
+
+.wg-alert-rule-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--wg-pill-bg);
+  color: var(--wg-text-2);
+}
+
+body[theme-mode='dark'] .wg-alert-rule-icon {
+  background: #2e3138;
+  color: #a8adb5;
+}
+
+.wg-alert-rule-icon.is-critical {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+body[theme-mode='dark'] .wg-alert-rule-icon.is-critical {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+
+.wg-alert-rule-desc {
+  margin: 0;
+  min-height: 40px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--wg-text-2);
+}
+
+.wg-alert-rule-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+@media (max-width: 1200px) {
+  .wg-alert-rules {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .wg-alert-rules {
+    grid-template-columns: 1fr;
+  }
+}

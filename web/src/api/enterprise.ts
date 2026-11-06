@@ -430,3 +430,60 @@ export function enterpriseAuditExportPath(params: {
   if (params.operator) q.set('operator', params.operator);
   return `/api/enterprise/audit/export?${q.toString()}`;
 }
+
+// --- enterprise alerts (admin) -------------------------------------------------
+// Only the six platform-defined thresholds are configurable (enable/disable);
+// there is no create/delete endpoint for rules.
+
+export interface EnterpriseAlert {
+  id: string;
+  alert_type: string;
+  threshold_percent: number;
+  current_value?: number | null;
+  limit_value?: number | null;
+  notified_at: string;
+  acknowledged_at?: string | null;
+  acknowledged_by?: string | null;
+}
+
+export interface EnterpriseAlertSetting {
+  alert_type: string;
+  threshold_percent: number;
+  enabled: boolean;
+  configurable: boolean;
+}
+
+export async function listEnterpriseAlerts(params?: {
+  status?: 'open' | 'acknowledged' | 'all';
+  type?: string;
+  limit?: number;
+}): Promise<EnterpriseAlert[]> {
+  const q = new URLSearchParams();
+  if (params?.status && params.status !== 'all') q.set('status', params.status);
+  if (params?.type && params.type !== 'all') q.set('type', params.type);
+  if (params?.limit) q.set('limit', String(params.limit));
+  const qs = q.toString();
+  const res = await request<{ alerts?: EnterpriseAlert[] | null }>(
+    `/api/enterprise/alerts${qs ? `?${qs}` : ''}`
+  );
+  return res.alerts ?? [];
+}
+
+export async function getEnterpriseAlertSettings(): Promise<EnterpriseAlertSetting[]> {
+  const res = await request<{ settings?: EnterpriseAlertSetting[] | null }>(
+    '/api/enterprise/alert-settings'
+  );
+  return res.settings ?? [];
+}
+
+export async function updateEnterpriseAlertSetting(payload: {
+  alert_type: string;
+  threshold_percent: number;
+  enabled: boolean;
+}): Promise<void> {
+  await request('/api/enterprise/alert-settings', { method: 'PUT', body: payload });
+}
+
+export async function acknowledgeEnterpriseAlert(alertId: string): Promise<void> {
+  await request(`/api/enterprise/alerts/${alertId}/ack`, { method: 'POST' });
+}
