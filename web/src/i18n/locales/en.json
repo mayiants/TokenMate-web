@@ -1181,7 +1181,7 @@
   "admin.upstream.col.key": "Key",
   "admin.upstream.col.weight": "Weight",
   "admin.upstream.col.health": "Health",
-  "admin.upstream.col.todayUsage": "Today",
+  "admin.upstream.col.todayUsage": "24h requests",
   "admin.upstream.col.enabled": "Enabled",
   "admin.upstream.col.requests": "Requests",
   "admin.upstream.col.failures": "Failures",

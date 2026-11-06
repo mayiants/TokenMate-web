@@ -1181,7 +1181,7 @@
   "admin.upstream.col.key": "密钥",
   "admin.upstream.col.weight": "权重",
   "admin.upstream.col.health": "健康度",
-  "admin.upstream.col.todayUsage": "今日请求",
+  "admin.upstream.col.todayUsage": "近 24h 请求",
   "admin.upstream.col.enabled": "启用",
   "admin.upstream.col.requests": "请求数",
   "admin.upstream.col.failures": "失败数",
