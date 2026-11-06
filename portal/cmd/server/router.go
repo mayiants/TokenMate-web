@@ -58,8 +58,6 @@ func setupRouter(deps *AppDeps) *gin.Engine {
 	if os.Getenv("LEGACY_WEB_UI") == "true" {
 		webGroup := router.Group("/")
 		deps.webHandler.RegisterRoutes(webGroup, deps.auth)
-	} else {
-		webui.Register(router)
 	}
 
 	// Metrics endpoint — protected by admin secret in header
@@ -187,10 +185,15 @@ func setupRouter(deps *AppDeps) *gin.Engine {
 	deps.mgmtTokenRoutes.Register(api.Group("/management-tokens"))
 	deps.mgmtTokenRoutes.RegisterConsumers(api.Group("/mgmt"))
 
-	// 404 handler for unmatched routes
-	router.NoRoute(func(c *gin.Context) {
-		c.JSON(404, gin.H{"error": gin.H{"message": "Not found"}})
-	})
+	// 404 handler for unmatched routes. Registered LAST so it wins. Legacy
+	// mode answers JSON; SPA mode falls back to the embedded React app.
+	if os.Getenv("LEGACY_WEB_UI") == "true" {
+		router.NoRoute(func(c *gin.Context) {
+			c.JSON(404, gin.H{"error": gin.H{"message": "Not found"}})
+		})
+	} else {
+		webui.Register(router)
+	}
 
 	return router
 }
