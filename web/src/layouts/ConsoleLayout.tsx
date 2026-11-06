@@ -29,7 +29,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useI18n } from '../i18n';
 import { useTheme } from '../utils/theme';
 import { getMyEnterprise } from '../api/enterprise';
-import { getAdminMode } from '../api/admin';
+import { getAdminModeCached } from '../api/admin';
 
 const COLLAPSE_STORAGE_KEY = 'wg-console-sider';
 
@@ -96,7 +96,7 @@ export default function ConsoleLayout() {
   // every /api/admin/* handler, so this is presentation only.
   useEffect(() => {
     let cancelled = false;
-    getAdminMode()
+    getAdminModeCached()
       .then((mode) => {
         if (!cancelled) {
           setHasAdmin(mode.userRole === 'system_admin' || mode.userRole === 'super_admin');

@@ -138,6 +138,18 @@ export function getAdminMode(): Promise<AdminMode> {
   return request<AdminMode>('/api/admin/admin-mode');
 }
 
+// Session-level probe cache: ConsoleLayout + AdminLayout both probe this on
+// mount — without caching, every console page re-hits the endpoint (and every
+// non-admin session logs a 403 per page). Cleared on login/logout.
+let adminModeCache: Promise<AdminMode> | null = null;
+export function getAdminModeCached(): Promise<AdminMode> {
+  if (!adminModeCache) adminModeCache = getAdminMode();
+  return adminModeCache;
+}
+export function clearAdminModeCache() {
+  adminModeCache = null;
+}
+
 export function getAdminStats(): Promise<AdminStats> {
   return request<AdminStats>('/api/admin/stats');
 }

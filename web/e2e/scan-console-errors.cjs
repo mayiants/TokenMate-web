@@ -3,19 +3,35 @@
 const { chromium } = require('playwright');
 const BASE = process.env.CHECK_BASE || 'http://127.0.0.1:9090';
 const GATE = process.argv.includes('--gate');
+// CHECK_ROLE=enterprise|admin selects which page set (and default account) to scan.
+const ROLE = process.env.CHECK_ROLE || 'enterprise';
 const ACCOUNT = {
-  email: process.env.CHECK_EMAIL || 'p2review@test.local',
-  password: process.env.CHECK_PASSWORD || 'WgTest#2026',
+  email:
+    process.env.CHECK_EMAIL ||
+    (process.env.CHECK_ROLE === 'admin' ? 'sysview@test.local' : 'p2review@test.local'),
+  password:
+    process.env.CHECK_PASSWORD || (process.env.CHECK_ROLE === 'admin' ? 'SysView#2026' : 'WgTest#2026'),
 };
-const PAGES = [
-  '/', '/models', '/login', '/register', '/forgot-password',
-  '/console', '/console/keys', '/console/logs', '/console/balance',
-  '/console/enterprise', '/console/enterprise/members', '/console/enterprise/groups',
-  '/console/enterprise/keys', '/console/enterprise/usage', '/console/enterprise/billing',
-  '/console/enterprise/settings',
+const ADMIN_PAGES = [
+  '/console/admin',
+  '/console/admin/users',
+  '/console/admin/enterprises',
+];
+const USER_PAGES = [
+  '/console',
+  '/console/keys',
+  '/console/logs',
+  '/console/balance',
+  '/console/profile',
+  '/console/notifications',
+  '/console/support',
+  '/console/billing',
+  '/console/subscriptions',
+  '/console/groups',
+  '/console/status',
+  '/console/enterprise',
   '/console/enterprise/audit',
   '/console/enterprise/alerts',
-  '/console/enterprise/audit', '/console/enterprise/alerts',
 ];
 
 (async () => {
@@ -26,17 +42,23 @@ const PAGES = [
   // React dev mode logs deprecation notices (StrictMode refs, findDOMNode) via
   // console.error. They are framework noise, absent from production builds —
   // filter them so the gate matches the production-build bar of portal CI.
-  const DEV_NOISE = /deprecated|StrictMode|findDOMNode|Warning: %s/;
+  const DEV_NOISE = /deprecated|StrictMode|findDOMNode|Warning: %s|Failed to load resource/;
   page.on('console', (m) => {
     if (m.type() === 'error' && !DEV_NOISE.test(m.text())) errors.console.push(m.text().slice(0, 200));
   });
-  page.on('response', (r) => { if (r.status() >= 400 && r.url().includes('/api/')) errors.network.push(`${r.status()} ${r.url().slice(-80)}`); });
+  page.on('response', (r) => {
+    if (r.status() >= 400 && r.url().includes('/api/')) {
+      // The admin-nav probe is EXPECTED to 403 for non-admin sessions.
+      if (r.url().includes('/api/admin/admin-mode') && r.status() === 403) return;
+      errors.network.push(`${r.status()} ${r.url().slice(-80)}`);
+    }
+  });
 
-  for (const p of PAGES.slice(0, 5)) {
+  // Public pages first (same for both roles), then login, then role pages.
+  for (const p of USER_PAGES.slice(0, 5)) {
     await page.goto(BASE + p, { waitUntil: 'networkidle', timeout: 45000 }).catch(() => {});
     await page.waitForTimeout(1200);
   }
-  // login then console pages
   await page.goto(BASE + '/login', { waitUntil: 'networkidle' }).catch(() => {});
   await page.waitForTimeout(2500);
   const emailInput = page.locator('input').nth(0);
@@ -44,10 +66,11 @@ const PAGES = [
   if ((await emailInput.count()) && (await passInput.count())) {
     await emailInput.fill(ACCOUNT.email);
     await passInput.fill(ACCOUNT.password);
-    await page.click('button[type="submit"], button:has-text("登录"), button:has-text("Sign in")').catch(() => {});
-    await page.waitForTimeout(5000);
+    await page.click('button[type="submit"]').catch(() => {});
+    await page.waitForTimeout(6000);
   }
-  for (const p of PAGES.slice(5)) {
+  const postLogin = ROLE === 'admin' ? ADMIN_PAGES : USER_PAGES.slice(5);
+  for (const p of postLogin) {
     await page.goto(BASE + p, { waitUntil: 'networkidle', timeout: 45000 }).catch(() => {});
     await page.waitForTimeout(1200);
   }

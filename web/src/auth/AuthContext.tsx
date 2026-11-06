@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { fetchMe, login as apiLogin, logout as apiLogout, register as apiRegister, type AuthUser } from '../api/auth';
 import { getToken, setToken } from '../api/client';
+import { clearAdminModeCache } from '../api/admin';
 
 interface AuthState {
   user: AuthUser | null;
@@ -28,7 +29,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!cancelled) setUser(me);
       })
       .catch(() => {
-        if (!cancelled) setToken(null);
+        if (!cancelled) clearAdminModeCache();
+    setToken(null);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

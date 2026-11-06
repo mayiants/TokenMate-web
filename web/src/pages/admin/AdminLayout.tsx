@@ -3,7 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { Button, Empty, Spin } from '@douyinfe/semi-ui';
 import { IconShieldStroked } from '@douyinfe/semi-icons';
 import { useI18n } from '../../i18n';
-import { getAdminMode } from '../../api/admin';
+import { getAdminModeCached } from '../../api/admin';
 
 const ADMIN_ROLES = ['system_admin', 'super_admin'];
 
@@ -21,7 +21,7 @@ export default function AdminLayout() {
 
   useEffect(() => {
     let cancelled = false;
-    getAdminMode()
+    getAdminModeCached()
       .then((mode) => {
         if (cancelled) return;
         setProbe(ADMIN_ROLES.includes(mode.userRole ?? '') ? 'ok' : 'denied');

@@ -2971,3 +2971,12 @@ body[theme-mode='dark'] .wg-alert-rule-icon.is-critical {
     grid-template-columns: 1fr;
   }
 }
+
+/* a11y: Semi light-button default primary text misses AA on its pale
+   background, in both themes (hero CTA already had its own override). */
+.semi-button-light {
+  color: var(--wg-primary-strong) !important;
+}
+body[theme-mode='dark'] .semi-button-light {
+  color: #7bb8ff !important;
+}

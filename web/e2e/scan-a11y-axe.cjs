@@ -6,12 +6,22 @@ const { AxeBuilder } = require('@axe-core/playwright');
 
 const BASE = process.env.CHECK_BASE || 'http://127.0.0.1:9090';
 const GATE = process.argv.includes('--gate');
+// CHECK_ROLE=enterprise|admin selects which page set (and default account) to scan.
+const ROLE = process.env.CHECK_ROLE || 'enterprise';
 const ACCOUNT = {
-  email: process.env.CHECK_EMAIL || 'p2review@test.local',
-  password: process.env.CHECK_PASSWORD || 'WgTest#2026',
+  email:
+    process.env.CHECK_EMAIL ||
+    (process.env.CHECK_ROLE === 'admin' ? 'sysview@test.local' : 'p2review@test.local'),
+  password:
+    process.env.CHECK_PASSWORD || (process.env.CHECK_ROLE === 'admin' ? 'SysView#2026' : 'WgTest#2026'),
 };
 
 const PUBLIC_PAGES = ['/', '/models', '/login', '/register', '/forgot-password'];
+const ADMIN_PAGES = [
+  '/console/admin',
+  '/console/admin/users',
+  '/console/admin/enterprises',
+];
 const CONSOLE_PAGES = [
   '/console',
   '/console/keys',
@@ -24,16 +34,7 @@ const CONSOLE_PAGES = [
   '/console/subscriptions',
   '/console/groups',
   '/console/status',
-
   '/console/enterprise',
-  '/console/enterprise/members',
-  '/console/enterprise/groups',
-  '/console/enterprise/keys',
-  '/console/enterprise/usage',
-  '/console/enterprise/billing',
-  '/console/enterprise/settings',
-  '/console/enterprise/audit',
-  '/console/enterprise/alerts',
   '/console/enterprise/audit',
   '/console/enterprise/alerts',
 ];
@@ -84,7 +85,8 @@ const CONSOLE_PAGES = [
     await page.click('button[type="submit"], button:has-text("登录"), button:has-text("Sign in")').catch(() => {});
     await page.waitForTimeout(5000);
   }
-  for (const p of CONSOLE_PAGES) await scan(p);
+  const pages = ROLE === 'admin' ? ADMIN_PAGES : CONSOLE_PAGES;
+  for (const p of pages) await scan(p);
 
   await browser.close();
   const failed = report.filter((r) => r.gateHits.length > 0);

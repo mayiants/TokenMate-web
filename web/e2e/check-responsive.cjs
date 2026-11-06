@@ -9,9 +9,14 @@ const path = require('path');
 
 const BASE = process.env.CHECK_BASE || 'http://127.0.0.1:9090';
 const GATE = process.argv.includes('--gate');
+// CHECK_ROLE=enterprise|admin selects which page set (and default account) to scan.
+const ROLE = process.env.CHECK_ROLE || 'enterprise';
 const ACCOUNT = {
-  email: process.env.CHECK_EMAIL || 'p2review@test.local',
-  password: process.env.CHECK_PASSWORD || 'WgTest#2026',
+  email:
+    process.env.CHECK_EMAIL ||
+    (process.env.CHECK_ROLE === 'admin' ? 'sysview@test.local' : 'p2review@test.local'),
+  password:
+    process.env.CHECK_PASSWORD || (process.env.CHECK_ROLE === 'admin' ? 'SysView#2026' : 'WgTest#2026'),
 };
 const SHOTS = '/opt/workspace/adaii/tr-research/screenshots/responsive';
 
@@ -21,6 +26,11 @@ const VIEWPORTS = [
   { name: 'mobile', width: 390, height: 844 }, // iPhone 14
 ];
 const PUBLIC_PAGES = ['/', '/models', '/login'];
+const ADMIN_PAGES = [
+  '/console/admin',
+  '/console/admin/users',
+  '/console/admin/enterprises',
+];
 const CONSOLE_PAGES = [
   '/console',
   '/console/keys',
@@ -83,7 +93,8 @@ const CONSOLE_PAGES = [
       await page.click('button[type="submit"]').catch(() => {});
       await page.waitForTimeout(6000);
     }
-    for (const p of CONSOLE_PAGES) await check(p, p.replace(/\//g, '_'));
+    const pages = ROLE === 'admin' ? ADMIN_PAGES : CONSOLE_PAGES;
+    for (const p of pages) await check(p, p.replace(/\//g, '_'));
     if (jsErrors.length) { failures += jsErrors.length; console.log(`✗ ${vp.name} js errors: ${jsErrors.slice(0, 3).join(' | ')}`); }
     await ctx.close();
   }
