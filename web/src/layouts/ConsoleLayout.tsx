@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Avatar, Button, Descriptions, Dropdown, Modal, Nav, Tooltip } from '@douyinfe/semi-ui';
+import { Avatar, Button, Dropdown, Nav, Tooltip } from '@douyinfe/semi-ui';
 import {
+  IconBellStroked,
+  IconCalendarClockStroked,
   IconChevronLeft,
   IconChevronRight,
   IconCreditCardStroked,
@@ -10,6 +12,7 @@ import {
   IconKeyStroked,
   IconList,
   IconMoon,
+  IconServerStroked,
   IconSun,
   IconUserCircle,
   IconBriefcaseStroked,
@@ -19,6 +22,7 @@ import {
   IconUserGroup,
   IconLanguage,
   IconMailStroked,
+  IconHelpCircleStroked,
 } from '@douyinfe/semi-icons';
 import { useAuth } from '../auth/AuthContext';
 import { useI18n } from '../i18n';
@@ -32,6 +36,16 @@ const NAV_ITEMS = [
   { itemKey: 'keys', textKey: 'console.nav.keys', path: '/console/keys', icon: <IconKeyStroked /> },
   { itemKey: 'logs', textKey: 'console.nav.logs', path: '/console/logs', icon: <IconList /> },
   { itemKey: 'balance', textKey: 'console.nav.balance', path: '/console/balance', icon: <IconCreditCardStroked /> },
+];
+
+const ACC_ITEMS = [
+  { itemKey: 'acc-profile', textKey: 'acc.nav.profile', path: '/console/profile', icon: <IconUserCircle /> },
+  { itemKey: 'acc-notifications', textKey: 'acc.nav.notifications', path: '/console/notifications', icon: <IconBellStroked /> },
+  { itemKey: 'acc-support', textKey: 'acc.nav.support', path: '/console/support', icon: <IconHelpCircleStroked /> },
+  { itemKey: 'acc-billing', textKey: 'acc.nav.billing', path: '/console/billing', icon: <IconCreditCardStroked /> },
+  { itemKey: 'acc-subscriptions', textKey: 'acc.nav.subscriptions', path: '/console/subscriptions', icon: <IconCalendarClockStroked /> },
+  { itemKey: 'acc-groups', textKey: 'acc.nav.groups', path: '/console/groups', icon: <IconFolderStroked /> },
+  { itemKey: 'acc-status', textKey: 'acc.nav.status', path: '/console/status', icon: <IconServerStroked /> },
 ];
 
 const ENT_ITEMS = [
@@ -51,7 +65,6 @@ export default function ConsoleLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_STORAGE_KEY) === '1');
-  const [profileVisible, setProfileVisible] = useState(false);
   const [hasEnterprise, setHasEnterprise] = useState(false);
 
   // Enterprise nav group only renders for users that actually belong to an
@@ -67,13 +80,12 @@ export default function ConsoleLayout() {
   }, []);
 
   const selectedKey = useMemo(() => {
-    // exact match or child-path match; '/console/enterprise' must not swallow
-    // '/console/enterprise/members' (and vice versa)
-    // longest-path-first: '/console/enterprise' must not shadow '/members' etc.
-    const ent = [...ENT_ITEMS]
+    // exact match or child-path match; longest-path-first so '/console/groups'
+    // never shadows a future nested route and vice versa.
+    const match = [...ACC_ITEMS, ...ENT_ITEMS]
       .sort((a, b) => b.path.length - a.path.length)
       .find((i) => location.pathname === i.path || location.pathname.startsWith(i.path + '/'));
-    if (ent) return ent.itemKey;
+    if (match) return match.itemKey;
     if (location.pathname.startsWith('/console/keys')) return 'keys';
     if (location.pathname.startsWith('/console/logs')) return 'logs';
     if (location.pathname.startsWith('/console/balance')) return 'balance';
@@ -81,14 +93,24 @@ export default function ConsoleLayout() {
   }, [location.pathname]);
 
 
-  // Flat nav: the Enterprise section header is a non-clickable label item —
-  // nested Nav.Sub groups corrupted their state on collapse and on header
-  // clicks (whitescreen bugs), so we render children as top-level items.
+  // Flat nav: section headers are non-clickable label items — nested Nav.Sub
+  // groups corrupted their state on collapse and on header clicks, so we
+  // render children as top-level items.
   const navItems = useMemo(() => {
     const base = NAV_ITEMS.map((i) => ({ ...i, text: t(i.textKey) }));
-    if (!hasEnterprise) return base;
+    const accHeader = {
+      itemKey: 'acc-header',
+      text: t('acc.nav.group'),
+      icon: <IconUserCircle />,
+      disabled: false,
+      style: { pointerEvents: 'none' as const, fontSize: 12, color: 'var(--wg-text-2)', marginTop: 8 },
+    };
+    const accItems = ACC_ITEMS.map((i) => ({ ...i, text: t(i.textKey) }));
+    if (!hasEnterprise) return [...base, accHeader, ...accItems];
     return [
       ...base,
+      accHeader,
+      ...accItems,
       { itemKey: 'ent-header', text: t('ent.nav.group'), icon: <IconMailStroked />, disabled: false, style: { pointerEvents: 'none' as const, fontSize: 12, color: 'var(--wg-text-2)', marginTop: 8 } },
       ...ENT_ITEMS.map((i) => ({ ...i, text: t(i.textKey) })),
     ];
@@ -129,7 +151,9 @@ export default function ConsoleLayout() {
           selectedKeys={[selectedKey]}
           items={navItems}
           onSelect={(data) => {
-            const all = hasEnterprise ? [...NAV_ITEMS, ...ENT_ITEMS] : NAV_ITEMS;
+            const all = hasEnterprise
+              ? [...NAV_ITEMS, ...ACC_ITEMS, ...ENT_ITEMS]
+              : [...NAV_ITEMS, ...ACC_ITEMS];
             const item = all.find((i) => i.itemKey === data.itemKey);
             if (item) navigate(item.path);
           }}
@@ -173,7 +197,7 @@ export default function ConsoleLayout() {
             position="bottomRight"
             render={
               <Dropdown.Menu>
-                <Dropdown.Item icon={<IconUserCircle />} onClick={() => setProfileVisible(true)}>
+                <Dropdown.Item icon={<IconUserCircle />} onClick={() => navigate('/console/profile')}>
                   {t('console.profile')}
                 </Dropdown.Item>
                 <Dropdown.Divider />
@@ -195,23 +219,6 @@ export default function ConsoleLayout() {
           <Outlet />
         </main>
       </div>
-      <Modal
-        title={t('console.profile')}
-        visible={profileVisible}
-        onCancel={() => setProfileVisible(false)}
-        footer={null}
-        width={480}
-        className="wg-modal"
-        maskClosable
-      >
-        <Descriptions
-          data={[
-            { key: t('auth.name'), value: user?.name ?? '—' },
-            { key: t('auth.email'), value: user?.email ?? '—' },
-            { key: 'Role', value: user?.role ?? '—' },
-          ]}
-        />
-      </Modal>
     </div>
   );
 }
