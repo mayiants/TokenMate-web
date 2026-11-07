@@ -77,10 +77,10 @@ var settingGroups = map[string]struct {
 	"operation":     {Name: "Operations", Keys: []string{"quota_for_new_user", "topup_link", "usd_exchange_rate", "retry_times"}},
 	"monitoring":    {Name: "Monitoring", Keys: []string{"channel_disable_threshold", "quota_remind_threshold", "automatic_disable_channel_enabled"}},
 	"token":         {Name: "Token", Keys: []string{"max_user_tokens", "default_token_quota", "token_expire_days"}},
-	"log":           {Name: "Logging", Keys: []string{"log_retention_days", "log_consume_enabled", "audit_log_retention_days"}},
+	"log":           {Name: "Logging", Keys: []string{"log_consume_enabled", "audit_log_retention_days"}},
 	"payment":       {Name: "Payment", Keys: []string{"alipay_enabled", "wechat_enabled", "payment_notify_url", "payment_simulation_mode"}},
 	"announcement":  {Name: "Announcement", Keys: []string{"announcement_enabled", "announcement_content"}},
-	"compliance":    {Name: "Compliance", Keys: []string{"gdpr_retention_days"}},
+	"compliance":    {Name: "Compliance", Keys: []string{"gdpr_retention_days", "log_retention_days", "retention_default_days"}},
 	"rate_limit":    {Name: "Rate Limit", Keys: []string{"default_user_rpm", "default_user_tpm", "default_user_daily_requests"}},
 	"notifications": {Name: "Notification Settings", Keys: []string{"balance_low_threshold_usd"}},
 }
@@ -96,7 +96,7 @@ var defaultSettings = map[string]string{
 	"max_user_tokens":                   "10",
 	"default_token_quota":               "1000000",
 	"token_expire_days":                 "30",
-	"log_retention_days":                "30",
+	"log_retention_days":                "90",
 	"log_consume_enabled":               "true",
 	"audit_log_retention_days":          "90",
 	"alipay_enabled":                    "true",
@@ -110,6 +110,7 @@ var defaultSettings = map[string]string{
 	"default_user_tpm":                  "500000",
 	"default_user_daily_requests":       "10000",
 	"balance_low_threshold_usd":         "1",
+	"retention_default_days":            "90",
 }
 
 // deadSettings are keys that exist in defaultSettings for backwards compatibility
@@ -125,7 +126,6 @@ var deadSettings = map[string]bool{
 	"max_user_tokens":                   true,
 	"default_token_quota":               true,
 	"token_expire_days":                 true,
-	"log_retention_days":                true,
 	"log_consume_enabled":               true,
 	"audit_log_retention_days":          true,
 	"alipay_enabled":                    true,
@@ -142,6 +142,7 @@ var allowedSettingKeys = map[string]bool{
 	// Non-dead defaultSettings keys
 	"usd_exchange_rate":           true,
 	"gdpr_retention_days":         true,
+	"log_retention_days":          true,
 	"default_user_rpm":            true,
 	"default_user_tpm":            true,
 	"default_user_daily_requests": true,
@@ -206,6 +207,14 @@ func (r *SettingsRoutes) updateSettings(c *gin.Context) {
 		if _, ok := defaultSettings[key]; !ok {
 			continue
 		}
+		// Retention day counts must stay within the enforced 1-365 window; an
+		// out-of-range value would silently fall back to a default at read time.
+		if key == "retention_default_days" || key == "log_retention_days" || key == "gdpr_retention_days" || key == "audit_log_retention_days" {
+			if n, err := strconv.Atoi(value); err != nil || n < 1 || n > 365 {
+				c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": fmt.Sprintf("%s must be an integer between 1 and 365", key)}})
+				return
+			}
+		}
 		if deadSettings[key] {
 			c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": fmt.Sprintf("Setting %q is not wired to any feature; write rejected (P2 audit)", key)}})
 			return
@@ -222,6 +231,12 @@ func (r *SettingsRoutes) updateSettings(c *gin.Context) {
 
 	if len(updated) > 0 {
 		_ = ReloadSystemSettings(r.db)
+		for _, k := range updated {
+			if k == "retention_default_days" {
+				resetPlatformRetentionCache() // so /api/keys/validate and the proxy policy sync pick it up
+				break
+			}
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "updated": updated})

@@ -156,7 +156,7 @@ func (db *DB) SeedDefaultData(ctx context.Context, logger *zap.Logger) error {
 		{"max_user_tokens", "10", "token", "Max API keys per user"},
 		{"default_token_quota", "1000000", "token", "Default monthly token quota"},
 		{"token_expire_days", "30", "token", "Token expiry in days"},
-		{"log_retention_days", "30", "log", "Log retention period"},
+		{"log_retention_days", "90", "log", "Log retention period"},
 		{"log_consume_enabled", "true", "log", "Enable consumption logging"},
 		{"audit_log_retention_days", "90", "log", "Audit log retention period"},
 		{"alipay_enabled", "true", "payment", "Enable Alipay payments"},

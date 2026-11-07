@@ -3965,6 +3965,15 @@ func (db *DB) InitSchema(ctx context.Context, logger *zap.Logger) error {
 	if _, err := db.Pool.Exec(ctx, `CREATE UNIQUE INDEX IF NOT EXISTS uq_enterprise_statements_period ON enterprise_statements (enterprise_id, period)`); err != nil {
 		return fmt.Errorf("create index uq_enterprise_statements_period: %w", err)
 	}
+	for _, col := range []string{
+		`ALTER TABLE enterprise_statements ADD COLUMN IF NOT EXISTS paid_micro BIGINT NOT NULL DEFAULT 0`,
+		`ALTER TABLE enterprise_statements ADD COLUMN IF NOT EXISTS paid_at TIMESTAMP`,
+		`ALTER TABLE enterprise_statements ADD COLUMN IF NOT EXISTS payment_note TEXT`,
+	} {
+		if _, err := db.Pool.Exec(ctx, col); err != nil {
+			return fmt.Errorf("enterprise_statements payment columns: %w", err)
+		}
+	}
 	if _, err := db.Pool.Exec(ctx, `CREATE INDEX IF NOT EXISTS idx_enterprise_statements_ent ON enterprise_statements (enterprise_id, created_at DESC)`); err != nil {
 		return fmt.Errorf("create index idx_enterprise_statements_ent: %w", err)
 	}

@@ -15,7 +15,7 @@ import (
 
 func TestSyncRetentionPolicies(t *testing.T) {
 	d := testEnterpriseDB(t)
-	defer d.Close()
+	t.Cleanup(d.Close) // registered first => runs last, after the deferred data cleanup
 	ctx := context.Background()
 
 	var entID string

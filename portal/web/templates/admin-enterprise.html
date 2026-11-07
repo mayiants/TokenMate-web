@@ -274,13 +274,13 @@
         </div>
         <div class="form-group">
           <label class="form-label">{{t "Credit Limit (micro-USD)"}}</label>
-          <input type="number" name="credit_total" id="edit-credit_total" class="form-input du-input du-input-bordered" min="0" aria-label="{{t "Credit Total"}}">
-          <p class="text-xs text-muted mt-1">1000000 = $1.00</p>
+          <input type="number" name="credit_total" id="edit-credit_total" class="form-input du-input du-input-bordered" min="0" aria-label="{{t "Credit Total"}}" readonly disabled>
+          <p class="text-xs text-muted mt-1">{{t "Read-only. Change via the Recharge action so the ledger records it."}}</p>
         </div>
         <div class="form-group">
           <label class="form-label">{{t "Prepaid Balance (USD)"}}</label>
-          <input type="number" name="prepaid_balance" id="edit-prepaid_balance" class="form-input du-input du-input-bordered" step="0.01" aria-label="{{t "Prepaid Balance"}}">
-          <p class="text-xs text-muted mt-1">{{t "Deducted before the monthly allowance; may go negative via adjustment. Saved as micro-USD."}}</p>
+          <input type="number" name="prepaid_balance" id="edit-prepaid_balance" class="form-input du-input du-input-bordered" step="0.01" aria-label="{{t "Prepaid Balance"}}" readonly disabled>
+          <p class="text-xs text-muted mt-1">{{t "Read-only. Change via the Recharge action so the ledger records it."}}</p>
         </div>
       </div>
       <div class="grid gap-4" style="grid-template-columns: 1fr 1fr 1fr">
@@ -457,6 +457,19 @@
         <input type="text" id="topup-invoice-title" class="form-input du-input du-input-bordered mt-2" placeholder="{{t "Invoice title (required when issuing)"}}">
       </div>
       <div class="form-group">
+        <label style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="topup-record-only" onchange="toggleRecordOnly()">
+          <span>{{t "Record only (money already in the wallet; book the ledger without changing the balance)"}}</span>
+        </label>
+        <p class="text-xs text-muted mt-1">{{t "Use for deposits funded outside the portal (e.g. a historical wire transfer). Exactly one of Credit or Prepaid, with an effective date in the past."}}</p>
+        <p class="text-xs text-muted mt-1"><strong>{{t "When to use"}}:</strong> {{t "the money is already in the balance but has no ledger entry (e.g. an early direct DB edit). This only writes the ledger; it does not change the balance."}}</p>
+        <p class="text-xs text-muted mt-1"><strong>{{t "When NOT to use"}}:</strong> {{t "a normal prepaid wire that just arrived - leave this unchecked and recharge so the balance actually increases. Post-paid customers paying a monthly statement need no recharge at all - just issue the invoice on the Reconciliation page."}}</p>
+      </div>
+      <div class="form-group" id="topup-effective-group" style="display:none">
+        <label class="form-label" for="topup-effective-at">{{t "Effective date (when the money arrived)"}}</label>
+        <input type="date" id="topup-effective-at" class="form-input du-input du-input-bordered">
+      </div>
+      <div class="form-group">
         <label class="form-label">{{t "Notes"}}</label>
         <input type="text" id="topup-reason" class="form-input du-input du-input-bordered" placeholder="{{t "Recharge reason (optional)"}}">
       </div>
@@ -601,8 +614,6 @@ function submitEdit() {
     name: document.getElementById('edit-name').value,
     contact_email: document.getElementById('edit-contact_email').value,
     quota_total: parseInt(document.getElementById('edit-quota_total').value) || 0,
-    credit_total: parseInt(document.getElementById('edit-credit_total').value) || 0,
-    prepaid_balance: Math.round(parseFloat(document.getElementById('edit-prepaid_balance').value || '0') * 1000000),
     pricing_ratio: parseFloat(document.getElementById('edit-pricing_ratio').value) || 1.0,
     max_admins: parseInt(document.getElementById('edit-max_admins').value) || 3,
     max_members: parseInt(document.getElementById('edit-max_members').value) || 50,
@@ -926,7 +937,20 @@ function showTopupModal(id, name) {
   document.getElementById('topup-issue-invoice').checked = false;
   document.getElementById('topup-invoice-title').value = '';
   document.getElementById('topup-invoice-group').style.display = 'none';
+  document.getElementById('topup-record-only').checked = false;
+  document.getElementById('topup-effective-at').value = '';
+  document.getElementById('topup-effective-group').style.display = 'none';
+  toggleRecordOnly();
   document.getElementById('topup-modal').style.display = 'flex';
+}
+
+// Record-only books a historical deposit: show the effective date, and hide the
+// quota row and the issue-invoice option (neither applies to a record_only).
+function toggleRecordOnly() {
+  var on = document.getElementById('topup-record-only').checked;
+  document.getElementById('topup-effective-group').style.display = on ? '' : 'none';
+  var invoice = document.getElementById('topup-issue-invoice');
+  if (on) { invoice.checked = false; document.getElementById('topup-invoice-group').style.display = 'none'; }
 }
 
 // The invoice block only matters when a prepaid amount is entered.
@@ -943,17 +967,30 @@ function submitTopup() {
   var credit = parseInt(document.getElementById('topup-credit').value) || 0;
   var prepaid = parseInt(document.getElementById('topup-prepaid').value) || 0;
   var reason = document.getElementById('topup-reason').value;
-  if (quota <= 0 && credit <= 0 && prepaid <= 0) { showMessage(_t('Error'), _t('Please enter at least one recharge amount')); return; }
+  var recordOnly = document.getElementById('topup-record-only').checked;
   var data = { reason: reason };
-  if (quota > 0) data.quota_total = quota;
-  if (credit > 0) data.credit_total = credit;
-  if (prepaid > 0) {
-    data.prepaid_balance = prepaid;
-    if (document.getElementById('topup-issue-invoice').checked) {
-      var invoiceTitle = document.getElementById('topup-invoice-title').value.trim();
-      if (!invoiceTitle) { showMessage(_t('Error'), _t('Invoice title is required when issuing an invoice')); return; }
-      data.issue_invoice = true;
-      data.invoice_title = invoiceTitle;
+  if (recordOnly) {
+    if (quota > 0) { showMessage(_t('Error'), _t('Record only cannot be used with quota')); return; }
+    if ((credit > 0) === (prepaid > 0)) { showMessage(_t('Error'), _t('Record only needs exactly one of credit or prepaid')); return; }
+    var eff = document.getElementById('topup-effective-at').value;
+    if (!eff) { showMessage(_t('Error'), _t('An effective date is required for record only')); return; }
+    if (!reason.trim()) { showMessage(_t('Error'), _t('A reason is required for record only')); return; }
+    data.record_only = true;
+    data.effective_at = new Date(eff + 'T00:00:00Z').toISOString();
+    if (credit > 0) data.credit_total = credit;
+    if (prepaid > 0) data.prepaid_balance = prepaid;
+  } else {
+    if (quota <= 0 && credit <= 0 && prepaid <= 0) { showMessage(_t('Error'), _t('Please enter at least one recharge amount')); return; }
+    if (quota > 0) data.quota_total = quota;
+    if (credit > 0) data.credit_total = credit;
+    if (prepaid > 0) {
+      data.prepaid_balance = prepaid;
+      if (document.getElementById('topup-issue-invoice').checked) {
+        var invoiceTitle = document.getElementById('topup-invoice-title').value.trim();
+        if (!invoiceTitle) { showMessage(_t('Error'), _t('Invoice title is required when issuing an invoice')); return; }
+        data.issue_invoice = true;
+        data.invoice_title = invoiceTitle;
+      }
     }
   }
   fetch('/api/admin/enterprise/' + currentTopupId + '/topup', {
@@ -965,8 +1002,12 @@ function submitTopup() {
   .then(function(result) {
     closeModal('topup-modal');
     if (result.success) {
-      showMessage(_t('Recharged'), _t('Enterprise quota/credit updated'));
-      setTimeout(function() { window.location.reload(); }, 1000);
+      if (recordOnly) {
+        showMessage(_t('Recorded'), _t('Ledger entry booked (balance unchanged). If an external invoice/fapiao was issued for this deposit, register it under Reconciliation > Record External Invoice.'));
+      } else {
+        showMessage(_t('Recharged'), _t('Enterprise quota/credit updated'));
+      }
+      setTimeout(function() { window.location.reload(); }, 1500);
     } else {
       showMessage(_t('Recharge failed'), result.error ? result.error.message : _t('Unknown error'));
     }

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -926,21 +927,37 @@ func (r *AdminRoutes) getEnterpriseReconciliation(c *gin.Context) {
 	// (un-invoiced) amounts without leaving the reconciliation page.
 	var statements []gin.H
 	stRows, sErr := r.db.Query(ctx,
-		`SELECT period, credit_used_micro, quota_used, prepaid_topup_micro
+		`SELECT period, credit_used_micro, quota_used, prepaid_topup_micro, COALESCE(paid_micro, 0), payment_note
 		 FROM enterprise_statements WHERE enterprise_id = $1::uuid
 		 ORDER BY period DESC LIMIT 24`, enterpriseID)
 	if sErr == nil {
 		defer stRows.Close()
 		for stRows.Next() {
 			var period string
-			var creditMicro, quotaUsed, prepaidTopup int64
-			if stRows.Scan(&period, &creditMicro, &quotaUsed, &prepaidTopup) == nil {
+			var creditMicro, quotaUsed, prepaidTopup, paidMicro int64
+			var paymentNote *string
+			if stRows.Scan(&period, &creditMicro, &quotaUsed, &prepaidTopup, &paidMicro, &paymentNote) == nil {
 				var invoiced int64
 				_ = r.db.QueryRow(ctx,
 					`SELECT COALESCE(SUM(amount), 0) FROM invoice_requests
 					 WHERE enterprise_id = $1::uuid AND pool = 'postpaid' AND period = $2
 					   AND status IN ('pending', 'processing', 'completed')`,
 					enterpriseID, period).Scan(&invoiced)
+				// Payment status is derived: a statement with no consumption is
+				// not a receivable; otherwise unpaid/partial/paid by paid vs consumed.
+				paymentStatus := "unpaid"
+				switch {
+				case creditMicro <= 0:
+					paymentStatus = "none"
+				case paidMicro >= creditMicro:
+					paymentStatus = "paid"
+				case paidMicro > 0:
+					paymentStatus = "partial"
+				}
+				note := ""
+				if paymentNote != nil {
+					note = *paymentNote
+				}
 				statements = append(statements, gin.H{
 					"period":            period,
 					"credit_used_usd":   float64(creditMicro) / 1_000_000.0,
@@ -948,6 +965,10 @@ func (r *AdminRoutes) getEnterpriseReconciliation(c *gin.Context) {
 					"prepaid_topup_usd": float64(prepaidTopup) / 1_000_000.0,
 					"invoiced_cents":    invoiced,
 					"open_cents":        creditMicro/10000 - invoiced,
+					"paid_usd":          float64(paidMicro) / 1_000_000.0,
+					"outstanding_usd":   float64(creditMicro-paidMicro) / 1_000_000.0,
+					"payment_status":    paymentStatus,
+					"payment_note":      note,
 				})
 			}
 		}
@@ -1617,3 +1638,93 @@ func (r *AdminRoutes) recordExternalInvoice(c *gin.Context) {
 		fmt.Sprintf("Recorded external %s invoice %s for %s: $%.2f (%s)", pool, invoiceNumber, entName, float64(req.AmountCents)/100.0, req.Note))
 	c.JSON(http.StatusOK, gin.H{"success": true, "id": requestID, "invoice_number": invoiceNumber})
 }
+
+// recordStatementPayment records a bank-transfer payment against a monthly
+// post-paid statement, for accounts-receivable tracking. It does NOT move any
+// balance (post-paid consumption already deducted credit during the month and
+// the month-end reset closed the statement); it only records how much of the
+// statement the customer has since paid, and writes a tamper-proof ledger row.
+// Prepaid statements carry no receivable, so a payment against a period with no
+// post-paid consumption is rejected.
+//
+// POST /api/admin/reconciliation/enterprise/:id/statements/:period/payment
+//
+//	{ "amount_cents": 99000, "note": "wire 2026-11-05", "replace": false }
+//
+// amount_cents is added to the already-recorded paid amount (or replaces it
+// when replace=true, e.g. to correct a mistake). The recorded total may not
+// exceed the statement consumption.
+func (r *AdminRoutes) recordStatementPayment(c *gin.Context) {
+	enterpriseID := c.Param("id")
+	period := c.Param("period")
+	var req struct {
+		AmountCents int64  `json:"amount_cents"`
+		Note        string `json:"note"`
+		Replace     bool   `json:"replace"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "Invalid request"}})
+		return
+	}
+	if req.AmountCents < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "amount_cents cannot be negative"}})
+		return
+	}
+	amountMicro := req.AmountCents * 10000
+
+	adminID := c.GetString("user_id")
+	var newPaidMicro int64
+	err := r.db.WithTx(c.Request.Context(), func(tx pgx.Tx) error {
+		var consumedMicro, paidMicro int64
+		if err := tx.QueryRow(c.Request.Context(),
+			`SELECT credit_used_micro, COALESCE(paid_micro, 0) FROM enterprise_statements
+			 WHERE enterprise_id = $1::uuid AND period = $2 FOR UPDATE`,
+			enterpriseID, period).Scan(&consumedMicro, &paidMicro); err != nil {
+			return err
+		}
+		if consumedMicro <= 0 {
+			return errStatementNoReceivable
+		}
+		newPaidMicro = paidMicro + amountMicro
+		if req.Replace {
+			newPaidMicro = amountMicro
+		}
+		if newPaidMicro > consumedMicro {
+			return errPaymentExceedsStatement
+		}
+		if _, err := tx.Exec(c.Request.Context(),
+			`UPDATE enterprise_statements SET paid_micro = $3, paid_at = NOW(), payment_note = $4
+			 WHERE enterprise_id = $1::uuid AND period = $2`,
+			enterpriseID, period, newPaidMicro, req.Note); err != nil {
+			return err
+		}
+		_, err := tx.Exec(c.Request.Context(),
+			`INSERT INTO enterprise_audit_log (enterprise_id, category, change_type, field_name, action, amount, delta, old_value, new_value, reason, changed_by)
+			 VALUES ($1, 'billing', 'statement_payment', 'paid_micro', 'payment', $2, $3, $4, $5, $6, $7::uuid)`,
+			enterpriseID, amountMicro, newPaidMicro-paidMicro, paidMicro, newPaidMicro,
+			fmt.Sprintf("Statement %s payment: %s", period, req.Note), adminID)
+		return err
+	})
+	if err != nil {
+		if errors.Is(err, errStatementNoReceivable) || errors.Is(err, errPaymentExceedsStatement) {
+			c.JSON(http.StatusConflict, gin.H{"error": gin.H{"message": err.Error()}})
+			return
+		}
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"message": "Statement not found"}})
+			return
+		}
+		r.logger.Error("Failed to record statement payment", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "Failed to record payment"}})
+		return
+	}
+	if r.audit != nil {
+		r.audit.Log(c.Request.Context(), adminID, c.GetString("user_email"), "billing", "statement_payment_recorded", "info",
+			fmt.Sprintf("Statement %s payment for %s: +$%.2f (total $%.2f)", period, enterpriseID, float64(req.AmountCents)/100.0, float64(newPaidMicro)/1_000_000.0))
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "paid_usd": float64(newPaidMicro) / 1_000_000.0})
+}
+
+var errStatementNoReceivable = errors.New("this period has no post-paid consumption, so there is no receivable to pay")
+
+var errPaymentExceedsStatement = errors.New("recorded payment would exceed the statement amount")

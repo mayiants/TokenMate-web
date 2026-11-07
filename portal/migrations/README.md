@@ -67,3 +67,4 @@ There is no automatic down migration. Roll back with the operational safety net:
 
 Verify the restored database, then switch traffic to it. Never hand-run
 `ALTER`/`UPDATE` against production to "fix" a migration.
+| `0038_retention_defaults_90d.sql` | Moves the platform defaults `retention_default_days` and `log_retention_days` from 30 to 90 days, only where they still hold the old default (`'30'`); admin-chosen values are kept. |

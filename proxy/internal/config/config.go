@@ -620,7 +620,7 @@ func setDefaults(v *viper.Viper) {
 	// Retention (local disk, disabled by default)
 	v.SetDefault("retention.enabled", false)
 	v.SetDefault("retention.directory", "./retention")
-	v.SetDefault("retention.max_age", "720h") // 30 days
+	v.SetDefault("retention.max_age", "2160h") // 90 days
 	v.SetDefault("retention.batch_size", 1)
 	v.SetDefault("retention.flush_every", "3s")
 	v.SetDefault("retention.capture_all_headers", false)

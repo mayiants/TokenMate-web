@@ -71,9 +71,18 @@ select option { background:var(--bg-card); color:var(--text); }
 .logs-table-box { overflow:auto; max-height:480px; }
 </style>
 
-<div class="page-header" style="margin-bottom:20px">
+<div class="page-header" style="margin-bottom:12px">
   <h1 class="page-title">{{t "Reconciliation & Invoices"}}</h1>
 </div>
+
+<details class="card mb-4" style="margin-bottom:16px">
+  <summary style="cursor:pointer; padding:12px 16px; font-weight:600">{{t "Billing flow guide (post-paid vs prepaid)"}}</summary>
+  <div class="card-body" style="padding:16px; border-top:1px solid var(--border)">
+    <p class="text-sm mb-2"><strong>{{t "Post-paid (monthly statement)"}}:</strong> {{t "consumption accrues to the enterprise's credit automatically. On the 1st of each month the system closes a statement (credit_used) and resets the allowance - no admin action. When the customer pays their statement (e.g. by bank transfer), do NOT change credit/quota/balance: just issue the invoice. If the invoice was issued outside the portal, use Record External Invoice with pool = Postpaid."}}</p>
+    <p class="text-sm mb-2"><strong>{{t "Prepaid (wire first, spend later)"}}:</strong> {{t "when a wire arrives, use the enterprise Recharge action to add to Prepaid Balance (this increases the balance AND writes the ledger). Issue the invoice at the same time, or register it later here as pool = Prepaid."}}</p>
+    <p class="text-sm"><strong>{{t "Record-only top-up"}}:</strong> {{t "only for money already in the balance that is missing a ledger entry (historical backfill). It does not change any balance. Never use it for a normal payment."}}</p>
+  </div>
+</details>
 
 <div class="tabs" style="display:flex; gap:0; border-bottom:1px solid var(--border); margin-bottom:20px">
   <button class="tab-btn active" data-tab="invoices" onclick="switchTab('invoices')">{{t "Invoice Review"}}</button>
@@ -893,7 +902,40 @@ async function loadEnterpriseDetailTab(tab, enterpriseId) {
   }
 }
 
+var ENT_RECON_ID = null;
+
+// recordStatementPayment prompts for a bank-transfer amount against a monthly
+// post-paid statement (accounts-receivable). It never moves a balance.
+async function recordStatementPayment(enterpriseId, period, consumedUsd, paidUsd) {
+  var outstanding = Math.max(0, (consumedUsd - paidUsd));
+  var raw = window.prompt(
+    _t('Payment amount (USD) received for period') + ' ' + period +
+    '. ' + _t('Outstanding') + ': $' + outstanding.toFixed(2),
+    outstanding.toFixed(2));
+  if (raw === null) return;
+  var amount = parseFloat(raw);
+  if (isNaN(amount) || amount < 0) { showToast('error', _t('Invalid amount')); return; }
+  var note = window.prompt(_t('Payment note (e.g. wire reference)'), '') || '';
+  try {
+    var res = await fetch('/api/admin/reconciliation/enterprise/' + enterpriseId + '/statements/' + encodeURIComponent(period) + '/payment', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount_cents: Math.round(amount * 100), note: note })
+    });
+    var data = await res.json();
+    if (res.ok && data.success) {
+      showToast('success', _t('Payment recorded'));
+      reloadEnterpriseBilling(enterpriseId);
+    } else {
+      showToast('error', (data.error && data.error.message) || _t('Failed to record payment'));
+    }
+  } catch (e) {
+    showToast('error', _t('Failed to record payment'));
+  }
+}
+
 async function reloadEnterpriseBilling(enterpriseId) {
+  ENT_RECON_ID = enterpriseId;
   try {
     var res = await fetch('/api/admin/reconciliation/enterprise/' + enterpriseId);
     var d = await res.json();
@@ -907,9 +949,17 @@ async function reloadEnterpriseBilling(enterpriseId) {
     if (st) {
       var rows = (b.statements || []).map(function(x) {
         var open = (x.open_cents || 0);
-        return '<tr><td>' + x.period + '</td><td>$' + (x.credit_used_usd || 0).toFixed(2) + '</td><td>' + (x.quota_used || 0) + '</td><td>$' + (x.prepaid_topup_usd || 0).toFixed(2) + '</td><td>' + usd(x.invoiced_cents) + '</td><td style="color:' + (open > 0 ? 'var(--success-text)' : 'var(--text-muted)') + '">' + usd(open) + '</td></tr>';
+        var ps = x.payment_status || 'unpaid';
+        var badgeCls = ps === 'paid' ? 'badge-success' : (ps === 'partial' ? 'badge-warning' : (ps === 'none' ? '' : 'badge-error'));
+        var psLabel = ps === 'none' ? '-' : (ps === 'paid' ? _t('Paid') : (ps === 'partial' ? _t('Partial') : _t('Unpaid')));
+        var badge = ps === 'none' ? '<span class="text-muted">-</span>' : '<span class="badge ' + badgeCls + '">' + psLabel + '</span>';
+        var outstanding = (x.outstanding_usd || 0);
+        var action = ps === 'none'
+          ? '<span class="text-muted">-</span>'
+          : '<button class="btn btn-secondary btn-sm" onclick="recordStatementPayment(\'' + ENT_RECON_ID + '\', \'' + x.period + '\', ' + (x.credit_used_usd || 0) + ', ' + (x.paid_usd || 0) + ')">' + _t('Record payment') + '</button>';
+        return '<tr><td>' + x.period + '</td><td>$' + (x.credit_used_usd || 0).toFixed(2) + '</td><td>' + (x.quota_used || 0) + '</td><td>$' + (x.prepaid_topup_usd || 0).toFixed(2) + '</td><td>' + usd(x.invoiced_cents) + '</td><td style="color:' + (open > 0 ? 'var(--success-text)' : 'var(--text-muted)') + '">' + usd(open) + '</td><td>$' + (x.paid_usd || 0).toFixed(2) + '</td><td style="color:' + (outstanding > 0.005 ? 'var(--error-text)' : 'var(--text-muted)') + '">$' + outstanding.toFixed(2) + '</td><td>' + badge + '</td><td>' + action + '</td></tr>';
       }).join('');
-      st.innerHTML = rows || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">' + _t('No data') + '</td></tr>';
+      st.innerHTML = rows || '<tr><td colspan="10" style="text-align:center;color:var(--text-muted)">' + _t('No data') + '</td></tr>';
     }
     var inv = document.getElementById('ent-invoices-tbody');
     if (inv) {
@@ -1275,8 +1325,8 @@ function renderEnterpriseResult(data) {
       <h3 style='margin:16px 0 8px; font-size:14px'>${_t('Monthly Statements')}</h3>
       <div class='data-table-wrapper'>
         <table class='ledger-table'>
-          <thead><tr><th>${_t('Period')}</th><th>${_t('Postpaid Consumption')}</th><th>${_t('Quota Used')}</th><th>${_t('Prepaid Top-up')}</th><th>${_t('Invoiced')}</th><th>${_t('Open (un-invoiced)')}</th></tr></thead>
-          <tbody id='ent-statements-tbody'><tr><td colspan='6' style='text-align:center;color:var(--text-muted)'>${_t('Loading...')}</td></tr></tbody>
+          <thead><tr><th>${_t('Period')}</th><th>${_t('Postpaid Consumption')}</th><th>${_t('Quota Used')}</th><th>${_t('Prepaid Top-up')}</th><th>${_t('Invoiced')}</th><th>${_t('Open (un-invoiced)')}</th><th>${_t('Paid')}</th><th>${_t('Outstanding')}</th><th>${_t('Payment')}</th><th>${_t('Actions')}</th></tr></thead>
+          <tbody id='ent-statements-tbody'><tr><td colspan='10' style='text-align:center;color:var(--text-muted)'>${_t('Loading...')}</td></tr></tbody>
         </table>
       </div>
       <h3 style='margin:16px 0 8px; font-size:14px'>${_t('Invoices')}</h3>

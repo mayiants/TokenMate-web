@@ -707,8 +707,8 @@ func TestValidateKey_RetentionFields(t *testing.T) {
 	if id, present := body["enterprise_id"]; !present || id != "" {
 		t.Errorf("enterprise_id = %v (present=%v), want empty string", id, present)
 	}
-	if body["retention_mode"] != "standard" || body["retention_days"] != float64(30) {
-		t.Errorf("platform defaults = %v / %v, want standard / 30", body["retention_mode"], body["retention_days"])
+	if body["retention_mode"] != "standard" || body["retention_days"] != float64(defaultRetentionDays) {
+		t.Errorf("platform defaults = %v / %v, want standard / default", body["retention_mode"], body["retention_days"])
 	}
 
 	// Second call is served from the Redis cache and must be identical.
@@ -736,7 +736,7 @@ func TestValidateKey_RetentionFields(t *testing.T) {
 	_, _ = v.d.Pool.Exec(ctx, `UPDATE system_settings SET value='9999' WHERE key='retention_default_days'`)
 	resetPlatformRetentionCache()
 	_, junk := callValidateKey(t, v.keys, rawPlain)
-	if junk["retention_mode"] != "standard" || junk["retention_days"] != float64(30) {
+	if junk["retention_mode"] != "standard" || junk["retention_days"] != float64(defaultRetentionDays) {
 		t.Errorf("invalid defaults leaked: %v / %v", junk["retention_mode"], junk["retention_days"])
 	}
 }
@@ -850,7 +850,7 @@ func TestSettingsRetentionDefaults(t *testing.T) {
 	}
 
 	code, got := do(s.getRetentionDefaults, http.MethodGet, nil)
-	if code != http.StatusOK || got["mode"] != "standard" || got["days"] != float64(30) {
+	if code != http.StatusOK || got["mode"] != "standard" || got["days"] != float64(defaultRetentionDays) {
 		t.Fatalf("defaults before any write: %d %v", code, got)
 	}
 

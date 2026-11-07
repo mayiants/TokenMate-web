@@ -2,8 +2,10 @@ package routes
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -179,10 +181,23 @@ func (r *EnterpriseRoutes) topupEnterprisePool(c *gin.Context) {
 		// amount stays in the事后申请 pool (design doc §prepaid 开票模式 A).
 		IssueInvoice bool   `json:"issue_invoice"`
 		InvoiceTitle string `json:"invoice_title"`
+		// RecordOnly (prepaid only): book a deposit that already reached the
+		// wallet (e.g. funded by a direct DB edit before the ledger existed)
+		// WITHOUT changing prepaid_balance. EffectiveAt is when the money
+		// actually arrived; it dates the audit row so monthly statements and
+		// reconciliation attribute it to the right period.
+		RecordOnly  bool       `json:"record_only"`
+		EffectiveAt *time.Time `json:"effective_at"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "Invalid request"}})
 		return
+	}
+	if req.RecordOnly {
+		if msg := validateRecordOnly(req.PrepaidBalance, req.CreditTotal, req.QuotaTotal, req.IssueInvoice, req.Reason, req.EffectiveAt); msg != "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": msg}})
+			return
+		}
 	}
 
 	// Validate: reject negative values
@@ -210,7 +225,7 @@ func (r *EnterpriseRoutes) topupEnterprisePool(c *gin.Context) {
 		return
 	}
 
-	if req.QuotaTotal != nil && *req.QuotaTotal > 0 {
+	if !req.RecordOnly && req.QuotaTotal != nil && *req.QuotaTotal > 0 {
 		if err := r.db.WithTx(c.Request.Context(), func(tx pgx.Tx) error {
 			var oldQuota int64
 			if err := tx.QueryRow(c.Request.Context(),
@@ -245,6 +260,9 @@ func (r *EnterpriseRoutes) topupEnterprisePool(c *gin.Context) {
 				enterpriseID).Scan(&oldCredit); err != nil {
 				return err
 			}
+			if req.RecordOnly {
+				return r.recordDeposit(c.Request.Context(), tx, enterpriseID, currentUserID, "credit_topup", "credit_total", oldCredit, *req.CreditTotal, *req.EffectiveAt, req.Reason)
+			}
 			newCredit := oldCredit + *req.CreditTotal
 			if _, err := tx.Exec(c.Request.Context(),
 				`UPDATE enterprises SET credit_total = $1, updated_at = NOW() WHERE id = $2::uuid`,
@@ -259,6 +277,10 @@ func (r *EnterpriseRoutes) topupEnterprisePool(c *gin.Context) {
 			}
 			return nil
 		}); err != nil {
+			if errors.Is(err, errRecordBelowBalance) || errors.Is(err, errRecordDuplicate) {
+				c.JSON(http.StatusConflict, gin.H{"error": gin.H{"message": err.Error()}})
+				return
+			}
 			r.logger.Error("Failed to top up enterprise credit", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "Failed to top up enterprise credit"}})
 			return
@@ -276,6 +298,9 @@ func (r *EnterpriseRoutes) topupEnterprisePool(c *gin.Context) {
 				`SELECT COALESCE(prepaid_balance, 0) FROM enterprises WHERE id = $1::uuid FOR UPDATE`,
 				enterpriseID).Scan(&oldPrepaid); err != nil {
 				return err
+			}
+			if req.RecordOnly {
+				return r.recordDeposit(c.Request.Context(), tx, enterpriseID, currentUserID, "prepaid_topup", "prepaid_balance", oldPrepaid, *req.PrepaidBalance, *req.EffectiveAt, req.Reason)
 			}
 			newPrepaid := oldPrepaid + *req.PrepaidBalance
 			if _, err := tx.Exec(c.Request.Context(),
@@ -304,6 +329,10 @@ func (r *EnterpriseRoutes) topupEnterprisePool(c *gin.Context) {
 			}
 			return nil
 		}); err != nil {
+			if errors.Is(err, errRecordBelowBalance) || errors.Is(err, errRecordDuplicate) {
+				c.JSON(http.StatusConflict, gin.H{"error": gin.H{"message": err.Error()}})
+				return
+			}
 			r.logger.Error("Failed to top up enterprise prepaid balance", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": gin.H{"message": "Failed to top up enterprise prepaid balance"}})
 			return
@@ -519,4 +548,67 @@ func (r *EnterpriseRoutes) resetOneEnterpriseBilling(ctx context.Context, id str
 		return false, "", 0, fmt.Errorf("commit: %w", err)
 	}
 	return statementInserted, period, creditUsedMicro, nil
+}
+
+var errRecordDuplicate = errors.New("an identical deposit (same amount and effective_at) is already recorded")
+
+var errRecordBelowBalance = errors.New("recorded deposits would be lower than the current balance; refusing to book an inconsistent ledger")
+
+// recordDeposit books a historical prepaid or credit deposit in
+// enterprise_audit_log (what the ledger reconciliation and prepaid-invoice
+// eligibility are computed from) WITHOUT touching the balance column. The
+// change_type/field_name select which ledger (prepaid_topup/prepaid_balance or
+// credit_topup/credit_total). old_value/new_value carry the running total of
+// recorded deposits of that type. created_at is the effective date so the row
+// lands in the right statement period. It refuses when the recorded total would
+// fall below the current balance, and rejects an exact replay (same amount and
+// effective_at) so a deposit cannot be counted twice.
+func (r *EnterpriseRoutes) recordDeposit(ctx context.Context, tx pgx.Tx, enterpriseID, userID, changeType, fieldName string, balance, amount int64, effectiveAt time.Time, reason string) error {
+	var dup bool
+	if err := tx.QueryRow(ctx,
+		`SELECT EXISTS (SELECT 1 FROM enterprise_audit_log
+		  WHERE enterprise_id = $1::uuid AND change_type = $2 AND field_name = $3
+		    AND delta = $4 AND created_at = $5)`,
+		enterpriseID, changeType, fieldName, amount, effectiveAt.UTC()).Scan(&dup); err != nil {
+		return err
+	}
+	if dup {
+		return errRecordDuplicate
+	}
+	var prior int64
+	if err := tx.QueryRow(ctx,
+		`SELECT COALESCE(SUM(delta), 0) FROM enterprise_audit_log
+		  WHERE enterprise_id = $1::uuid AND change_type = $2 AND field_name = $3`,
+		enterpriseID, changeType, fieldName).Scan(&prior); err != nil {
+		return err
+	}
+	if prior+amount < balance {
+		return errRecordBelowBalance
+	}
+	_, err := tx.Exec(ctx,
+		`INSERT INTO enterprise_audit_log (enterprise_id, category, change_type, field_name, action, amount, delta, old_value, new_value, reason, changed_by, created_at)
+		 VALUES ($1, 'billing', $2, $3, 'topup', $4, $4, $5, $6, $7, $8::uuid, $9)`,
+		enterpriseID, changeType, fieldName, amount, prior, prior+amount, "[record-only, balance unchanged] "+reason, userID, effectiveAt.UTC())
+	return err
+}
+
+// validateRecordOnly returns a client-facing message for an invalid record_only
+// request, or "" when it is acceptable. record_only books a historical deposit
+// into the ledger WITHOUT changing a balance; it applies to exactly one of
+// prepaid_balance or credit_total, never quota, and never issues an invoice.
+func validateRecordOnly(prepaid, credit, quota *int64, issueInvoice bool, reason string, effectiveAt *time.Time) string {
+	pos := func(p *int64) bool { return p != nil && *p > 0 }
+	switch {
+	case quota != nil && *quota != 0:
+		return "record_only cannot be combined with quota_total"
+	case pos(prepaid) == pos(credit):
+		return "record_only requires exactly one of a positive prepaid_balance or credit_total"
+	case issueInvoice:
+		return "record_only cannot issue an invoice"
+	case strings.TrimSpace(reason) == "":
+		return "record_only requires a reason"
+	case effectiveAt == nil || !effectiveAt.Before(time.Now()):
+		return "record_only requires effective_at in the past"
+	}
+	return ""
 }

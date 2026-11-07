@@ -964,6 +964,17 @@ func (r *EnterpriseRoutes) updateEnterprise(c *gin.Context) {
 		return
 	}
 
+	// prepaid_balance and credit_total are money the customer paid for. Editing
+	// them straight from the form left no ledger row (this is why Intel's wallet
+	// had no audit trail). They now move only through the recharge flow
+	// (quota/credit/prepaid top-up or record_only), which writes a tamper-proof
+	// enterprise_audit_log entry. Reject a direct edit instead of silently
+	// ignoring it, so an admin is told where to go.
+	if req.PrepaidBalance != nil || req.CreditTotal != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "prepaid_balance and credit_total cannot be edited directly; use the Recharge action (or record_only to book a deposit that is already in the wallet)"}})
+		return
+	}
+
 	ctx := c.Request.Context()
 	var setClauses []string
 	var args []interface{}
@@ -1014,17 +1025,6 @@ func (r *EnterpriseRoutes) updateEnterprise(c *gin.Context) {
 	if req.BillingCycle != nil {
 		setClauses = append(setClauses, fmt.Sprintf("billing_cycle = $%d", argIdx))
 		args = append(args, *req.BillingCycle)
-		argIdx++
-	}
-	if req.CreditTotal != nil {
-		setClauses = append(setClauses, fmt.Sprintf("credit_total = $%d", argIdx))
-		args = append(args, *req.CreditTotal)
-		argIdx++
-	}
-	if req.PrepaidBalance != nil {
-		// Negative allowed: manual adjustment can set the wallet below zero.
-		setClauses = append(setClauses, fmt.Sprintf("prepaid_balance = $%d", argIdx))
-		args = append(args, *req.PrepaidBalance)
 		argIdx++
 	}
 	if req.PricingRatio != nil {

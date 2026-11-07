@@ -76,7 +76,7 @@ func NewDiskStore(cfg Config, logger *zap.Logger) (*DiskStore, error) {
 		cfg.FlushEvery = 3 * time.Second
 	}
 	if cfg.MaxAge <= 0 {
-		cfg.MaxAge = 30 * 24 * time.Hour // 30 days
+		cfg.MaxAge = 90 * 24 * time.Hour // 90 days
 	}
 
 	if cfg.MaxDiskPercent == 0 {

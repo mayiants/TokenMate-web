@@ -3,6 +3,37 @@
   <h1 class="page-title">{{t "Compliance"}}</h1>
 </div>
 
+<!-- Data Retention Settings -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h2 class="card-title">{{t "Data Retention Settings"}}</h2>
+  </div>
+  <div class="card-body">
+    <p class="text-sm text-muted mb-4">{{t "Days are enforced to 1-365. Changes to the platform default apply to data already on disk (cleanup follows the current policy)."}}</p>
+    <div class="grid gap-4" style="grid-template-columns: 1fr 1fr 1fr">
+      <div class="form-group">
+        <label class="form-label" for="set-retention_default_days">{{t "Default request retention (days)"}}</label>
+        <input type="number" id="set-retention_default_days" class="form-input du-input du-input-bordered" min="1" max="365">
+        <p class="text-xs text-muted mt-1">{{t "Request/response payload retention for keys with no enterprise. Enterprises set their own under each enterprise."}}</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="set-log_retention_days">{{t "Log retention (days)"}}</label>
+        <input type="number" id="set-log_retention_days" class="form-input du-input du-input-bordered" min="1" max="365">
+        <p class="text-xs text-muted mt-1">{{t "Window for sensitive-check and operational logs."}}</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="set-gdpr_retention_days">{{t "Deleted-account PII retention (days)"}}</label>
+        <input type="number" id="set-gdpr_retention_days" class="form-input du-input du-input-bordered" min="1" max="365">
+        <p class="text-xs text-muted mt-1">{{t "Grace period before a deletion request is anonymized."}}</p>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <button class="btn btn-primary btn-sm" onclick="saveRetentionSettings(this)">{{t "Save"}}</button>
+      <span id="retention-settings-note" class="text-sm text-muted" style="align-self:center"></span>
+    </div>
+  </div>
+</div>
+
 <!-- User Data Export (ad-hoc, for regulators / upstream audits) -->
 <div class="card mb-4">
   <div class="card-header">
@@ -110,7 +141,48 @@ function _esc(s) {
   return d.innerHTML;
 }
 
+async function loadRetentionSettings() {
+  try {
+    var res = await fetch('/api/admin/settings', { credentials: 'same-origin' });
+    var data = await res.json();
+    var comp = (data.settings && data.settings.compliance && data.settings.compliance.settings) || {};
+    ['retention_default_days', 'log_retention_days', 'gdpr_retention_days'].forEach(function(k) {
+      var el = document.getElementById('set-' + k);
+      if (el && comp[k]) el.value = comp[k].value;
+    });
+  } catch (e) { /* non-fatal: fields stay blank */ }
+}
+
+async function saveRetentionSettings(btn) {
+  var note = document.getElementById('retention-settings-note');
+  var settings = {};
+  ['retention_default_days', 'log_retention_days', 'gdpr_retention_days'].forEach(function(k) {
+    var v = document.getElementById('set-' + k).value;
+    if (v !== '') settings[k] = String(v);
+  });
+  btn.disabled = true;
+  try {
+    var res = await fetch('/api/admin/settings', {
+      method: 'PUT', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ settings: settings })
+    });
+    var data = await res.json();
+    if (res.ok && data.success) {
+      note.textContent = _t('Saved') + ' (' + (data.updated || []).length + ')';
+      showToast('success', _t('Operation completed'));
+    } else {
+      note.textContent = (data.error && data.error.message) || _t('Load failed');
+    }
+  } catch (e) {
+    note.textContent = _t('Load failed');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function loadCompliance() {
+  loadRetentionSettings();
   try {
     var res = await fetch('/api/gdpr/admin/export-requests', { credentials: 'same-origin' });
     var data = await res.json();

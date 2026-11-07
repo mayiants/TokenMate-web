@@ -221,6 +221,7 @@ func (r *AdminRoutes) Register(rg *gin.RouterGroup) {
 	rg.GET("/reconciliation/user/:id", r.auth.RequireAdmin(), r.getUserReconciliation)
 	rg.GET("/reconciliation/ledger", r.auth.RequireAdmin(), r.getLedger)
 	rg.GET("/reconciliation/enterprise/:id", r.auth.RequireAdmin(), r.getEnterpriseReconciliation)
+	rg.POST("/reconciliation/enterprise/:id/statements/:period/payment", r.auth.RequireAdmin(), r.recordStatementPayment)
 	rg.GET("/reconciliation/top-users", r.auth.RequireAdmin(), r.listTopUsers)
 	rg.GET("/reconciliation/top-enterprises", r.auth.RequireAdmin(), r.listTopEnterprises)
 

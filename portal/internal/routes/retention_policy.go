@@ -23,7 +23,7 @@ const (
 	// Platform defaults for keys that belong to no enterprise, used when the
 	// system_settings rows are missing or hold an invalid value.
 	defaultRetentionMode = retentionModeStandard
-	defaultRetentionDays = 30
+	defaultRetentionDays = 90
 
 	settingRetentionDefaultMode = "retention_default_mode"
 	settingRetentionDefaultDays = "retention_default_days"

@@ -476,7 +476,7 @@ func TestCleanup_CurrentPolicyOverridesDirectoryDays(t *testing.T) {
 	shortened := put(entB, "90d", 40*day, "shortened")                                      // 90d -> 30d: goes now
 	shortKeep := put(entB, "90d", 10*day, "short-keep")                                     // inside the new 30d
 	unknown := put("cccccccc-bbbb-4ccc-8ddd-eeeeeeeeeeee", "30d", 40*day, "unknown-tenant") // no policy: dir N
-	personal := put("_personal", "30d", 40*day, "personal")                                 // platform 60d: survives
+	_ = put("_personal", "30d", 40*day, "personal")                                         // platform 60d: survives
 
 	// No policy fetched yet: directory days decide.
 	s.SetPolicySource(func(context.Context) (Policy, error) { return Policy{}, errors.New("portal down") })
@@ -487,7 +487,7 @@ func TestCleanup_CurrentPolicyOverridesDirectoryDays(t *testing.T) {
 
 	// Recreate what the failed pass removed, then use a working policy.
 	extended = put(entA, "30d", 40*day, "extended")
-	personal = put("_personal", "30d", 40*day, "personal")
+	personal := put("_personal", "30d", 40*day, "personal")
 	s.SetPolicySource(func(context.Context) (Policy, error) {
 		return Policy{Platform: 60, Enterprises: map[string]int{entA: 60, entB: 30}}, nil
 	})
