@@ -2997,3 +2997,8 @@ body[theme-mode='dark'] .wg-alert-rule-icon.is-critical {
 body[theme-mode='dark'] .semi-button-light {
   color: #7bb8ff !important;
 }
+
+/* a11y: input suffix text (e.g. USD) — Semi default is too pale */
+.semi-input-suffix-text {
+  color: var(--wg-text-2);
+}

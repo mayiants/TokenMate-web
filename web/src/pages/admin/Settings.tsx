@@ -372,7 +372,7 @@ function NumberField({
   return (
     <div className="wg-form-field">
       <label className="wg-form-label">{label}</label>
-      <InputNumber
+      <InputNumber aria-label="numeric setting"
         style={{ width: 240 }}
         min={0}
         precision={precision}
