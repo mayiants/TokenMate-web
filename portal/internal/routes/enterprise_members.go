@@ -18,6 +18,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// userIsPlatformAdmin reports whether the user holds a platform-level role
+// (system_admin / super_admin). Platform administrators operate outside the
+// enterprise membership model: they must never be added to enterprise_members,
+// and no users.role sync may ever overwrite their role. Every membership write
+// path below guards on this before mutating.
+func (r *EnterpriseRoutes) userIsPlatformAdmin(ctx context.Context, userID string) bool {
+	var role string
+	if err := r.db.QueryRow(ctx,
+		`SELECT role FROM users WHERE id = $1::uuid AND deleted_at IS NULL`, userID).Scan(&role); err != nil {
+		return false
+	}
+	return role == "system_admin" || role == "super_admin"
+}
+
 // reclaimMemberEnterpriseQuota returns the unused portion of a member's
 // enterprise-quota grant to the enterprise pool when the member leaves the
 // enterprise (S-U6). It must run inside the same transaction as
@@ -130,7 +144,7 @@ func (r *EnterpriseRoutes) removeMyEnterpriseMember(c *gin.Context) {
 			return err
 		}
 		if _, err := tx.Exec(c.Request.Context(),
-			`UPDATE users SET enterprise_id = NULL, role = 'user', updated_at = NOW()
+			`UPDATE users SET enterprise_id = NULL, role = CASE WHEN role IN ('system_admin','super_admin') THEN role ELSE 'user' END, updated_at = NOW()
 			 WHERE id = $1::uuid AND enterprise_id = $2::uuid`,
 			userID, enterpriseID); err != nil {
 			return err
@@ -674,6 +688,11 @@ func (r *EnterpriseRoutes) inviteMember(c *gin.Context) {
 		`SELECT id::text FROM users WHERE email = $1 AND deleted_at IS NULL`, req.Email,
 	).Scan(&existingUserID)
 	if err == nil && existingUserID != nil {
+		// Platform administrators cannot join an enterprise.
+		if r.userIsPlatformAdmin(c.Request.Context(), *existingUserID) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "Platform administrators cannot belong to an enterprise"}})
+			return
+		}
 		// User exists — create an invitation in email_confirmed state.
 		// SA invitations pre-approve nothing: the enterprise admin must
 		// approve first, regardless of domain match.
@@ -1017,6 +1036,17 @@ func (r *EnterpriseRoutes) approveInvitationAdmin(c *gin.Context) {
 	}
 
 	memberAdded := false
+
+	// Platform administrators cannot join an enterprise — reject approvals
+	// that would pull one in (e.g. an invitation created before promotion).
+	var inviteeUserID *string
+	if err := r.db.QueryRow(ctx,
+		`SELECT id::text FROM users WHERE email = $1 AND deleted_at IS NULL`, email).Scan(&inviteeUserID); err == nil && inviteeUserID != nil {
+		if r.userIsPlatformAdmin(ctx, *inviteeUserID) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "Platform administrators cannot belong to an enterprise"}})
+			return
+		}
+	}
 
 	// Check max_admins before proceeding with admin role
 	if role == "admin" {
@@ -1416,6 +1446,14 @@ func (r *EnterpriseRoutes) acceptInvitation(c *gin.Context) {
 		// different enterprise: the UPDATE only touches rows whose
 		// enterprise_id is NULL or already points at this enterprise.
 		if existingUserID != nil {
+			// Platform administrators cannot join an enterprise.
+			if r.userIsPlatformAdmin(c.Request.Context(), *existingUserID) {
+				q := url.Values{}
+				q.Set("toast", "error")
+				q.Set("message", "Platform administrators cannot belong to an enterprise")
+				c.Redirect(http.StatusFound, "/api/enterprise/accept?token="+token+"&"+q.Encode())
+				return
+			}
 			if err := r.db.Exec(c.Request.Context(),
 				`UPDATE users SET enterprise_id = $1::uuid, role = $2, updated_at = NOW()
 				 WHERE id = $3::uuid AND (enterprise_id IS NULL OR enterprise_id = $1::uuid)`,
@@ -1545,7 +1583,7 @@ func (r *EnterpriseRoutes) removeMember(c *gin.Context) {
 			return err
 		}
 		if _, err := tx.Exec(c.Request.Context(),
-			`UPDATE users SET enterprise_id = NULL, role = 'user', updated_at = NOW()
+			`UPDATE users SET enterprise_id = NULL, role = CASE WHEN role IN ('system_admin','super_admin') THEN role ELSE 'user' END, updated_at = NOW()
 		 WHERE id = $1::uuid AND enterprise_id = $2::uuid`,
 			userID, enterpriseID); err != nil {
 			return err
@@ -1618,6 +1656,13 @@ func (r *EnterpriseRoutes) promoteDemoteMember(c *gin.Context) {
 
 	if userID == currentUserID {
 		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "Cannot change your own role"}})
+		return
+	}
+
+	// Platform administrators are not manageable as enterprise members, and
+	// their users.role must never be synced from an enterprise role.
+	if r.userIsPlatformAdmin(c.Request.Context(), userID) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "Platform administrators cannot belong to an enterprise"}})
 		return
 	}
 
@@ -1769,7 +1814,7 @@ func (r *EnterpriseRoutes) quitEnterprise(c *gin.Context) {
 		}
 		// Update user
 		if _, err := tx.Exec(c.Request.Context(),
-			`UPDATE users SET enterprise_id = NULL, role = 'user', updated_at = NOW() WHERE id = $1::uuid`,
+			`UPDATE users SET enterprise_id = NULL, role = CASE WHEN role IN ('system_admin','super_admin') THEN role ELSE 'user' END, updated_at = NOW() WHERE id = $1::uuid`,
 			userID); err != nil {
 			return err
 		}
@@ -2061,6 +2106,12 @@ func (r *EnterpriseRoutes) appointAdmin(c *gin.Context) {
 		return
 	}
 
+	// Platform administrators cannot be appointed as enterprise admins.
+	if r.userIsPlatformAdmin(c.Request.Context(), req.UserID) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "Platform administrators cannot belong to an enterprise"}})
+		return
+	}
+
 	// Promote to admin
 	err = r.db.Exec(c.Request.Context(),
 		`UPDATE enterprise_members SET role = 'admin' WHERE enterprise_id = $1::uuid AND user_id = $2::uuid AND removed_at IS NULL`,
@@ -2255,6 +2306,11 @@ func (r *EnterpriseRoutes) addEnterpriseMember(c *gin.Context) {
 		c.JSON(http.StatusConflict, gin.H{"error": gin.H{"message": "User already belongs to another enterprise"}})
 		return
 	}
+	// Platform administrators cannot be added to an enterprise.
+	if r.userIsPlatformAdmin(c.Request.Context(), userID) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "Platform administrators cannot belong to an enterprise"}})
+		return
+	}
 
 	// Existing user whose email domain is NOT whitelisted: don't add directly.
 	// An EA add counts as implicit EA approval, so create an ea_approved
@@ -2418,6 +2474,13 @@ func (r *EnterpriseRoutes) reassignUserEnterprise(c *gin.Context) {
 		return
 	}
 
+	// Platform administrators are outside the enterprise model — never
+	// reassign their enterprise or sync their role.
+	if r.userIsPlatformAdmin(ctx, userID) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"message": "Platform administrators cannot belong to an enterprise"}})
+		return
+	}
+
 	// Resolve the user and their current enterprise.
 	var sourceEnterpriseID *string
 	if err := r.db.QueryRow(ctx,
@@ -2523,7 +2586,7 @@ func (r *EnterpriseRoutes) reassignUserEnterprise(c *gin.Context) {
 		// 2. Attach to the target enterprise, or leave standalone.
 		if targetEnterpriseID == "" {
 			if _, err := tx.Exec(ctx,
-				`UPDATE users SET enterprise_id = NULL, role = 'user', updated_at = NOW() WHERE id = $1::uuid`,
+				`UPDATE users SET enterprise_id = NULL, role = CASE WHEN role IN ('system_admin','super_admin') THEN role ELSE 'user' END, updated_at = NOW() WHERE id = $1::uuid`,
 				userID); err != nil {
 				return err
 			}
