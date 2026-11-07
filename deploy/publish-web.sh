@@ -10,4 +10,5 @@ if [ ! -d node_modules ]; then
 fi
 npm run build
 rsync -a --delete dist/ "$ROOT/portal/webui/dist/"
+rsync -a --delete dist/ "$ROOT/web/dist-preview/"
 echo "SPA published -> portal/webui/dist (portal rebuild required to embed)"
