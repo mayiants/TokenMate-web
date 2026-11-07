@@ -123,6 +123,7 @@ func setupRouter(deps *AppDeps) *gin.Engine {
 	deps.authRoutes.RegisterSSO(router)
 	deps.webhookRoutes.Register(api.Group("/webhook"))
 	deps.agentEnrollRoutes.Register(api.Group("/v1/agent"))
+	deps.agentDeviceRoutes.Register(api.Group("/v1/agent"))
 
 	deps.apiKeyRoutes.Register(api.Group("/apikeys"))
 	deps.apiKeyRoutes.Register(api.Group("/keys"))

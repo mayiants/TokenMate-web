@@ -68,6 +68,7 @@ type AppDeps struct {
 	deviceRoutes        *routes.DeviceRoutes
 	mgmtTokenRoutes     *routes.ManagementTokenRoutes
 	agentEnrollRoutes   *routes.AgentEnrollmentRoutes
+	agentDeviceRoutes   *routes.AgentDeviceRoutes
 	notificationRoutes  *routes.NotificationRoutes
 	ticketRoutes        *routes.TicketRoutes
 	notificationSvc     *services.NotificationService
@@ -241,6 +242,7 @@ func bootstrap() *AppDeps {
 		deviceRoutes:        routes.NewDeviceRoutes(database, auth, logger),
 		mgmtTokenRoutes:     routes.NewManagementTokenRoutes(database, cfg, auth, logger, auditLog),
 		agentEnrollRoutes:   routes.NewAgentEnrollmentRoutes(database, cfg, logger, auditLog, mailSender),
+		agentDeviceRoutes:   routes.NewAgentDeviceRoutes(database, cfg, logger, auth),
 		notificationRoutes:  routes.NewNotificationRoutes(database, auth, notificationSvc),
 		ticketRoutes:        routes.NewTicketRoutes(database, auth, notificationSvc, auditLog, cfg, storageProvider, logger),
 	}
