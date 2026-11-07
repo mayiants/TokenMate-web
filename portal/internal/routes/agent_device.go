@@ -140,10 +140,23 @@ func (r *AgentDeviceRoutes) poll(c *gin.Context) {
 		// re-fetch the token after the exchange consumed it.
 		_, _ = r.db.Pool.Exec(c.Request.Context(),
 			`UPDATE agent_device_auth SET session_token_enc = '' WHERE id = $1::uuid AND session_token_enc <> ''`, id)
+		// Identify the approver so the agent can fill member fields in its
+		// local state (status display, server-side reporting dimensions).
+		var memberName, memberEmail, userID string
+		_ = r.db.QueryRow(c.Request.Context(),
+			`SELECT COALESCE(user_id::text, '') FROM agent_device_auth WHERE id = $1::uuid`,
+			id).Scan(&userID)
+		if userID != "" {
+			_ = r.db.QueryRow(c.Request.Context(),
+				`SELECT name, email FROM users WHERE id = $1::uuid`, userID).
+				Scan(&memberName, &memberEmail)
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"status":        "approved",
 			"session_token": token,
 			"expires_in":    int(time.Until(expiresAt).Seconds()),
+			"member_name":   memberName,
+			"member_email":  memberEmail,
 		})
 	default:
 		c.JSON(http.StatusOK, gin.H{"status": status})
