@@ -2770,12 +2770,17 @@ button.wg-model-name-btn:hover {
   color: var(--wg-primary-strong);
 }
 
-/* a11y: Semi light/danger text tones miss WCAG AA on white — darken in our scope */
+/* a11y: Semi light/danger text tones miss WCAG AA on white — darken in our scope.
+   Solid danger needs a darker red too: white on Semi's #f93920 is only ~3.7:1,
+   below the 4.5:1 AA threshold for button labels. */
 .wg-hero-cta .semi-button-light {
   color: var(--wg-primary-strong) !important;
 }
-.semi-button-danger {
+.semi-button-danger:not(.semi-button-solid) {
   color: #cf1322 !important;
+}
+.semi-button-danger.semi-button-solid {
+  background-color: #cf1322 !important;
 }
 
 /* a11y: gallery select placeholder contrast */

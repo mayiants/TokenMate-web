@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Avatar, Button, Dropdown, Nav, Tooltip } from '@douyinfe/semi-ui';
 import {
@@ -36,21 +36,34 @@ import { getAdminModeCached } from '../api/admin';
 
 const COLLAPSE_STORAGE_KEY = 'wg-console-sider';
 
+// One flattened sider entry: either a navigable page (path) or a section
+// header (no path, pointerEvents none via style).
+interface SiderItem {
+  itemKey: string;
+  text: string;
+  path?: string;
+  icon?: ReactNode;
+  disabled?: boolean;
+  style?: CSSProperties;
+}
+
 const NAV_ITEMS = [
   { itemKey: 'dashboard', textKey: 'console.nav.dashboard', path: '/console', icon: <IconHomeStroked /> },
   { itemKey: 'keys', textKey: 'console.nav.keys', path: '/console/keys', icon: <IconKeyStroked /> },
   { itemKey: 'logs', textKey: 'console.nav.logs', path: '/console/logs', icon: <IconList /> },
   { itemKey: 'balance', textKey: 'console.nav.balance', path: '/console/balance', icon: <IconCreditCardStroked /> },
+  { itemKey: 'billing', textKey: 'acc.nav.billing', path: '/console/billing', icon: <IconCreditCardStroked /> },
+  { itemKey: 'subscriptions', textKey: 'acc.nav.subscriptions', path: '/console/subscriptions', icon: <IconCalendarClockStroked /> },
+  { itemKey: 'groups', textKey: 'acc.nav.groups', path: '/console/groups', icon: <IconFolderStroked /> },
+  { itemKey: 'status', textKey: 'acc.nav.status', path: '/console/status', icon: <IconServerStroked /> },
 ];
 
-const ACC_ITEMS = [
+// Account-level pages (profile / notifications / support) live in the
+// top-right user dropdown, not in the sider.
+const USER_MENU_ITEMS = [
   { itemKey: 'acc-profile', textKey: 'acc.nav.profile', path: '/console/profile', icon: <IconUserCircle /> },
   { itemKey: 'acc-notifications', textKey: 'acc.nav.notifications', path: '/console/notifications', icon: <IconBellStroked /> },
   { itemKey: 'acc-support', textKey: 'acc.nav.support', path: '/console/support', icon: <IconHelpCircleStroked /> },
-  { itemKey: 'acc-billing', textKey: 'acc.nav.billing', path: '/console/billing', icon: <IconCreditCardStroked /> },
-  { itemKey: 'acc-subscriptions', textKey: 'acc.nav.subscriptions', path: '/console/subscriptions', icon: <IconCalendarClockStroked /> },
-  { itemKey: 'acc-groups', textKey: 'acc.nav.groups', path: '/console/groups', icon: <IconFolderStroked /> },
-  { itemKey: 'acc-status', textKey: 'acc.nav.status', path: '/console/status', icon: <IconServerStroked /> },
 ];
 
 const ENT_ITEMS = [
@@ -121,7 +134,7 @@ export default function ConsoleLayout() {
   const selectedKey = useMemo(() => {
     // exact match or child-path match; longest-path-first so '/console/groups'
     // never shadows a future nested route and vice versa.
-    const match = [...ACC_ITEMS, ...ENT_ITEMS, ...ADMIN_ITEMS]
+    const match = [...NAV_ITEMS, ...ENT_ITEMS, ...ADMIN_ITEMS]
       .sort((a, b) => b.path.length - a.path.length)
       .find((i) => location.pathname === i.path || location.pathname.startsWith(i.path + '/'));
     if (match) return match.itemKey;
@@ -135,17 +148,9 @@ export default function ConsoleLayout() {
   // Flat nav: section headers are non-clickable label items — nested Nav.Sub
   // groups corrupted their state on collapse and on header clicks, so we
   // render children as top-level items.
-  const navItems = useMemo(() => {
+  const navItems = useMemo<SiderItem[]>(() => {
     const base = NAV_ITEMS.map((i) => ({ ...i, text: t(i.textKey) }));
-    const accHeader = {
-      itemKey: 'acc-header',
-      text: t('acc.nav.group'),
-      icon: <IconUserCircle />,
-      disabled: false,
-      style: { pointerEvents: 'none' as const, fontSize: 12, color: 'var(--wg-text-2)', marginTop: 8 },
-    };
-    const accItems = ACC_ITEMS.map((i) => ({ ...i, text: t(i.textKey) }));
-    const adminHeader = {
+    const adminHeader: SiderItem = {
       itemKey: 'admin-header',
       text: t('admin.nav.group'),
       icon: <IconSettingStroked />,
@@ -153,7 +158,7 @@ export default function ConsoleLayout() {
       style: { pointerEvents: 'none' as const, fontSize: 12, color: 'var(--wg-text-2)', marginTop: 8 },
     };
     const adminItems = ADMIN_ITEMS.map((i) => ({ ...i, text: t(i.textKey) }));
-    const items = [...base, accHeader, ...accItems];
+    const items: SiderItem[] = [...base];
     if (hasEnterprise) {
       items.push(
         { itemKey: 'ent-header', text: t('ent.nav.group'), icon: <IconMailStroked />, disabled: false, style: { pointerEvents: 'none' as const, fontSize: 12, color: 'var(--wg-text-2)', marginTop: 8 } },
@@ -201,7 +206,6 @@ export default function ConsoleLayout() {
           onSelect={(data) => {
             const all = [
               ...NAV_ITEMS,
-              ...ACC_ITEMS,
               ...(hasEnterprise ? ENT_ITEMS : []),
               ...(hasAdmin ? ADMIN_ITEMS : []),
             ];
@@ -248,9 +252,11 @@ export default function ConsoleLayout() {
             position="bottomRight"
             render={
               <Dropdown.Menu>
-                <Dropdown.Item icon={<IconUserCircle />} onClick={() => navigate('/console/profile')}>
-                  {t('console.profile')}
-                </Dropdown.Item>
+                {USER_MENU_ITEMS.map((i) => (
+                  <Dropdown.Item key={i.itemKey} icon={i.icon} onClick={() => navigate(i.path)}>
+                    {t(i.textKey)}
+                  </Dropdown.Item>
+                ))}
                 <Dropdown.Divider />
                 <Dropdown.Item icon={<IconExit />} type="danger" onClick={onLogout}>
                   {t('console.logout')}

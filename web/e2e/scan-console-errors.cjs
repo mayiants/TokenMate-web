@@ -64,6 +64,9 @@ const USER_PAGES = [
     if (r.status() >= 400 && r.url().includes('/api/')) {
       // The admin-nav probe is EXPECTED to 403 for non-admin sessions.
       if (r.url().includes('/api/admin/admin-mode') && r.status() === 403) return;
+      // The enterprise-nav probe is EXPECTED to 403 for users with no
+      // enterprise membership (backend decides; hides the section).
+      if (r.url().includes('/api/enterprise') && r.status() === 403) return;
       errors.network.push(`${r.status()} ${r.url().slice(-80)}`);
     }
   });
