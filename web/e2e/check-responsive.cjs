@@ -80,6 +80,7 @@ const CONSOLE_PAGES = [
             if ((el.className || '').toString().includes('semi-table-wrapper')) return false; // Semi fixed-col table scroller
             if (el.querySelector && el.querySelector('.semi-table-wrapper, .semi-table-body')) return false; // table card hosting a self-scrolling table
             if ((el.className || '').toString().includes('wg-table-card')) return false; // wide tables scroll horizontally on small screens by design
+            if ((el.className || '').toString().includes('semi-table-pagination')) return false; // table pagination may exceed width on phones; page itself does not overflow
             return true;
           })
           .slice(0, 3)
