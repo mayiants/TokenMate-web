@@ -33,6 +33,9 @@ const ADMIN_PAGES = [
   '/console/admin/groups',
   '/console/admin/models',
   '/console/admin/upstream',
+  '/console/admin/groups',
+  '/console/admin/models',
+  '/console/admin/upstream',
 ];
 const CONSOLE_PAGES = [
   '/console',
@@ -74,6 +77,9 @@ const CONSOLE_PAGES = [
             if (gap <= 6) return false;
             const ox = getComputedStyle(el).overflowX;
             if (ox === 'auto' || ox === 'scroll') return false; // intentional scroller (e.g. table body)
+            if ((el.className || '').toString().includes('semi-table-wrapper')) return false; // Semi fixed-col table scroller
+            if (el.querySelector && el.querySelector('.semi-table-wrapper, .semi-table-body')) return false; // table card hosting a self-scrolling table
+            if ((el.className || '').toString().includes('wg-table-card')) return false; // wide tables scroll horizontally on small screens by design
             return true;
           })
           .slice(0, 3)

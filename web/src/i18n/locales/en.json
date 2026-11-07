@@ -1238,5 +1238,6 @@
   "admin.upstream.rotateKeep": "Leave blank to update limits/tier only",
   "admin.upstream.rotateHint": "A new key replaces the old one immediately and triggers async validation.",
   "admin.upstream.providerRequired": "Select a provider",
-  "admin.upstream.keyRequired": "Key is required"
+  "admin.upstream.keyRequired": "Key is required",
+  "admin.models.ariaToggleListing": "Toggle listing status"
 }

@@ -218,7 +218,7 @@ export default function AdminModels() {
       width: 100,
       render: (v: string, r: ServiceModel) =>
         v === 'active' || v === 'paused' ? (
-          <Switch size="small" checked={v === 'active'} onChange={() => toggleModel(r)} />
+          <Switch aria-label={t('admin.models.ariaToggleListing')} size="small" checked={v === 'active'} onChange={() => toggleModel(r)} />
         ) : (
           statusTag(v, t)
         ),
@@ -342,7 +342,7 @@ export default function AdminModels() {
       dataIndex: 'status',
       width: 100,
       render: (v: string, r: PricingRule) => (
-        <Switch
+        <Switch aria-label={t('admin.models.ariaToggleListing')}
           size="small"
           checked={v === 'active'}
           onChange={() =>
@@ -737,7 +737,7 @@ function PricingDrawer({
         <div className="wg-form-field">
           <label className="wg-form-label">{t('admin.models.field.status')}</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Switch checked={active} onChange={setActive} />
+            <Switch aria-label={t('admin.models.ariaToggleListing')} checked={active} onChange={setActive} />
             <span className="wg-cell-dim">
               {active ? t('admin.group.status.active') : t('admin.group.status.inactive')}
             </span>

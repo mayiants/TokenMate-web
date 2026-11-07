@@ -1238,5 +1238,6 @@
   "admin.upstream.rotateKeep": "留空则仅更新限额与层级",
   "admin.upstream.rotateHint": "填写新密钥后立即替换原密钥，并触发异步校验。",
   "admin.upstream.providerRequired": "请选择上游",
-  "admin.upstream.keyRequired": "请输入密钥"
+  "admin.upstream.keyRequired": "请输入密钥",
+  "admin.models.ariaToggleListing": "切换上架状态"
 }
