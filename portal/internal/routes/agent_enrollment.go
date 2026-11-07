@@ -425,18 +425,21 @@ func (r *AgentEnrollmentRoutes) exchange(c *gin.Context) {
 		"key_id":       keyID,
 		"device_id":    deviceID,
 		"api_base_url": r.cfg.App.BaseURL,
-		"adapter":      r.adapterManifest(c, client, osName),
+		"adapter":      r.adapterManifest(c, client, osName, ""),
 	})
 }
 
-func (r *AgentEnrollmentRoutes) adapterManifest(c *gin.Context, client, osName string) gin.H {
+func (r *AgentEnrollmentRoutes) adapterManifest(c *gin.Context, client, osName, arch string) gin.H {
 	var configPath, method, baseVar, keyVar string
 	var manifest []byte
 	var version int
+	// Exact arch row wins; arch='' rows match any architecture.
 	err := r.db.QueryRow(c.Request.Context(),
 		`SELECT config_path, inject_method, env_base_url_var, env_api_key_var, manifest::text, manifest_version
-		 FROM agent_adapters WHERE client = $1 AND os = $2 AND active`,
-		client, osName,
+		 FROM agent_adapters
+		 WHERE client = $1 AND os = $2 AND active AND (arch = $3 OR arch = '')
+		 ORDER BY (arch = $3) DESC LIMIT 1`,
+		client, osName, arch,
 	).Scan(&configPath, &method, &baseVar, &keyVar, &manifest, &version)
 	if err != nil {
 		return gin.H{"status": "no_adapter"}
@@ -522,7 +525,8 @@ func (r *AgentEnrollmentRoutes) heartbeat(c *gin.Context) {
 func (r *AgentEnrollmentRoutes) getConfig(c *gin.Context) {
 	client := strings.ToLower(strings.TrimSpace(c.DefaultQuery("client", "workbuddy")))
 	osName := strings.ToLower(strings.TrimSpace(c.DefaultQuery("os", "windows")))
-	manifest := r.adapterManifest(c, client, osName)
+	arch := strings.ToLower(strings.TrimSpace(c.Query("arch")))
+	manifest := r.adapterManifest(c, client, osName, arch)
 	if manifest["status"] == "no_adapter" {
 		agentError(c, http.StatusNotFound, "No adapter for this client and OS")
 		return

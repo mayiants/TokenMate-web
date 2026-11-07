@@ -23,6 +23,7 @@ type State struct {
 	AdapterClient     string `json:"adapter_client"`
 	AdapterVersion    int    `json:"adapter_version"`
 	AdapterBackupPath string `json:"adapter_backup_path,omitempty"`
+	ClientVersion     string `json:"client_version,omitempty"`
 	EnrolledAt        string `json:"enrolled_at"`
 }
 

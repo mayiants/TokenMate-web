@@ -10,11 +10,14 @@ package adapter
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -34,6 +37,10 @@ type Manifest struct {
 	VersionHint    string                   `json:"version_hint,omitempty"`    // substring expected in version output
 	EnvExpandNote  string                   `json:"env_expand_note,omitempty"`
 }
+
+// trailingCommaRe strips trailing commas (",}" / ",]") which WorkBuddy's
+// parser tolerates but encoding/json rejects.
+var trailingCommaRe = regexp.MustCompile(`,(\s*[}\]])`)
 
 // Pending reports whether the manifest explicitly says injection is not yet
 // verified. The agent stores the key and defers all config writes.
@@ -55,19 +62,36 @@ func Detect(m *api.AdapterManifest) (installed bool, version string, err error) 
 			return true, probeVersion(full, detail), nil
 		}
 	}
+	// Manifest list missed — fall back to runtime discovery (registry,
+	// uninstall entries, fixed-drive scan). Auto-detected installs never
+	// get version-probed: GUI clients must not be executed for detection.
+	for _, p := range candidateInstallPaths() {
+		if info, err := os.Stat(p); err == nil && !info.IsDir() {
+			return true, "", nil
+		}
+	}
 	return false, "", nil
 }
 
 func probeVersion(exe string, detail Manifest) string {
-	args := detail.VersionArgs
-	if len(args) == 0 {
-		args = []string{"--version"}
-	}
-	out, err := exec.Command(exe, args...).CombinedOutput()
-	if err != nil {
+	// GUI clients (Electron) cannot be probed by executing them — the args
+	// are ignored and the app window pops up. Only CLI-type clients should
+	// declare version_args in the manifest.
+	if len(detail.VersionArgs) == 0 {
 		return ""
 	}
-	s := strings.TrimSpace(string(out))
+	cmd := exec.Command(exe, detail.VersionArgs...)
+	var buf bytes.Buffer
+	cmd.Stdout = &buf
+	cmd.Stderr = &buf
+	if err := cmd.Start(); err != nil {
+		return ""
+	}
+	// Cap the probe so a client that stays running never blocks detection.
+	timer := time.AfterFunc(5*time.Second, func() { _ = cmd.Process.Kill() })
+	defer timer.Stop()
+	_ = cmd.Wait()
+	s := strings.TrimSpace(buf.String())
 	if len(s) > 120 {
 		s = s[:120]
 	}
@@ -79,6 +103,19 @@ func probeVersion(exe string, detail Manifest) string {
 func ExpandEnv(s string) string {
 	if runtime.GOOS == "windows" {
 		s = os.Expand(s, func(k string) string { return os.Getenv(k) })
+		// %VAR% form (CMD/PowerShell convention) — os.Expand only knows $VAR.
+		for {
+			start := strings.IndexByte(s, '%')
+			if start == -1 {
+				break
+			}
+			rest := s[start+1:]
+			end := strings.IndexByte(rest, '%')
+			if end <= 0 {
+				break
+			}
+			s = s[:start] + os.Getenv(rest[:end]) + rest[end+1:]
+		}
 	}
 	return os.ExpandEnv(s)
 }
@@ -107,13 +144,39 @@ func Apply(m *api.AdapterManifest, baseURL, apiKey string) (backupPath string, a
 	}
 
 	cfgPath := ExpandEnv(m.ConfigPath)
+	if err := safeConfigPath(cfgPath); err != nil {
+		return "", false, err
+	}
 	raw, readErr := os.ReadFile(cfgPath)
 	exists := readErr == nil
 
 	var doc map[string]interface{}
 	if exists {
-		if err := json.Unmarshal(raw, &doc); err != nil {
-			return "", false, fmt.Errorf("existing config %s is not valid JSON: %w", cfgPath, err)
+		parsed := bytes.TrimPrefix(raw, []byte("\xef\xbb\xbf"))
+		if len(bytes.TrimSpace(parsed)) == 0 {
+			doc = map[string]interface{}{}
+		} else {
+			// WorkBuddy's parser tolerates trailing commas; encoding/json
+			// does not. Normalize before unmarshalling.
+			parsed = trailingCommaRe.ReplaceAll(parsed, []byte("$1"))
+			// models.json may be a bare array or an object holding a
+			// "models" key — both forms are valid for the client.
+			var decoded interface{}
+			if err := json.Unmarshal(parsed, &decoded); err != nil {
+				preview := bytes.TrimSpace(parsed)
+				if len(preview) > 64 {
+					preview = preview[:64]
+				}
+				return "", false, fmt.Errorf("existing config %s is not valid JSON (first bytes %s): %w", cfgPath, strconv.Quote(string(preview)), err)
+			}
+			switch v := decoded.(type) {
+			case map[string]interface{}:
+				doc = v
+			case []interface{}:
+				doc = map[string]interface{}{"models": v}
+			default:
+				doc = map[string]interface{}{}
+			}
 		}
 	} else {
 		dir := filepath.Dir(cfgPath)
@@ -151,14 +214,18 @@ func Apply(m *api.AdapterManifest, baseURL, apiKey string) (backupPath string, a
 
 	if exists {
 		backupPath = cfgPath + ".woodgit-backup"
-		bkRaw, bkErr := os.ReadFile(backupPath)
-		if bkErr != nil || !bytes.Equal(bkRaw, raw) {
-			// No backup yet, or the config changed since our backup: refresh it.
+		if _, err := os.Stat(backupPath); errors.Is(err, os.ErrNotExist) {
+			// First injection only: capture the user's ORIGINAL config. The
+			// backup must never be refreshed from a later (already-injected)
+			// state, or restore would return our own key instead of the
+			// user's original file.
 			stamped := fmt.Sprintf("%s.woodgit-backup-%s", cfgPath, time.Now().Format("20060102150405"))
 			if err := os.WriteFile(stamped, raw, 0o600); err != nil {
 				return "", false, fmt.Errorf("backup config: %w", err)
 			}
-			_ = os.WriteFile(backupPath, raw, 0o600)
+			if err := os.WriteFile(backupPath, raw, 0o600); err != nil {
+				return "", false, fmt.Errorf("backup config: %w", err)
+			}
 		}
 	}
 
@@ -239,8 +306,8 @@ func upsertEntries(doc map[string]interface{}, detail *Manifest, baseURL, apiKey
 			return fmt.Errorf("manifest entry template must be a JSON object")
 		}
 		keyValue, ok := rendered[keyField].(string)
-		if !ok || keyValue == "" {
-			return fmt.Errorf("manifest entry template must define a string %q field", keyField)
+		if !ok || keyValue == "" || len(keyValue) > 128 {
+			return fmt.Errorf("manifest entry template must define a string %q field of 1-128 chars", keyField)
 		}
 		replaced := false
 		for i, item := range arr {
@@ -281,5 +348,91 @@ func renderTemplate(v interface{}, baseURL, apiKey string) interface{} {
 		return out
 	default:
 		return v
+	}
+}
+
+// safeConfigPath guards the single filesystem write this package performs.
+// The manifest is data, not code: without this, a portal misconfiguration or
+// compromise would become an arbitrary-file-write primitive on customer
+// machines. The resolved path must be absolute, free of "..", and live
+// inside well-known user-profile roots.
+func safeConfigPath(p string) error {
+	if p == "" {
+		return fmt.Errorf("config path is empty")
+	}
+	if !filepath.IsAbs(p) {
+		return fmt.Errorf("config path %q is not absolute", p)
+	}
+	clean := filepath.Clean(p)
+	if strings.Contains(clean, "..") {
+		return fmt.Errorf("config path %q contains '..'", p)
+	}
+	var allowed []string
+	if home, err := os.UserHomeDir(); err == nil && home != "" {
+		allowed = append(allowed, filepath.Clean(home))
+	}
+	for _, env := range []string{"LOCALAPPDATA", "APPDATA", "XDG_CONFIG_HOME"} {
+		if v := os.Getenv(env); v != "" {
+			allowed = append(allowed, filepath.Clean(v))
+		}
+	}
+	for _, root := range allowed {
+		if clean == root || strings.HasPrefix(clean, root+string(os.PathSeparator)) {
+			return nil
+		}
+	}
+	return fmt.Errorf("config path %q is outside the allowed user-profile roots", p)
+}
+
+// ConfigDirExists reports whether the adapter's target config directory is
+// present. A client whose config dir exists counts as installed even when
+// the executable itself is outside every known install location.
+func ConfigDirExists(m *api.AdapterManifest) bool {
+	if m == nil || m.ConfigPath == "" {
+		return false
+	}
+	info, err := os.Stat(filepath.Dir(ExpandEnv(m.ConfigPath)))
+	return err == nil && info.IsDir()
+}
+
+// FallbackManifest returns a built-in manifest for known clients so the
+// agent can still inject (and doctor can still verify) when the portal is
+// unreachable or has no adapter row. Paths match the P0-verified layout.
+func FallbackManifest(client, osName string) *api.AdapterManifest {
+	if client != "workbuddy" {
+		return nil
+	}
+	osName = strings.ToLower(osName)
+	var configPath string
+	switch osName {
+	case "windows":
+		configPath = `%USERPROFILE%\.workbuddy\models.json`
+	case "linux", "darwin":
+		configPath = "$HOME/.workbuddy/models.json"
+	default:
+		return nil
+	}
+	manifest := Manifest{
+		Status:         "active",
+		ConfigFormat:   "json",
+		EntryArrayPath: "models",
+		EntryKeyField:  "id",
+		Entries: []map[string]interface{}{
+			{"id": "glm-5.3", "name": "GLM 5.3 (Woodgit)", "vendor": "woodgit",
+				"url": "{{base_url}}/v1", "apiKey": "{{api_key}}",
+				"supportsToolCall": true, "supportsImages": true, "supportsReasoning": true, "useCustomProtocol": false},
+			{"id": "kimi-k3", "name": "Kimi K3 (Woodgit)", "vendor": "woodgit",
+				"url": "{{base_url}}/v1", "apiKey": "{{api_key}}",
+				"supportsToolCall": true, "supportsImages": true, "supportsReasoning": true, "useCustomProtocol": false},
+		},
+	}
+	raw, _ := json.Marshal(manifest)
+	return &api.AdapterManifest{
+		Client:       client,
+		OS:           osName,
+		ConfigPath:   configPath,
+		InjectMethod: "file",
+		Manifest:     raw,
+		Version:      -1, // signals "local fallback, not a portal version"
 	}
 }

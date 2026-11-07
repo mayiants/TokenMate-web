@@ -2,9 +2,10 @@
 # Copies the agent into %LOCALAPPDATA%\WoodgitAgent and registers a
 # per-user scheduled task that runs `heartbeat` every 5 minutes.
 #
-# Usage:  powershell -ExecutionPolicy Bypass -File install.ps1 [-Binary .\woodgit-agent.exe]
+# Usage:  powershell -ExecutionPolicy Bypass -File install.ps1 [-Binary .\woodgit-agent.exe] [-BinaryArm64 .\woodgit-agent-arm64.exe] [-Server https://portal.example.com] [-Insecure]
 param(
     [string]$Binary = ".\woodgit-agent.exe",
+    [string]$BinaryArm64 = ".\woodgit-agent-arm64.exe",
     [string]$Server = "",
     [switch]$Insecure
 )
@@ -13,10 +14,20 @@ $ErrorActionPreference = "Stop"
 $InstallDir = Join-Path $env:LOCALAPPDATA "WoodgitAgent"
 $TaskName = "WoodgitAgent Heartbeat"
 
-if (-not (Test-Path $Binary)) { throw "Agent binary not found: $Binary" }
+# Pick the binary matching this machine's architecture.
+$arch = $env:PROCESSOR_ARCHITECTURE
+if ($arch -eq "ARM64" -and (Test-Path $BinaryArm64)) {
+    $chosen = $BinaryArm64
+} elseif (Test-Path $Binary) {
+    $chosen = $Binary
+} elseif (Test-Path $BinaryArm64) {
+    $chosen = $BinaryArm64
+} else {
+    throw "Agent binary not found: $Binary (or $BinaryArm64)"
+}
 
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
-Copy-Item $Binary (Join-Path $InstallDir "woodgit-agent.exe") -Force
+Copy-Item $chosen (Join-Path $InstallDir "woodgit-agent.exe") -Force
 
 # Heartbeat every 5 minutes, starting at user logon. A per-user task avoids
 # any UAC prompt and stops with the user's session context.
@@ -36,11 +47,11 @@ if ($userPath -notlike "*$InstallDir*") {
     [Environment]::SetEnvironmentVariable("Path", "$userPath;$InstallDir", "User")
 }
 
-Write-Host "Installed to $InstallDir"
+Write-Host "Installed to $InstallDir ($arch)"
 Write-Host "Heartbeat scheduled task '$TaskName' registered (every 5 min)."
 Write-Host ""
 Write-Host "Next step — enroll this device:"
-$args = "enroll --server $Server"
-if ($Insecure) { $args += " --insecure" }
-Write-Host "  woodgit-agent $args"
+$enrollArgs = "enroll --server $Server"
+if ($Insecure) { $enrollArgs += " --insecure" }
+Write-Host "  woodgit-agent $enrollArgs"
 Write-Host "(open a NEW terminal so PATH picks up, or use $exe directly)"

@@ -1,2 +1,6 @@
 woodgit-agent
 woodgit-agent.exe
+woodgit-agent-arm64.exe
+agent
+dist/
+*.woodgit-backup*

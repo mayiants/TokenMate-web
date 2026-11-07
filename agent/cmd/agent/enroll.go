@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -80,6 +81,7 @@ func newEnrollCmd() *cobra.Command {
 				"device_fingerprint": fp,
 				"hostname":           hostname,
 				"os_version":         osVersion(),
+				"arch":               runtime.GOARCH,
 				"agent_version":      Version,
 				"client":             client,
 				"os":                 "windows",
@@ -102,7 +104,7 @@ func newEnrollCmd() *cobra.Command {
 				APIBaseURL:     exchanged.APIBaseURL,
 				DeviceID:       exchanged.DeviceID,
 				KeyID:          exchanged.KeyID,
-				KeyPrefix:      exchanged.APIKey[:15] + "...",
+				KeyPrefix:      shortKey(exchanged.APIKey) + "...",
 				MemberName:     verified.MemberName,
 				MemberEmail:    email,
 				Hostname:       hostname,
@@ -169,10 +171,4 @@ func newStatusCmd() *cobra.Command {
 			return nil
 		},
 	}
-}
-
-func osVersion() string {
-	// Detailed OS version (build number etc.) is probed on Windows via the
-	// registry in a later iteration; the server mainly needs coarse shape.
-	return runtimeGOOS()
 }

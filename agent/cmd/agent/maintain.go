@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
+	"time"
 
 	"github.com/mayiants/ai-gateway-go/agent/internal/adapter"
 	"github.com/mayiants/ai-gateway-go/agent/internal/api"
@@ -49,34 +53,44 @@ func newHeartbeatCmd() *cobra.Command {
 				"device_id":          s.DeviceID,
 				"device_fingerprint": fp,
 				"agent_version":      Version,
-				"client_version":     detectClientVersion(s),
+				"client_version":     s.ClientVersion,
 			})
 			if err != nil {
+				logf("heartbeat failed: %v", err)
 				return err
 			}
 			if hb.KeyStatus != "active" {
+				logf("heartbeat: key status %s", hb.KeyStatus)
 				fmt.Printf("KEY STATUS: %s — this device has been revoked; contact your administrator.\n", hb.KeyStatus)
 				return fmt.Errorf("key revoked")
 			}
 			fmt.Printf("ok (key active, config v%d)\n", hb.ConfigVersion)
 
 			if hb.ConfigVersion > s.AdapterVersion {
-				m, err := c.GetConfig(ctx, s.AdapterClient, "windows")
+				m, err := c.GetConfig(ctx, s.AdapterClient, runtime.GOOS, runtime.GOARCH)
 				if err != nil {
-					fmt.Printf("WARN: adapter manifest fetch failed: %v\n", err)
-					return nil
+					// Portal unreachable: fall back to the built-in manifest so
+					// a fresh machine can still finish (or repair) injection.
+					m = adapter.FallbackManifest(s.AdapterClient, runtime.GOOS)
+					logf("GetConfig failed (%v); using built-in fallback manifest", err)
+					if m == nil {
+						return nil
+					}
 				}
 				if adapter.Pending(m) {
 					return nil
 				}
 				backup, applied, err := adapter.Apply(m, s.APIBaseURL, key)
 				if err != nil {
+					logf("adapter re-apply failed: %v", err)
 					fmt.Printf("WARN: adapter re-apply failed: %v\n", err)
 					return nil
 				}
 				if applied {
 					s.AdapterBackupPath = backup
-					s.AdapterVersion = m.Version
+					if m.Version >= 0 {
+						s.AdapterVersion = m.Version
+					}
 					_ = s.Save()
 					fmt.Printf("client config updated to adapter v%d (backup %s)\n", m.Version, backup)
 				}
@@ -111,7 +125,7 @@ func newDoctorCmd() *cobra.Command {
 			check("api key store", true, s.KeyPrefix)
 
 			ctx := context.Background()
-			m, err := c.GetConfig(ctx, s.AdapterClient, "windows")
+			m, err := c.GetConfig(ctx, s.AdapterClient, runtime.GOOS, runtime.GOARCH)
 			if err != nil {
 				check("portal reachable", false, err.Error())
 			} else {
@@ -122,7 +136,7 @@ func newDoctorCmd() *cobra.Command {
 				"device_id":          s.DeviceID,
 				"device_fingerprint": fp,
 				"agent_version":      Version,
-				"client_version":     detectClientVersion(s),
+				"client_version":     s.ClientVersion,
 			})
 			if err != nil {
 				check("heartbeat", false, err.Error())
@@ -135,9 +149,20 @@ func newDoctorCmd() *cobra.Command {
 				if derr != nil {
 					check("client detect", false, derr.Error())
 				} else if !installed {
-					check("client detect", false, s.AdapterClient+" not found on this machine")
+					// The exe may sit outside every known location (custom
+					// portable installs); the config dir is what injection
+					// actually needs.
+					if adapter.ConfigDirExists(m) {
+						check("client detect", true, "config dir present (exe not located)")
+					} else {
+						check("client detect", false, s.AdapterClient+" not found on this machine")
+					}
 				} else {
 					check("client detect", true, version)
+					if version != "" && version != s.ClientVersion {
+						s.ClientVersion = version
+						_ = s.Save()
+					}
 				}
 				switch {
 				case adapter.Pending(m):
@@ -175,7 +200,7 @@ func newRestoreCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			m, err := c.GetConfig(context.Background(), s.AdapterClient, "windows")
+			m, err := c.GetConfig(context.Background(), s.AdapterClient, runtime.GOOS, runtime.GOARCH)
 			if err != nil {
 				return err
 			}
@@ -190,7 +215,7 @@ func newRestoreCmd() *cobra.Command {
 
 func detectClientVersion(s *state.State) string {
 	c := api.NewClient(s.Server, s.InsecureTLS)
-	m, err := c.GetConfig(context.Background(), s.AdapterClient, "windows")
+	m, err := c.GetConfig(context.Background(), s.AdapterClient, runtime.GOOS, runtime.GOARCH)
 	if err != nil {
 		return ""
 	}
@@ -201,23 +226,46 @@ func detectClientVersion(s *state.State) string {
 	return version
 }
 
+// shortKey never panics on short keys (a key shorter than the display
+// width is still a valid key).
+func shortKey(key string) string {
+	if len(key) <= 15 {
+		return key
+	}
+	return key[:15]
+}
+
+// logf appends a timestamped line to the agent log inside the state dir so
+// unattended failures (e.g. scheduled heartbeats) leave a trace.
+func logf(format string, args ...interface{}) {
+	f, err := os.OpenFile(filepath.Join(state.Dir(), "agent.log"),
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	fmt.Fprintf(f, "%s %s\n", time.Now().UTC().Format(time.RFC3339), fmt.Sprintf(format, args...))
+}
+
 func verifyConfig(cfgPath, baseURL, apiKey string) (bool, string) {
 	raw, err := os.ReadFile(cfgPath)
 	if err != nil {
 		return false, "config missing: " + err.Error()
 	}
-	var doc map[string]interface{}
-	if err := json.Unmarshal(raw, &doc); err != nil {
+	// The client accepts a bare array or an object (and may write a BOM) —
+	// validity here must match that tolerance.
+	raw = bytes.TrimPrefix(raw, []byte("\xef\xbb\xbf"))
+	var v interface{}
+	if err := json.Unmarshal(raw, &v); err != nil {
 		return false, "config not valid JSON"
 	}
-	_ = doc
 	// Full field verification needs the manifest's dotted paths; the cheap
 	// check (file exists, parses, mentions our gateway host) catches the
 	// common breakage modes (deleted file, overwritten by client upgrade).
 	if !strings.Contains(string(raw), strings.TrimPrefix(strings.TrimPrefix(baseURL, "https://"), "http://")) {
 		return false, "config does not reference gateway " + baseURL
 	}
-	if !strings.Contains(string(raw), apiKey[:15]) {
+	if !strings.Contains(string(raw), shortKey(apiKey)) {
 		return false, "config does not contain this device's key"
 	}
 	return true, "gateway + key present"

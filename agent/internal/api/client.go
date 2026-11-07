@@ -177,9 +177,13 @@ func (c *Client) Heartbeat(ctx context.Context, bearer string, body map[string]s
 	return &out, nil
 }
 
-func (c *Client) GetConfig(ctx context.Context, clientName, osName string) (*AdapterManifest, error) {
+func (c *Client) GetConfig(ctx context.Context, clientName, osName, arch string) (*AdapterManifest, error) {
 	var out AdapterManifest
-	if err := c.get(ctx, "/config?client="+clientName+"&os="+osName, &out); err != nil {
+	q := "/config?client=" + clientName + "&os=" + osName
+	if arch != "" {
+		q += "&arch=" + arch
+	}
+	if err := c.get(ctx, q, &out); err != nil {
 		return nil, err
 	}
 	if out.Status == "no_adapter" {
