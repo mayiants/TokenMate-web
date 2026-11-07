@@ -115,9 +115,15 @@ export default function ConsoleLayout() {
     };
   }, []);
 
-  // Platform-admin probe: the same 403 that hides the group is enforced by
-  // every /api/admin/* handler, so this is presentation only.
+  // Platform-admin visibility. The login/me role is authoritative — a stale
+  // cached admin-mode probe must never resurrect the admin group after an
+  // account switch (clearAdminModeCache on login/logout is the second layer).
+  const isPlatformAdmin = user?.role === 'system_admin' || user?.role === 'super_admin';
   useEffect(() => {
+    if (!isPlatformAdmin) {
+      setHasAdmin(false);
+      return;
+    }
     let cancelled = false;
     getAdminModeCached()
       .then((mode) => {
@@ -129,7 +135,7 @@ export default function ConsoleLayout() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isPlatformAdmin]);
 
   const selectedKey = useMemo(() => {
     // exact match or child-path match; longest-path-first so '/console/groups'

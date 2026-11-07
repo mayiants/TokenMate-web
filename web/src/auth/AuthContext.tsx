@@ -41,12 +41,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
+    clearAdminModeCache();
     const u = await apiLogin(email, password);
     setUser(u);
     return u;
   }, []);
 
   const register = useCallback(async (payload: { name?: string; email: string; password: string; code: string }) => {
+    clearAdminModeCache();
     const u = await apiRegister(payload);
     setUser(u);
     return u;
@@ -54,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await apiLogout();
+    clearAdminModeCache();
     setUser(null);
   }, []);
 

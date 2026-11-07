@@ -2,6 +2,7 @@ import { Routes, Route, Outlet } from 'react-router-dom';
 import PublicLayout from './layouts/PublicLayout';
 import ConsoleLayout from './layouts/ConsoleLayout';
 import RequireAuth from './components/RequireAuth';
+import { RequireAdminRole, RequireEnterpriseMember } from './components/RequireRole';
 import Landing from './pages/Landing';
 import ModelsGallery from './pages/ModelsGallery';
 import Login from './pages/auth/Login';
@@ -80,9 +81,11 @@ export default function App() {
           path="enterprise"
           element={
             <Suspense fallback={lazyFallback}>
-              <EntLayout>
-                <Outlet />
-              </EntLayout>
+              <RequireEnterpriseMember>
+                <EntLayout>
+                  <Outlet />
+                </EntLayout>
+              </RequireEnterpriseMember>
             </Suspense>
           }
         >
@@ -100,7 +103,9 @@ export default function App() {
           path="admin"
           element={
             <Suspense fallback={lazyFallback}>
-              <AdminLayout />
+              <RequireAdminRole>
+                <AdminLayout />
+              </RequireAdminRole>
             </Suspense>
           }
         >
