@@ -51,14 +51,14 @@ func (r *ProfileRoutes) getProfile(c *gin.Context) {
 
 	var id, name, email, role, timezone string
 	var balance int64
-	var phone, company *string
+	var phone, company, secondEmail *string
 	var createdAt time.Time
 
 	err := r.db.QueryRow(c.Request.Context(),
-		`SELECT id::text, name, email, phone, company, role, balance, COALESCE(timezone, 'UTC'), created_at
+		`SELECT id::text, name, email, phone, company, role, balance, COALESCE(timezone, 'UTC'), created_at, second_email
 		 FROM users WHERE id = $1::uuid AND deleted_at IS NULL`,
 		userID,
-	).Scan(&id, &name, &email, &phone, &company, &role, &balance, &timezone, &createdAt)
+	).Scan(&id, &name, &email, &phone, &company, &role, &balance, &timezone, &createdAt, &secondEmail)
 	if err != nil {
 		r.logger.Warn("Profile query failed", zap.Error(err), zap.String("user_id", userID))
 		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"message": "User not found"}})
@@ -79,6 +79,9 @@ func (r *ProfileRoutes) getProfile(c *gin.Context) {
 	}
 	if company != nil {
 		resp["company"] = *company
+	}
+	if secondEmail != nil && *secondEmail != "" {
+		resp["second_email"] = *secondEmail
 	}
 
 	c.JSON(http.StatusOK, gin.H{"user": resp})
