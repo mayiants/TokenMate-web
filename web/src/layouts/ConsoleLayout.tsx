@@ -26,6 +26,7 @@ import {
   IconHelpCircleStroked,
   IconComponent,
   IconCloudStroked,
+  IconTicketCode,
 } from '@douyinfe/semi-icons';
 import { useAuth } from '../auth/AuthContext';
 import { useI18n } from '../i18n';
@@ -73,6 +74,10 @@ const ADMIN_ITEMS = [
   { itemKey: 'admin-groups', textKey: 'admin.nav.groups', path: '/console/admin/groups', icon: <IconFolderStroked /> },
   { itemKey: 'admin-models', textKey: 'admin.nav.models', path: '/console/admin/models', icon: <IconComponent /> },
   { itemKey: 'admin-upstream', textKey: 'admin.nav.upstream', path: '/console/admin/upstream', icon: <IconCloudStroked /> },
+  { itemKey: 'admin-finance', textKey: 'admin.nav.finance', path: '/console/admin/finance', icon: <IconCreditCardStroked /> },
+  { itemKey: 'admin-ops', textKey: 'admin.nav.ops', path: '/console/admin/ops', icon: <IconTicketCode /> },
+  { itemKey: 'admin-security', textKey: 'admin.nav.security', path: '/console/admin/security', icon: <IconShieldStroked /> },
+  { itemKey: 'admin-settings', textKey: 'admin.nav.settings', path: '/console/admin/settings', icon: <IconSettingStroked /> },
 ];
 
 export default function ConsoleLayout() {

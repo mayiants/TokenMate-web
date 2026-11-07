@@ -33,9 +33,17 @@ const ADMIN_PAGES = [
   '/console/admin/groups',
   '/console/admin/models',
   '/console/admin/upstream',
+  '/console/admin/finance',
+  '/console/admin/ops',
+  '/console/admin/security',
+  '/console/admin/settings',
   '/console/admin/groups',
   '/console/admin/models',
   '/console/admin/upstream',
+  '/console/admin/finance',
+  '/console/admin/ops',
+  '/console/admin/security',
+  '/console/admin/settings',
 ];
 const CONSOLE_PAGES = [
   '/console',

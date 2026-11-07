@@ -40,6 +40,10 @@ const AdminEnterprises = lazy(() => import('./pages/admin/Enterprises'));
 const AdminGroups = lazy(() => import('./pages/admin/Groups'));
 const AdminModelsAdmin = lazy(() => import('./pages/admin/ModelsAdmin'));
 const AdminUpstream = lazy(() => import('./pages/admin/Upstream'));
+const AdminFinance = lazy(() => import('./pages/admin/Finance'));
+const AdminOps = lazy(() => import('./pages/admin/Ops'));
+const AdminSecurity = lazy(() => import('./pages/admin/Security'));
+const AdminSettings = lazy(() => import('./pages/admin/Settings'));
 
 const lazyFallback = (
   <div style={{ display: 'flex', justifyContent: 'center', padding: 96 }}>
@@ -106,6 +110,10 @@ export default function App() {
           <Route path="groups" element={<Suspense fallback={lazyFallback}><AdminGroups /></Suspense>} />
           <Route path="models" element={<Suspense fallback={lazyFallback}><AdminModelsAdmin /></Suspense>} />
           <Route path="upstream" element={<Suspense fallback={lazyFallback}><AdminUpstream /></Suspense>} />
+          <Route path="finance" element={<Suspense fallback={lazyFallback}><AdminFinance /></Suspense>} />
+          <Route path="ops" element={<Suspense fallback={lazyFallback}><AdminOps /></Suspense>} />
+          <Route path="security" element={<Suspense fallback={lazyFallback}><AdminSecurity /></Suspense>} />
+          <Route path="settings" element={<Suspense fallback={lazyFallback}><AdminSettings /></Suspense>} />
         </Route>
       </Route>
       <Route element={<PublicLayout />}>
