@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/middleware"
-	"github.com/ai-proxy/ai-portal-go/pkg/metrics"
+	"github.com/mayiants/ai-portal-go/internal/middleware"
+	"github.com/mayiants/ai-portal-go/pkg/metrics"
 	"github.com/gin-gonic/gin"
 )
 

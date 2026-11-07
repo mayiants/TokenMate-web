@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ai-proxy/ai-portal-go/internal/config"
+	"github.com/mayiants/ai-portal-go/internal/config"
 	"go.uber.org/zap"
 )
 

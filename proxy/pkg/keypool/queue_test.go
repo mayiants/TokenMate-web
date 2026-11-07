@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
-	"github.com/ai-proxy/ai-proxy-go/internal/config"
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay"
-	"github.com/ai-proxy/ai-proxy-go/types"
+	"github.com/mayiants/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/internal/config"
+	"github.com/mayiants/ai-proxy-go/pkg/relay"
+	"github.com/mayiants/ai-proxy-go/types"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )

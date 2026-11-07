@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/pkg/keypool"
+	"github.com/mayiants/ai-proxy-go/pkg/keypool"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/aws"
-	"github.com/ai-proxy/ai-portal-go/pkg/crypto"
-	"github.com/ai-proxy/ai-portal-go/pkg/validation"
+	"github.com/mayiants/ai-portal-go/internal/aws"
+	"github.com/mayiants/ai-portal-go/pkg/crypto"
+	"github.com/mayiants/ai-portal-go/pkg/validation"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

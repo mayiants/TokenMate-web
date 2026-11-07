@@ -3,9 +3,9 @@ package relay
 import (
 	"testing"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay/base"
-	"github.com/ai-proxy/ai-proxy-go/types"
+	"github.com/mayiants/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/pkg/relay/base"
+	"github.com/mayiants/ai-proxy-go/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

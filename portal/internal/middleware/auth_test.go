@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/config"
-	"github.com/ai-proxy/ai-portal-go/pkg/jwt"
+	"github.com/mayiants/ai-portal-go/internal/config"
+	"github.com/mayiants/ai-portal-go/pkg/jwt"
 	"github.com/gin-gonic/gin"
 )
 

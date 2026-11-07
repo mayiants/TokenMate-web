@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/pkg/telemetry"
+	"github.com/mayiants/ai-portal-go/pkg/telemetry"
 	"go.uber.org/zap"
 )
 

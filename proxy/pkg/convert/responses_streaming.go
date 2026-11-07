@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/dto"
 )
 
 // ResponsesStreamState tracks incremental state for OpenAI SSE → Responses SSE conversion.

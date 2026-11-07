@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
-	"github.com/ai-proxy/ai-proxy-go/internal/retention"
+	"github.com/mayiants/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/internal/retention"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )

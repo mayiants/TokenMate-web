@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/internal/middleware"
-	"github.com/ai-proxy/ai-proxy-go/pkg/circuitbreaker"
-	"github.com/ai-proxy/ai-proxy-go/pkg/metrics"
+	"github.com/mayiants/ai-proxy-go/internal/middleware"
+	"github.com/mayiants/ai-proxy-go/pkg/circuitbreaker"
+	"github.com/mayiants/ai-proxy-go/pkg/metrics"
 	"github.com/gin-gonic/gin"
 )
 

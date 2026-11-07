@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/sso"
-	"github.com/ai-proxy/ai-portal-go/internal/sso/ssotest"
+	"github.com/mayiants/ai-portal-go/internal/sso"
+	"github.com/mayiants/ai-portal-go/internal/sso/ssotest"
 	"github.com/alicebob/miniredis/v2"
 	jwtlib "github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"

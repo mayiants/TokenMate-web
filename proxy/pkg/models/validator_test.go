@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/ai-proxy/ai-proxy-go/internal/config"
+	"github.com/mayiants/ai-proxy-go/internal/config"
 	"go.uber.org/zap"
 )
 

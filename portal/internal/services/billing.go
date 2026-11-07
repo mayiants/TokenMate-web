@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
-	"github.com/ai-proxy/ai-portal-go/pkg/metrics"
+	"github.com/mayiants/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/pkg/metrics"
 	"go.uber.org/zap"
 )
 

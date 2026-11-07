@@ -3,7 +3,7 @@ package server
 import (
 	"testing"
 
-	"github.com/ai-proxy/ai-proxy-go/internal/config"
+	"github.com/mayiants/ai-proxy-go/internal/config"
 )
 
 func baseCfg() config.FailoverConfig {

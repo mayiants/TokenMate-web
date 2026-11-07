@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/db"
 )
 
 // UpstreamUsageRecordItem holds a single upstream usage record.

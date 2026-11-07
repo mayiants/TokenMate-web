@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/ai-proxy/ai-portal-go/internal/middleware"
-	"github.com/ai-proxy/ai-portal-go/internal/session"
+	"github.com/mayiants/ai-portal-go/internal/middleware"
+	"github.com/mayiants/ai-portal-go/internal/session"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

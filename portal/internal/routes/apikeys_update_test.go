@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/config"
-	"github.com/ai-proxy/ai-portal-go/internal/db"
-	"github.com/ai-proxy/ai-portal-go/pkg/audit"
+	"github.com/mayiants/ai-portal-go/internal/config"
+	"github.com/mayiants/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/pkg/audit"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

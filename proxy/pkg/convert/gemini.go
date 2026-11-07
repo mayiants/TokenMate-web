@@ -1,7 +1,7 @@
 package convert
 
 import (
-	"github.com/ai-proxy/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/dto"
 )
 
 // GeminiContent represents a single content block in Gemini format.

@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay"
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay/channel/aws"
+	"github.com/mayiants/ai-proxy-go/pkg/relay"
+	"github.com/mayiants/ai-proxy-go/pkg/relay/channel/aws"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/middleware"
-	"github.com/ai-proxy/ai-portal-go/internal/sso"
-	"github.com/ai-proxy/ai-portal-go/internal/web"
-	"github.com/ai-proxy/ai-portal-go/webui"
-	"github.com/ai-proxy/ai-portal-go/pkg/metrics"
+	"github.com/mayiants/ai-portal-go/internal/middleware"
+	"github.com/mayiants/ai-portal-go/internal/sso"
+	"github.com/mayiants/ai-portal-go/internal/web"
+	"github.com/mayiants/ai-portal-go/webui"
+	"github.com/mayiants/ai-portal-go/pkg/metrics"
 	"github.com/gin-gonic/gin"
 )
 

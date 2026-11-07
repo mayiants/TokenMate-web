@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/ai-proxy/ai-portal-go/internal/config"
+	"github.com/mayiants/ai-portal-go/internal/config"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )

@@ -15,9 +15,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
-	"github.com/ai-proxy/ai-portal-go/internal/storage"
-	"github.com/ai-proxy/ai-portal-go/pkg/audit"
+	"github.com/mayiants/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/storage"
+	"github.com/mayiants/ai-portal-go/pkg/audit"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.uber.org/zap"

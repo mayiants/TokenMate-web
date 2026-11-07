@@ -4,8 +4,8 @@ import (
 	"crypto/rand"
 	"math/big"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
-	"github.com/ai-proxy/ai-portal-go/internal/middleware"
+	"github.com/mayiants/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

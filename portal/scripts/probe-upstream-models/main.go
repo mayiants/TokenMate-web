@@ -43,7 +43,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/ai-proxy/ai-portal-go/pkg/crypto"
+	"github.com/mayiants/ai-portal-go/pkg/crypto"
 )
 
 type modelRow struct {

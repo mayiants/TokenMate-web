@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/pkg/metrics"
+	"github.com/mayiants/ai-portal-go/pkg/metrics"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"

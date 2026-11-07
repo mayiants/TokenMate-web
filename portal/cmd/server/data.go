@@ -7,9 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ai-proxy/ai-portal-go/internal/config"
-	"github.com/ai-proxy/ai-portal-go/internal/datax"
-	"github.com/ai-proxy/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/config"
+	"github.com/mayiants/ai-portal-go/internal/datax"
+	"github.com/mayiants/ai-portal-go/internal/db"
 	"go.uber.org/zap"
 )
 

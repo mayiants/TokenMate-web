@@ -5,7 +5,7 @@ package routing
 import (
 	"strings"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/dto"
 )
 
 // SceneType represents the classified intent of a user request.

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/db"
 )
 
 // ModelGroupHealthRow is an aggregated health row for a model + user group.

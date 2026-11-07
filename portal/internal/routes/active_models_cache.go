@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/db"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )

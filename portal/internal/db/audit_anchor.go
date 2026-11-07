@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/pkg/auditchain"
+	"github.com/mayiants/ai-portal-go/pkg/auditchain"
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
 )

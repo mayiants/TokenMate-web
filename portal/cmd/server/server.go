@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/pkg/telemetry"
+	"github.com/mayiants/ai-portal-go/pkg/telemetry"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

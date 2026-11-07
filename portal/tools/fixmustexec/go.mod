@@ -1,4 +1,4 @@
-module github.com/ai-proxy/ai-portal-go/tools/fixmustexec
+module github.com/mayiants/ai-portal-go/tools/fixmustexec
 
 go 1.25
 

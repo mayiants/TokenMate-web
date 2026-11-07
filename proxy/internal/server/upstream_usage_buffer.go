@@ -8,8 +8,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/pkg/billing"
-	"github.com/ai-proxy/ai-proxy-go/pkg/fallbacklog"
+	"github.com/mayiants/ai-proxy-go/pkg/billing"
+	"github.com/mayiants/ai-proxy-go/pkg/fallbacklog"
 	"go.uber.org/zap"
 )
 

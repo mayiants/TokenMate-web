@@ -3,7 +3,7 @@ package server
 import (
 	"strings"
 
-	"github.com/ai-proxy/ai-proxy-go/internal/config"
+	"github.com/mayiants/ai-proxy-go/internal/config"
 )
 
 // failoverState tracks per-request retry/failover progress. See

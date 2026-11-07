@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/internal/config"
+	"github.com/mayiants/ai-proxy-go/internal/config"
 	"go.uber.org/zap"
 )
 

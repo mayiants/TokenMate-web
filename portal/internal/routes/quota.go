@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/ai-proxy/ai-portal-go/internal/services"
+	"github.com/mayiants/ai-portal-go/internal/services"
 )
 
 // Quota unit constants

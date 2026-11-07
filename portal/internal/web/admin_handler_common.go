@@ -8,8 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/ai-proxy/ai-portal-go/internal/routes"
-	"github.com/ai-proxy/ai-portal-go/pkg/crypto"
+	"github.com/mayiants/ai-portal-go/internal/routes"
+	"github.com/mayiants/ai-portal-go/pkg/crypto"
 )
 
 // --- Admin Action Handlers ---

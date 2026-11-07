@@ -11,8 +11,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ai-proxy/ai-portal-go/internal/query"
-	"github.com/ai-proxy/ai-portal-go/web"
+	"github.com/mayiants/ai-portal-go/internal/query"
+	"github.com/mayiants/ai-portal-go/web"
 )
 
 // TestTemplatesParse verifies all registered page templates can be parsed and

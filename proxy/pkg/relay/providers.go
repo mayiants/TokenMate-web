@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay/base"
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay/channel/aws"
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay/channel/azure"
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay/channel/claude"
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay/channel/gemini"
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay/channel/openai"
-	"github.com/ai-proxy/ai-proxy-go/types"
+	"github.com/mayiants/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/pkg/relay/base"
+	"github.com/mayiants/ai-proxy-go/pkg/relay/channel/aws"
+	"github.com/mayiants/ai-proxy-go/pkg/relay/channel/azure"
+	"github.com/mayiants/ai-proxy-go/pkg/relay/channel/claude"
+	"github.com/mayiants/ai-proxy-go/pkg/relay/channel/gemini"
+	"github.com/mayiants/ai-proxy-go/pkg/relay/channel/openai"
+	"github.com/mayiants/ai-proxy-go/types"
 )
 
 // OpenAICompatibleAdaptor - OpenAI-compatible adapter for other providers

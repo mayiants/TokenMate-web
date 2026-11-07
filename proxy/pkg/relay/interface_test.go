@@ -3,7 +3,7 @@ package relay
 import (
 	"testing"
 
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay/base"
+	"github.com/mayiants/ai-proxy-go/pkg/relay/base"
 )
 
 func TestGetProviderFromModel(t *testing.T) {

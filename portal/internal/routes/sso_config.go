@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
-	"github.com/ai-proxy/ai-portal-go/internal/sso"
-	"github.com/ai-proxy/ai-portal-go/pkg/crypto"
+	"github.com/mayiants/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/sso"
+	"github.com/mayiants/ai-portal-go/pkg/crypto"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"

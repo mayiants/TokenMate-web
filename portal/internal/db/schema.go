@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ai-proxy/ai-portal-go/migrations"
+	"github.com/mayiants/ai-portal-go/migrations"
 	"go.uber.org/zap"
 )
 

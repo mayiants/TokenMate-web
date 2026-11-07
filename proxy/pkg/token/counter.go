@@ -6,8 +6,8 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
-	"github.com/ai-proxy/ai-proxy-go/types"
+	"github.com/mayiants/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/types"
 	"github.com/pkoukk/tiktoken-go"
 )
 

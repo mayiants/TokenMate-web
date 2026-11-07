@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/config"
-	"github.com/ai-proxy/ai-portal-go/pkg/i18n"
-	"github.com/ai-proxy/ai-portal-go/pkg/metrics"
+	"github.com/mayiants/ai-portal-go/internal/config"
+	"github.com/mayiants/ai-portal-go/pkg/i18n"
+	"github.com/mayiants/ai-portal-go/pkg/metrics"
 	"go.uber.org/zap"
 )
 

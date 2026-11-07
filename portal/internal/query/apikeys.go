@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/db"
 )
 
 // APIKeyItem holds a unified API key record.

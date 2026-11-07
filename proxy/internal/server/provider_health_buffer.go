@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/pkg/billing"
+	"github.com/mayiants/ai-proxy-go/pkg/billing"
 	"go.uber.org/zap"
 )
 

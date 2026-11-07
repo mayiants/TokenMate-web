@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ai-proxy/ai-portal-go/pkg/i18n"
-	"github.com/ai-proxy/ai-portal-go/web"
+	"github.com/mayiants/ai-portal-go/pkg/i18n"
+	"github.com/mayiants/ai-portal-go/web"
 )
 
 func loadTestI18n(t *testing.T) i18n.I18n {

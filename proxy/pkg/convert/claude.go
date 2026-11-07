@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/dto"
 )
 
 // RequestOpenAI2Claude converts an OpenAI-format request to Claude format.

@@ -11,10 +11,10 @@ import (
 	"sync"
 	"time"
 
-	awspkg "github.com/ai-proxy/ai-portal-go/internal/aws"
-	"github.com/ai-proxy/ai-portal-go/internal/config"
-	"github.com/ai-proxy/ai-portal-go/internal/db"
-	"github.com/ai-proxy/ai-portal-go/pkg/crypto"
+	awspkg "github.com/mayiants/ai-portal-go/internal/aws"
+	"github.com/mayiants/ai-portal-go/internal/config"
+	"github.com/mayiants/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/pkg/crypto"
 	"go.uber.org/zap"
 )
 

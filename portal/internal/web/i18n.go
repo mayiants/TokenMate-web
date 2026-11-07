@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ai-proxy/ai-portal-go/pkg/i18n"
-	"github.com/ai-proxy/ai-portal-go/web"
+	"github.com/mayiants/ai-portal-go/pkg/i18n"
+	"github.com/mayiants/ai-portal-go/web"
 )
 
 // LoadTranslations loads i18n JSON files from embedded FS.

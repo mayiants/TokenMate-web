@@ -8,11 +8,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
-	"github.com/ai-proxy/ai-proxy-go/pkg/keypool"
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay"
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay/channel/aws"
-	"github.com/ai-proxy/ai-proxy-go/pkg/token"
+	"github.com/mayiants/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/pkg/keypool"
+	"github.com/mayiants/ai-proxy-go/pkg/relay"
+	"github.com/mayiants/ai-proxy-go/pkg/relay/channel/aws"
+	"github.com/mayiants/ai-proxy-go/pkg/token"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

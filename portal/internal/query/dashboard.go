@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/db"
 )
 
 // InvoiceRequestItem holds a recent invoice for dashboard display.

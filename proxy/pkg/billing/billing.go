@@ -16,9 +16,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
-	"github.com/ai-proxy/ai-proxy-go/pkg/telemetry"
-	"github.com/ai-proxy/ai-proxy-go/types"
+	"github.com/mayiants/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/pkg/telemetry"
+	"github.com/mayiants/ai-proxy-go/types"
 )
 
 // CostBreakdown - Detailed cost breakdown

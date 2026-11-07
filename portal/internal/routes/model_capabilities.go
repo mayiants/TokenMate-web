@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/db"
 	"github.com/gin-gonic/gin"
 )
 

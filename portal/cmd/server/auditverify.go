@@ -9,10 +9,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ai-proxy/ai-portal-go/internal/config"
-	"github.com/ai-proxy/ai-portal-go/internal/db"
-	"github.com/ai-proxy/ai-portal-go/internal/routes"
-	"github.com/ai-proxy/ai-portal-go/pkg/auditchain"
+	"github.com/mayiants/ai-portal-go/internal/config"
+	"github.com/mayiants/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/routes"
+	"github.com/mayiants/ai-portal-go/pkg/auditchain"
 	"go.uber.org/zap"
 )
 

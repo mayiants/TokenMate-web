@@ -6,12 +6,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
-	"github.com/ai-proxy/ai-proxy-go/internal/config"
-	"github.com/ai-proxy/ai-proxy-go/internal/server"
-	"github.com/ai-proxy/ai-proxy-go/pkg/billing"
-	"github.com/ai-proxy/ai-proxy-go/pkg/cache"
-	"github.com/ai-proxy/ai-proxy-go/pkg/token"
+	"github.com/mayiants/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/internal/config"
+	"github.com/mayiants/ai-proxy-go/internal/server"
+	"github.com/mayiants/ai-proxy-go/pkg/billing"
+	"github.com/mayiants/ai-proxy-go/pkg/cache"
+	"github.com/mayiants/ai-proxy-go/pkg/token"
 	"go.uber.org/zap"
 )
 

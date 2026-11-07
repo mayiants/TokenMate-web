@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/internal/retention"
+	"github.com/mayiants/ai-proxy-go/internal/retention"
 	"go.uber.org/zap"
 )
 

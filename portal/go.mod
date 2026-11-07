@@ -1,4 +1,4 @@
-module github.com/ai-proxy/ai-portal-go
+module github.com/mayiants/ai-portal-go
 
 go 1.26.0
 

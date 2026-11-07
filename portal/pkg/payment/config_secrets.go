@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/ai-proxy/ai-portal-go/pkg/crypto"
+	"github.com/mayiants/ai-portal-go/pkg/crypto"
 )
 
 // gatewaySensitiveFields lists the config keys holding secrets per gateway.

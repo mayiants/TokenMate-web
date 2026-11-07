@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/pkg/metrics"
+	"github.com/mayiants/ai-proxy-go/pkg/metrics"
 	"go.uber.org/zap"
 )
 

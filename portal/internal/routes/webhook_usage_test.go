@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/pkg/metrics"
+	"github.com/mayiants/ai-portal-go/pkg/metrics"
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"

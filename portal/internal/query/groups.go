@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/db"
 )
 
 // AdminGroup holds a user group for admin display.

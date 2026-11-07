@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/testutil"
-	"github.com/ai-proxy/ai-portal-go/migrations"
-	"github.com/ai-proxy/ai-portal-go/pkg/auditchain"
+	"github.com/mayiants/ai-portal-go/internal/testutil"
+	"github.com/mayiants/ai-portal-go/migrations"
+	"github.com/mayiants/ai-portal-go/pkg/auditchain"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"

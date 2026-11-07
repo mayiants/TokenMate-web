@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay"
+	"github.com/mayiants/ai-proxy-go/pkg/relay"
 	"go.uber.org/zap"
 )
 

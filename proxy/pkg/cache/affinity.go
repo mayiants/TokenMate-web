@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
-	"github.com/ai-proxy/ai-proxy-go/pkg/metrics"
-	"github.com/ai-proxy/ai-proxy-go/types"
+	"github.com/mayiants/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/pkg/metrics"
+	"github.com/mayiants/ai-proxy-go/types"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"

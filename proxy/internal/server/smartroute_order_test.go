@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/pkg/keypool"
+	"github.com/mayiants/ai-proxy-go/pkg/keypool"
 )
 
 func mkKey(id string, failures int, lastFailure, lastSuccess, lastUsed time.Time) *keypool.KeyInternal {

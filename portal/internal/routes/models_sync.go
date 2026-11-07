@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/pkg/crypto"
+	"github.com/mayiants/ai-portal-go/pkg/crypto"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

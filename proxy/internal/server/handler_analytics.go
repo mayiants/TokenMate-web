@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/ai-proxy/ai-proxy-go/internal/retention/analytics"
+	"github.com/mayiants/ai-proxy-go/internal/retention/analytics"
 	"github.com/gin-gonic/gin"
 )
 

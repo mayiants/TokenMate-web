@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay/base"
-	"github.com/ai-proxy/ai-proxy-go/types"
+	"github.com/mayiants/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/pkg/relay/base"
+	"github.com/mayiants/ai-proxy-go/types"
 )
 
 // ClaudeAdaptor - Anthropic Claude API adapter

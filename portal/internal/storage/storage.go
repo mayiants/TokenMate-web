@@ -6,7 +6,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/config"
+	"github.com/mayiants/ai-portal-go/internal/config"
 )
 
 // UploadOptions contains metadata for an upload.

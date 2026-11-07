@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/config"
-	"github.com/ai-proxy/ai-portal-go/internal/db"
-	"github.com/ai-proxy/ai-portal-go/internal/services"
-	"github.com/ai-proxy/ai-portal-go/internal/testutil"
-	"github.com/ai-proxy/ai-portal-go/pkg/audit"
-	"github.com/ai-proxy/ai-portal-go/pkg/mail"
+	"github.com/mayiants/ai-portal-go/internal/config"
+	"github.com/mayiants/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/services"
+	"github.com/mayiants/ai-portal-go/internal/testutil"
+	"github.com/mayiants/ai-portal-go/pkg/audit"
+	"github.com/mayiants/ai-portal-go/pkg/mail"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )

@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/internal/auth"
-	"github.com/ai-proxy/ai-proxy-go/internal/config"
-	"github.com/ai-proxy/ai-proxy-go/internal/retention"
+	"github.com/mayiants/ai-proxy-go/internal/auth"
+	"github.com/mayiants/ai-proxy-go/internal/config"
+	"github.com/mayiants/ai-proxy-go/internal/retention"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

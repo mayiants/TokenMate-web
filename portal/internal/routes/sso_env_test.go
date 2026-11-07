@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/session"
-	"github.com/ai-proxy/ai-portal-go/internal/sso"
-	"github.com/ai-proxy/ai-portal-go/internal/sso/ssotest"
-	"github.com/ai-proxy/ai-portal-go/pkg/crypto"
+	"github.com/mayiants/ai-portal-go/internal/session"
+	"github.com/mayiants/ai-portal-go/internal/sso"
+	"github.com/mayiants/ai-portal-go/internal/sso/ssotest"
+	"github.com/mayiants/ai-portal-go/pkg/crypto"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )

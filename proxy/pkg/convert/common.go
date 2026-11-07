@@ -3,7 +3,7 @@ package convert
 import (
 	"fmt"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/dto"
 )
 
 // RoleMapping defines bidirectional role conversions between formats.

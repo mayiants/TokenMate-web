@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ai-proxy/ai-portal-go/internal/middleware"
+	"github.com/mayiants/ai-portal-go/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

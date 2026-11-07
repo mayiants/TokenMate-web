@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
-	"github.com/ai-proxy/ai-portal-go/internal/middleware"
+	"github.com/mayiants/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"

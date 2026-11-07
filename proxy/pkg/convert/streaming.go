@@ -7,7 +7,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/dto"
 )
 
 // AnthropicStreamState tracks incremental state for OpenAI SSE → Anthropic SSE conversion

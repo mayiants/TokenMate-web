@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/db"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"

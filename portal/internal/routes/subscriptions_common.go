@@ -3,9 +3,9 @@ package routes
 import (
 	"strconv"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
-	"github.com/ai-proxy/ai-portal-go/internal/middleware"
-	"github.com/ai-proxy/ai-portal-go/pkg/audit"
+	"github.com/mayiants/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/middleware"
+	"github.com/mayiants/ai-portal-go/pkg/audit"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

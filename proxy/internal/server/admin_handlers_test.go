@@ -8,9 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/ai-proxy/ai-proxy-go/internal/auth"
-	"github.com/ai-proxy/ai-proxy-go/internal/config"
-	"github.com/ai-proxy/ai-proxy-go/pkg/keypool"
+	"github.com/mayiants/ai-proxy-go/internal/auth"
+	"github.com/mayiants/ai-proxy-go/internal/config"
+	"github.com/mayiants/ai-proxy-go/pkg/keypool"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

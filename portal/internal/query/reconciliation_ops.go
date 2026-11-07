@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
-	"github.com/ai-proxy/ai-portal-go/internal/services"
+	"github.com/mayiants/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/services"
 )
 
 // ReconciliationPeriod represents a supported shortcut or custom range.

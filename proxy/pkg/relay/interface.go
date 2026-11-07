@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay/base"
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay/channel/aws"
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay/channel/azure"
-	"github.com/ai-proxy/ai-proxy-go/types"
+	"github.com/mayiants/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/pkg/relay/base"
+	"github.com/mayiants/ai-proxy-go/pkg/relay/channel/aws"
+	"github.com/mayiants/ai-proxy-go/pkg/relay/channel/azure"
+	"github.com/mayiants/ai-proxy-go/types"
 )
 
 // Adaptor - Provider adapter interface

@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/pkg/billing"
-	"github.com/ai-proxy/ai-proxy-go/pkg/geoip"
-	"github.com/ai-proxy/ai-proxy-go/pkg/metrics"
+	"github.com/mayiants/ai-proxy-go/pkg/billing"
+	"github.com/mayiants/ai-proxy-go/pkg/geoip"
+	"github.com/mayiants/ai-proxy-go/pkg/metrics"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.uber.org/zap"

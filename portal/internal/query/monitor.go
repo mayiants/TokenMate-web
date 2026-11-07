@@ -5,7 +5,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/db"
 )
 
 // UpstreamKeyStatus holds upstream key monitoring data.

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
-	"github.com/ai-proxy/ai-portal-go/pkg/i18n"
-	"github.com/ai-proxy/ai-portal-go/pkg/notify"
+	"github.com/mayiants/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/pkg/i18n"
+	"github.com/mayiants/ai-portal-go/pkg/notify"
 	"go.uber.org/zap"
 )
 

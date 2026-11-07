@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/query"
+	"github.com/mayiants/ai-portal-go/internal/query"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

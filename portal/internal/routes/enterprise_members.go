@@ -10,8 +10,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/ai-proxy/ai-portal-go/pkg/crypto"
-	"github.com/ai-proxy/ai-portal-go/web"
+	"github.com/mayiants/ai-portal-go/pkg/crypto"
+	"github.com/mayiants/ai-portal-go/web"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"

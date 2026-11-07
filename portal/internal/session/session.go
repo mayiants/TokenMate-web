@@ -22,9 +22,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
-	"github.com/ai-proxy/ai-portal-go/pkg/audit"
-	"github.com/ai-proxy/ai-portal-go/pkg/jwt"
+	"github.com/mayiants/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/pkg/audit"
+	"github.com/mayiants/ai-portal-go/pkg/jwt"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 )

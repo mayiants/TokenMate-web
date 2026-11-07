@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ai-proxy/ai-portal-go/pkg/i18n"
-	"github.com/ai-proxy/ai-portal-go/web"
+	"github.com/mayiants/ai-portal-go/pkg/i18n"
+	"github.com/mayiants/ai-portal-go/web"
 	"github.com/gin-gonic/gin"
 )
 

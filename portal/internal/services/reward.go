@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
-	"github.com/ai-proxy/ai-portal-go/pkg/audit"
+	"github.com/mayiants/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/pkg/audit"
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
 )

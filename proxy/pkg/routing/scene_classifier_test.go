@@ -3,7 +3,7 @@ package routing
 import (
 	"testing"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/dto"
 	"github.com/stretchr/testify/assert"
 )
 

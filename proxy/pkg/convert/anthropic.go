@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/dto"
 )
 
 // AnthropicRequest represents Anthropic Messages API request format

@@ -3,7 +3,7 @@ package server
 import (
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/pkg/metrics"
+	"github.com/mayiants/ai-proxy-go/pkg/metrics"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

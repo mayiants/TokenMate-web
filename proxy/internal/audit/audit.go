@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/internal/config"
-	"github.com/ai-proxy/ai-proxy-go/pkg/telemetry"
+	"github.com/mayiants/ai-proxy-go/internal/config"
+	"github.com/mayiants/ai-proxy-go/pkg/telemetry"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )

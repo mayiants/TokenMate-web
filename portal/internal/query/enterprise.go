@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/db"
 )
 
 // AdminEnterprise is an enterprise row for the admin list

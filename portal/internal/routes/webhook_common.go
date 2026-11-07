@@ -13,12 +13,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/config"
-	"github.com/ai-proxy/ai-portal-go/internal/db"
-	"github.com/ai-proxy/ai-portal-go/internal/services"
-	"github.com/ai-proxy/ai-portal-go/pkg/mail"
-	"github.com/ai-proxy/ai-portal-go/pkg/metrics"
-	"github.com/ai-proxy/ai-portal-go/pkg/telemetry"
+	"github.com/mayiants/ai-portal-go/internal/config"
+	"github.com/mayiants/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/services"
+	"github.com/mayiants/ai-portal-go/pkg/mail"
+	"github.com/mayiants/ai-portal-go/pkg/metrics"
+	"github.com/mayiants/ai-portal-go/pkg/telemetry"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

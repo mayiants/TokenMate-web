@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"github.com/ai-proxy/ai-portal-go/pkg/audit"
+	"github.com/mayiants/ai-portal-go/pkg/audit"
 	"github.com/gin-gonic/gin"
 )
 

@@ -1,4 +1,4 @@
-module github.com/ai-proxy/ai-proxy-go
+module github.com/mayiants/ai-proxy-go
 
 go 1.26.0
 

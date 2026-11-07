@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/internal/audit"
+	"github.com/mayiants/ai-proxy-go/internal/audit"
 	"github.com/gin-gonic/gin"
 )
 

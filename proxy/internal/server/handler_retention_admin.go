@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ai-proxy/ai-proxy-go/internal/retention"
+	"github.com/mayiants/ai-proxy-go/internal/retention"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

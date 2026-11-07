@@ -3,7 +3,7 @@ package server
 import (
 	"net/http"
 
-	"github.com/ai-proxy/ai-proxy-go/pkg/models"
+	"github.com/mayiants/ai-proxy-go/pkg/models"
 	"github.com/gin-gonic/gin"
 )
 

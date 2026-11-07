@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ai-proxy/ai-proxy-go/pkg/token"
+	"github.com/mayiants/ai-proxy-go/pkg/token"
 )
 
 // Bedrock embeddings support (InvokeModel, not Converse).

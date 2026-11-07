@@ -12,10 +12,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 
-	"github.com/ai-proxy/ai-portal-go/internal/config"
-	"github.com/ai-proxy/ai-portal-go/internal/db"
-	"github.com/ai-proxy/ai-portal-go/internal/middleware"
-	"github.com/ai-proxy/ai-portal-go/internal/testutil"
+	"github.com/mayiants/ai-portal-go/internal/config"
+	"github.com/mayiants/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/middleware"
+	"github.com/mayiants/ai-portal-go/internal/testutil"
 )
 
 func usageExportDB(t *testing.T) *db.DB {

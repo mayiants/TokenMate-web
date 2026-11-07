@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/routes"
+	"github.com/mayiants/ai-portal-go/internal/routes"
 	"go.uber.org/zap"
 )
 

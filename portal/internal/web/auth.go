@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ai-proxy/ai-portal-go/internal/routes"
-	"github.com/ai-proxy/ai-portal-go/internal/session"
-	"github.com/ai-proxy/ai-portal-go/pkg/metrics"
+	"github.com/mayiants/ai-portal-go/internal/routes"
+	"github.com/mayiants/ai-portal-go/internal/session"
+	"github.com/mayiants/ai-portal-go/pkg/metrics"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

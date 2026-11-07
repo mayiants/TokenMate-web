@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
-	"github.com/ai-proxy/ai-proxy-go/pkg/telemetry"
+	"github.com/mayiants/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/pkg/telemetry"
 )
 
 // --- Pre-consume Scheme A: Freeze + Charge-on-Timeout ---

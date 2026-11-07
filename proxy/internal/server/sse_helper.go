@@ -1,9 +1,9 @@
 package server
 
 import (
-	"github.com/ai-proxy/ai-proxy-go/pkg/relay"
-	"github.com/ai-proxy/ai-proxy-go/pkg/sse"
-	"github.com/ai-proxy/ai-proxy-go/types"
+	"github.com/mayiants/ai-proxy-go/pkg/relay"
+	"github.com/mayiants/ai-proxy-go/pkg/sse"
+	"github.com/mayiants/ai-proxy-go/types"
 )
 
 // sseFormatForAdaptor maps a relay adaptor's output format to the SSE parser dialect.

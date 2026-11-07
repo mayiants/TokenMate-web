@@ -3,7 +3,7 @@ package billing
 import (
 	"testing"
 
-	"github.com/ai-proxy/ai-proxy-go/types"
+	"github.com/mayiants/ai-proxy-go/types"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"sync"
 
-	"github.com/ai-proxy/ai-proxy-go/dto"
+	"github.com/mayiants/ai-proxy-go/dto"
 )
 
 // Pool is a thin generic wrapper around sync.Pool.

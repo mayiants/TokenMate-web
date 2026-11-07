@@ -3,7 +3,7 @@ package query
 import (
 	"context"
 
-	"github.com/ai-proxy/ai-portal-go/internal/db"
+	"github.com/mayiants/ai-portal-go/internal/db"
 )
 
 // ProviderHealthItem holds provider health data for admin display.
