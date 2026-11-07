@@ -11,10 +11,11 @@ import {
   Tag,
   Toast,
 } from '@douyinfe/semi-ui';
-import { IconExport, IconRefresh, IconSearch } from '@douyinfe/semi-icons';
+import { IconExport, IconLock, IconRefresh, IconSearch } from '@douyinfe/semi-icons';
 import PageHead from '../../components/PageHead';
 import dangerConfirm from '../../components/dangerConfirm';
 import { useI18n } from '../../i18n';
+import { getAdminModeCached } from '../../api/admin';
 import { formatDateTime, formatNumber } from '../../api/console';
 import {
   anonymizePendingDeletion,
@@ -57,6 +58,20 @@ const CATEGORY_COLORS: Record<string, 'blue' | 'green' | 'orange' | 'violet' | '
 export default function AdminSecurity() {
   const { t } = useI18n();
   const [tab, setTab] = useState<TabKey>('audit');
+  // The compliance tab reads super-admin-only endpoints (retention defaults,
+  // GDPR export requests, pending deletions) — gate the whole tab so a
+  // system_admin sees an explicit lock instead of silently empty cards.
+  const [isSuper, setIsSuper] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getAdminModeCached()
+      .then((m) => !cancelled && setIsSuper(m.userRole === 'super_admin'))
+      .catch(() => !cancelled && setIsSuper(false));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // audit
   const [logs, setLogs] = useState<AdminAuditLog[] | null>(null);
@@ -116,6 +131,7 @@ export default function AdminSecurity() {
   );
 
   const loadCompliance = useCallback(async () => {
+    if (!isSuper) return;
     setCompLoading(true);
     try {
       const [ret, exp, del] = await Promise.all([
@@ -135,7 +151,7 @@ export default function AdminSecurity() {
     } finally {
       setCompLoading(false);
     }
-  }, []);
+  }, [isSuper]);
 
   useEffect(() => {
     loadAudit(1);
@@ -456,6 +472,32 @@ export default function AdminSecurity() {
         </Tabs.TabPane>
 
         <Tabs.TabPane itemKey="compliance" tab={t('admin.security.tab.compliance')}>
+          {!isSuper ? (
+            <div className="wg-pro-card">
+              <div className="wg-pro-card-body">
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '48px 16px',
+                    textAlign: 'center',
+                  }}
+                >
+                  <IconLock size="large" style={{ color: 'var(--wg-text-2)' }} />
+                  <div style={{ fontWeight: 600 }}>{t('admin.security.superOnly.title')}</div>
+                  <div className="wg-cell-dim" style={{ maxWidth: 420 }}>
+                    {t('admin.security.superOnly.hint')}
+                  </div>
+                  <Tag color="red" size="small">
+                    {t('profile.role.super_admin')}
+                  </Tag>
+                </div>
+              </div>
+            </div>
+          ) : (
+          <>
           <div className="wg-stat-grid">
             <StatCard
               label={t('admin.security.comp.kpi.retention')}
@@ -531,6 +573,8 @@ export default function AdminSecurity() {
               empty={<Empty description={t('admin.security.comp.deletion.empty')} />}
             />
           </div>
+          </>
+          )}
         </Tabs.TabPane>
       </Tabs>
 

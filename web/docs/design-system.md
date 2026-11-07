@@ -58,3 +58,19 @@ Landing/ModelsGallery 无 CRUD：条件控件（搜索）居左优先，视图�
 
 - 所有用户可见文案 `t('key')`，支持 `{var}` 插值；zh/en 键集合必须一致（`npm run check:i18n` 门禁）
 - en 值不得含中文字符（门禁检查）
+
+## 7. 抽屉/表单布局标准（2026-11-07 起，对齐 arco-design-pro / ant-design-pro 通行模式）
+
+调研结论：Semi 官方无活跃 Pro 模板（semi-pro 已下架），社区模板（resemi/resemi-admin 等）偏脚手架无页面密度参考；arco-design-pro（字节同门）与 ant-design-pro 的 CRUD 页面模式与 Semi 组件完全兼容，采纳其布局通则。不动 topbar / 侧栏导航 / 底栏，只规范页面内容与浮层。
+
+| 场景 | 规格 |
+|---|---|
+| 短值字段（数字/单选/日期/开关/短文本） | **两列并排**（`.wg-field-grid` / `.wg-form-grid`，<640px 自动单列） |
+| 长值字段（URL、多行文本、多选模型、单选卡片组、药丸组） | 整行；`.wg-field-grid` 内自动 span（`:has` 规则），其余手动加 `.wg-field-span` |
+| Drawer 宽度 | 简单编辑 480–560px；创建/复杂表单 `min(600px, 90vw)`；>6 个字段分节（DrawerSections） |
+| Modal | 居中 480px，页脚按钮右对齐；危险确认红钮（dangerConfirm） |
+| 表单分区 | 抽屉内低频字段折叠（DrawerSections），主路径字段不折叠 |
+| 页面内容 | 统计卡一行（wg-stat-grid）→ 过滤条（条件左/操作右）→ 表格卡；详情用 2–4 列 Meta 栅格（wg-key-meta-grid 模式） |
+| 密度 | 字段间距 14–16px；label 与控件间距 6px；hint 12px `--wg-text-2` 紧随控件 |
+
+CRUD 一律 Drawer（见 3.1），抽屉内字段禁止再"一行一个"全宽堆叠——这是本次布局整改的核心规则。

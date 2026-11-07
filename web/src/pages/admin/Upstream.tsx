@@ -709,7 +709,7 @@ function ProviderDrawer({
           <Input value={type} onChange={setType} />
         </div>
 
-        <div className="wg-form-field">
+        <div className="wg-form-field wg-field-span">
           <label className="wg-form-label">{t('admin.upstream.field.baseUrl')}</label>
           <Input value={baseUrl} onChange={setBaseUrl} placeholder="https://api.example.com/v1" />
         </div>

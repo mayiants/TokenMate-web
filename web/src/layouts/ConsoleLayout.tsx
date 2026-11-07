@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Avatar, Button, Dropdown, Nav, Tooltip } from '@douyinfe/semi-ui';
+import { Avatar, Button, Dropdown, Nav, Tag, Tooltip } from '@douyinfe/semi-ui';
 import {
   IconBellStroked,
   IconCalendarClockStroked,
@@ -214,7 +214,6 @@ export default function ConsoleLayout() {
           }}
         />
         <div className="wg-console-sider-bottom">
-          <span className="wg-build-tag" title="build tag">{__BUILD_TAG__}</span>
           <Tooltip content={t('common.language')} position="right">
             <Button
               icon={<IconLanguage />}
@@ -252,6 +251,39 @@ export default function ConsoleLayout() {
             position="bottomRight"
             render={
               <Dropdown.Menu>
+                <Dropdown.Item disabled>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, maxWidth: 220 }}>
+                    <span
+                      style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {displayName}
+                    </span>
+                    {user?.role && user.role !== 'user' && (
+                      <Tag
+                        size="small"
+                        color={
+                          user.role === 'super_admin'
+                            ? 'red'
+                            : user.role === 'system_admin'
+                              ? 'violet'
+                              : 'blue'
+                        }
+                      >
+                        {(() => {
+                          const key = `profile.role.${user.role}`;
+                          const v = t(key);
+                          return v === key ? user.role : v;
+                        })()}
+                      </Tag>
+                    )}
+                  </div>
+                </Dropdown.Item>
+                <Dropdown.Divider />
                 {USER_MENU_ITEMS.map((i) => (
                   <Dropdown.Item key={i.itemKey} icon={i.icon} onClick={() => navigate(i.path)}>
                     {t(i.textKey)}

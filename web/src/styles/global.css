@@ -1730,6 +1730,28 @@ body.theme-dark .wg-endpoint-method {
   padding: 4px 8px;
   overflow-y: auto;
   overflow-x: hidden;
+  /* Thin, theme-aware scrollbar — the native wide bar rendered white in dark
+     mode and covered half of the icons when the sider was collapsed. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--wg-text-2) transparent;
+}
+.wg-console-nav::-webkit-scrollbar {
+  width: 5px;
+}
+.wg-console-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.wg-console-nav::-webkit-scrollbar-thumb {
+  background: var(--wg-text-2);
+  border-radius: 3px;
+}
+/* Collapsed sider: keep the list scrollable but hide the scrollbar gutter so
+   it never covers the centered icons. */
+.wg-console-collapsed .wg-console-nav {
+  scrollbar-width: none;
+}
+.wg-console-collapsed .wg-console-nav::-webkit-scrollbar {
+  width: 0;
 }
 
 .wg-console-sider-bottom {
@@ -1813,10 +1835,6 @@ body.theme-dark .wg-endpoint-method {
     gap: 6px;
     padding: 8px 0;
   }
-  .wg-build-tag {
-    display: none;
-  }
-
   .wg-console-sider .wg-logo-text,
   .wg-console-sider .semi-navigation-item-text {
     display: none;
@@ -2751,10 +2769,44 @@ body.theme-dark .wg-tint-violet {
   }
 }
 
+/* Drawer form layout standard (aligned with arco-design-pro / ant-design-pro
+   patterns, applied to our Semi components): fields pair up in two columns;
+   only genuinely long fields span the full row. Multi-selects, pill/radio-card
+   groups and textareas span automatically; use .wg-field-span for the rest. */
 .wg-field-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 16px;
+  row-gap: 14px;
+}
+.wg-field-grid > .wg-form-field:has(.semi-select-multiple),
+.wg-field-grid > .wg-form-field:has(.wg-keytype-grid),
+.wg-field-grid > .wg-form-field:has(.wg-form-pills),
+.wg-field-grid > .wg-form-field:has(.wg-radio-chips),
+.wg-field-grid > .wg-form-field:has(textarea),
+.wg-field-grid > .wg-form-field.wg-field-span {
+  grid-column: 1 / -1;
+}
+@media (max-width: 640px) {
+  .wg-field-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Standalone two-column pair for hand-rolled drawer bodies (KeyDrawer etc.) */
+.wg-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 16px;
+  row-gap: 14px;
+}
+.wg-form-grid > .wg-form-field-full {
+  grid-column: 1 / -1;
+}
+@media (max-width: 640px) {
+  .wg-form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 button.wg-model-name-btn {
@@ -2862,13 +2914,6 @@ body.theme-dark {
   --semi-color-text-0: #e8eaed;
   --semi-color-text-1: #c9cdd3;
   --semi-color-text-2: #a8adb5;
-}
-
-.wg-build-tag {
-  font-size: 10px;
-  color: var(--wg-text-3, #8f959e);
-  font-family: var(--wg-font-mono, monospace);
-  user-select: none;
 }
 
 /* The sider is one chrome column: Semi Nav paints its own --semi-color-bg-1

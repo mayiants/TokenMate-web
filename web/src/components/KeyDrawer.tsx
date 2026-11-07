@@ -380,7 +380,7 @@ export default function KeyDrawer({ visible, mode, keyData, modelOptions, onClos
     desc: t('keys.drawer.limitsDesc'),
     tip: t('keys.drawer.rpmTip'),
     children: isCreate ? (
-      <>
+      <div className="wg-form-grid">
         <div className="wg-form-field">
           <label className="wg-form-label" htmlFor="wg-key-rpm">
             {t('keys.drawer.rpm')}
@@ -419,7 +419,7 @@ export default function KeyDrawer({ visible, mode, keyData, modelOptions, onClos
             style={{ width: '100%' }}
           />
         </div>
-      </>
+      </div>
     ) : (
       <>
         <div className="wg-key-meta-grid">

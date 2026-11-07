@@ -10,6 +10,7 @@ import {
 } from '@douyinfe/semi-icons';
 import PageHead from '../../components/PageHead';
 import dangerConfirm from '../../components/dangerConfirm';
+import ContactCard from './ContactCard';
 import { useI18n } from '../../i18n';
 import { setToken } from '../../api/client';
 import {
@@ -309,6 +310,8 @@ export default function Profile() {
               </div>
             </div>
           </section>
+
+          <ContactCard profile={profile} onChanged={setProfile} />
 
           <section className="wg-pro-card">
             <div className="wg-pro-card-head">

@@ -12,8 +12,8 @@ import purgecss from '@fullhuman/postcss-purgecss';
 // a class inventory + visual diff harness.
 const purgeDisabled = undefined;
 
-// Visible build tag: rendered in the sider bottom bar so reviewers can
-// always tell WHICH build their browser actually loaded (cache disputes).
+// Visible build tag removed from the sider (reviewer confusion) — the define
+// stays so external tooling can still inject a build identifier if needed.
 const BUILD_TAG = process.env.BUILD_TAG || Date.now().toString(36);
 
 export default defineConfig({

@@ -15,6 +15,7 @@ export interface ProfileUser {
   timezone?: string;
   phone?: string;
   company?: string;
+  second_email?: string;
   created_at?: string;
 }
 
@@ -70,5 +71,55 @@ export async function requestDataDeletion(): Promise<{ message?: string }> {
   return request<{ message?: string }>('/api/gdpr/delete', {
     method: 'POST',
     body: { confirm: 'DELETE_MY_DATA' },
+  });
+}
+
+// Contact changes — verification-code flows (internal/routes/profile.go).
+// Phone codes are not deliverable yet (no SMS gateway): the backend rejects
+// send-change-code with type=phone.
+export async function sendChangeCode(type: 'email' | 'phone', value: string): Promise<void> {
+  await request<{ success: boolean }>('/api/profile/send-change-code', {
+    method: 'POST',
+    body: { type, value },
+  });
+}
+
+export async function changeEmail(payload: {
+  new_email: string;
+  verification_code: string;
+  password: string;
+}): Promise<void> {
+  await request<{ success: boolean }>('/api/profile/change-email', {
+    method: 'PATCH',
+    body: payload,
+  });
+}
+
+export async function changePhone(payload: {
+  new_phone: string;
+  verification_code: string;
+  password: string;
+}): Promise<void> {
+  await request<{ success: boolean }>('/api/profile/change-phone', {
+    method: 'PATCH',
+    body: payload,
+  });
+}
+
+export async function sendBackupEmailCode(email: string): Promise<void> {
+  await request<{ success: boolean }>('/api/profile/send-backup-email-code', {
+    method: 'POST',
+    body: { email },
+  });
+}
+
+export async function changeBackupEmail(payload: {
+  new_email: string;
+  verification_code: string;
+  password: string;
+}): Promise<void> {
+  await request<{ success: boolean }>('/api/profile/change-backup-email', {
+    method: 'PATCH',
+    body: payload,
   });
 }
