@@ -7,13 +7,15 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --outDir dist-preview",
+    "serve:dist": "vite preview --outDir dist",
     "check:i18n": "node e2e/check-i18n.cjs",
-    "check:a11y": "node e2e/scan-a11y-axe.cjs --gate && CHECK_ROLE=admin node e2e/scan-a11y-axe.cjs --gate",
-    "check:console": "node e2e/scan-console-errors.cjs --gate && CHECK_ROLE=admin node e2e/scan-console-errors.cjs --gate",
+    "check:a11y": "node e2e/scan-a11y-axe.cjs --gate && node e2e/scan-a11y-axe.cjs --gate --role=admin",
+    "check:console": "node e2e/scan-console-errors.cjs --gate && node e2e/scan-console-errors.cjs --gate --role=admin",
     "check:lighthouse": "node e2e/scan-lighthouse.cjs --gate",
-    "check:ui": "npm run check:i18n && npm run check:console && npm run check:a11y && npm run check:responsive",
+    "check:ui": "npm run check:i18n && npm run check:console && npm run check:a11y && npm run check:responsive && npm run check:lighthouse",
+    "check:ui:public": "node e2e/check-i18n.cjs && node e2e/scan-console-errors.cjs --gate --public && node e2e/scan-a11y-axe.cjs --gate --public && node e2e/check-responsive.cjs --gate --public && node e2e/scan-lighthouse.cjs --gate",
     "publish": "npm run build && rsync -a --delete dist/ dist-preview/",
-    "check:responsive": "node e2e/check-responsive.cjs --gate && CHECK_ROLE=admin node e2e/check-responsive.cjs --gate"
+    "check:responsive": "node e2e/check-responsive.cjs --gate && node e2e/check-responsive.cjs --gate --role=admin"
   },
   "dependencies": {
     "@douyinfe/semi-icons": "^2.75.0",

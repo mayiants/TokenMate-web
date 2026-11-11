@@ -16,27 +16,31 @@ const purgeDisabled = undefined;
 // stays so external tooling can still inject a build identifier if needed.
 const BUILD_TAG = process.env.BUILD_TAG || Date.now().toString(36);
 
+// Backend the dev/preview server proxies /api to. Overridable so a CI runner or
+// an alternate environment can point the UI gates at another portal instance.
+const API_TARGET = process.env.API_TARGET || 'http://127.0.0.1:3001';
+
 export default defineConfig({
   define: {
     __BUILD_TAG__: JSON.stringify(BUILD_TAG),
   },
   plugins: [react()],
   server: {
-    host: '127.0.0.1',
-    port: 5173,
+    host: process.env.HOST || '127.0.0.1',
+    port: Number(process.env.PORT) || 5173,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:3001',
+        target: API_TARGET,
         changeOrigin: true,
       },
     },
   },
   preview: {
-    host: '127.0.0.1',
-    port: 4174,
+    host: process.env.HOST || '127.0.0.1',
+    port: Number(process.env.PREVIEW_PORT) || 4174,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:3001',
+        target: API_TARGET,
         changeOrigin: true,
       },
     },

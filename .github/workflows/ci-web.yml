@@ -1,0 +1,119 @@
+name: web-ui-gates
+
+# UI gates for the React SPA, mirroring the requirements portal CI enforces:
+# typecheck+build, i18n key parity, axe (wcag2a/aa, serious+critical = fail),
+# console/network errors, responsive overflow and Lighthouse thresholds.
+#
+# Public-page gates run on every PR (no backend needed). The authenticated
+# half needs a portal API behind the /api proxy, so it runs on demand against
+# a reachable environment (workflow_dispatch) with credentials from secrets.
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/ci-web.yml'
+  pull_request:
+    paths:
+      - 'web/**'
+      - '.github/workflows/ci-web.yml'
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Base URL of an environment whose /api proxy reaches a portal API'
+        required: false
+      email:
+        description: 'Account for the authenticated scans (admin set)'
+        required: false
+
+defaults:
+  run:
+    working-directory: web
+
+jobs:
+  build-and-public-gates:
+    name: build + i18n + axe + console + responsive + lighthouse (public pages)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck + build
+        run: npm run build
+
+      - name: i18n gate (zh/en parity, no untranslated keys)
+        run: npm run check:i18n
+
+      - name: Install Playwright chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Serve production build
+        run: |
+          npx vite preview --outDir dist --host 127.0.0.1 --port 4174 &
+          for i in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:4174 >/dev/null; then echo "preview up"; break; fi
+            sleep 1
+          done
+
+      - name: UI gates (public pages)
+        env:
+          CHECK_BASE: http://127.0.0.1:4174
+        run: npm run check:ui:public
+
+  authenticated-gates:
+    name: axe + console + responsive (authenticated, needs an environment)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.base_url != ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: axe (user console, then admin console)
+        env:
+          CHECK_BASE: ${{ inputs.base_url }}
+          CHECK_EMAIL: ${{ secrets.CHECK_EMAIL }}
+          CHECK_PASSWORD: ${{ secrets.CHECK_PASSWORD }}
+        run: npm run check:a11y
+
+      - name: console / network errors
+        env:
+          CHECK_BASE: ${{ inputs.base_url }}
+          CHECK_EMAIL: ${{ secrets.CHECK_EMAIL }}
+          CHECK_PASSWORD: ${{ secrets.CHECK_PASSWORD }}
+        run: npm run check:console
+
+      - name: responsive overflow
+        env:
+          CHECK_BASE: ${{ inputs.base_url }}
+          CHECK_EMAIL: ${{ secrets.CHECK_EMAIL }}
+          CHECK_PASSWORD: ${{ secrets.CHECK_PASSWORD }}
+          SHOTS_DIR: ${{ runner.temp }}/responsive
+        run: npm run check:responsive
+
+      - name: Upload responsive screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: responsive-screenshots
+          path: ${{ runner.temp }}/responsive
+          if-no-files-found: ignore

@@ -1,52 +1,27 @@
 // Console/network error scan — ported from ai-portal-go e2e/scan-console-errors.js.
-// Gate mode exits 1 when any JS error, console.error, or failed API request is seen.
+// Gate mode exits 1 when any JS error, console.error, or failed API request is seen,
+// and also when the authenticated half could not log in (a silently-logged-out
+// run would otherwise scan only the login page and report zero errors).
 const { chromium } = require('playwright');
+const { PUBLIC_PAGES, CONSOLE_PAGES, ADMIN_PAGES } = require('./pages.cjs');
+
 const BASE = process.env.CHECK_BASE || 'http://127.0.0.1:9090';
 const GATE = process.argv.includes('--gate');
+// --public (or CHECK_PUBLIC_ONLY=1): run the public-page half only, for CI
+// environments that have no portal API behind the /api proxy.
+const PUBLIC_ONLY = process.env.CHECK_PUBLIC_ONLY === '1' || process.argv.includes('--public');
 // CHECK_ROLE=enterprise|admin selects which page set (and default account) to scan.
-const ROLE = process.env.CHECK_ROLE || 'enterprise';
+const ROLE =
+  process.env.CHECK_ROLE ||
+  (process.argv.find((a) => a.startsWith('--role=')) || '').split('=')[1] ||
+  'enterprise';
 const ACCOUNT = {
   email:
     process.env.CHECK_EMAIL ||
-    (process.env.CHECK_ROLE === 'admin' ? 'sysview@test.local' : 'p2review@test.local'),
+    (ROLE === 'admin' ? 'sysview@test.local' : 'p2review@test.local'),
   password:
-    process.env.CHECK_PASSWORD || (process.env.CHECK_ROLE === 'admin' ? 'SysView#2026' : 'WgTest#2026'),
+    process.env.CHECK_PASSWORD || (ROLE === 'admin' ? 'SysView#2026' : 'WgTest#2026'),
 };
-const ADMIN_PAGES = [
-  '/console/admin',
-  '/console/admin/users',
-  '/console/admin/enterprises',
-  '/console/admin/groups',
-  '/console/admin/models',
-  '/console/admin/upstream',
-  '/console/admin/finance',
-  '/console/admin/ops',
-  '/console/admin/security',
-  '/console/admin/settings',
-  '/console/admin/groups',
-  '/console/admin/models',
-  '/console/admin/upstream',
-  '/console/admin/finance',
-  '/console/admin/ops',
-  '/console/admin/security',
-  '/console/admin/settings',
-];
-const USER_PAGES = [
-  '/console',
-  '/console/keys',
-  '/console/logs',
-  '/console/balance',
-  '/console/profile',
-  '/console/notifications',
-  '/console/support',
-  '/console/billing',
-  '/console/subscriptions',
-  '/console/groups',
-  '/console/status',
-  '/console/enterprise',
-  '/console/enterprise/audit',
-  '/console/enterprise/alerts',
-];
 
 (async () => {
   const browser = await chromium.launch();
@@ -71,11 +46,26 @@ const USER_PAGES = [
     }
   });
 
-  // Public pages first (same for both roles), then login, then role pages.
-  for (const p of USER_PAGES.slice(0, 5)) {
+  // Public pages first.
+  for (const p of PUBLIC_PAGES) {
     await page.goto(BASE + p, { waitUntil: 'networkidle', timeout: 45000 }).catch(() => {});
     await page.waitForTimeout(1200);
   }
+
+  // CHECK_PUBLIC_ONLY=1: no backend available — public pages only, no login.
+  if (PUBLIC_ONLY) {
+    await browser.close();
+    const publicTotal = errors.js.length + errors.console.length + errors.network.length;
+    for (const [k, list] of Object.entries(errors)) {
+      for (const e of list.slice(0, 10)) console.log(`[${k}] ${e}`);
+    }
+    console.log(
+      `console scan (public only): js=${errors.js.length} console=${errors.console.length} network=${errors.network.length}`
+    );
+    if (GATE && publicTotal) process.exit(1);
+    return;
+  }
+
   await page.goto(BASE + '/login', { waitUntil: 'networkidle' }).catch(() => {});
   await page.waitForTimeout(2500);
   const emailInput = page.locator('input').nth(0);
@@ -86,10 +76,20 @@ const USER_PAGES = [
     await page.click('button[type="submit"]').catch(() => {});
     await page.waitForTimeout(6000);
   }
-  const postLogin = ROLE === 'admin' ? ADMIN_PAGES : USER_PAGES.slice(5);
-  for (const p of postLogin) {
-    await page.goto(BASE + p, { waitUntil: 'networkidle', timeout: 45000 }).catch(() => {});
-    await page.waitForTimeout(1200);
+
+  const authed = !page.url().includes('/login');
+  if (!authed) {
+    console.log(
+      `! login as ${ACCOUNT.email} failed — authenticated pages NOT scanned. ` +
+        'Point CHECK_BASE at a server whose /api proxy reaches a running portal API.'
+    );
+  } else {
+    const pages = ROLE === 'admin' ? ADMIN_PAGES : CONSOLE_PAGES;
+    for (const p of pages) {
+      await page.goto(BASE + p, { waitUntil: 'networkidle', timeout: 45000 }).catch(() => {});
+      await page.waitForTimeout(1200);
+      if (page.url().includes('/login')) break;
+    }
   }
   await browser.close();
 
@@ -98,5 +98,5 @@ const USER_PAGES = [
     for (const e of list.slice(0, 10)) console.log(`[${k}] ${e}`);
   }
   console.log(`console scan: js=${errors.js.length} console=${errors.console.length} network=${errors.network.length}`);
-  if (GATE && total) process.exit(1);
+  if (GATE && (total || !authed)) process.exit(1);
 })();
