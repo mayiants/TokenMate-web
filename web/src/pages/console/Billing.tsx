@@ -228,7 +228,7 @@ export default function Billing() {
       dataIndex: 'amount_usd',
       width: 130,
       render: (_: unknown, r: BalanceTransaction) => (
-        <span className="wg-num" style={{ color: r.amount_usd >= 0 ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+        <span className={`wg-num ${r.amount_usd >= 0 ? 'wg-amount-pos' : 'wg-amount-neg'}`}>
           {r.amount_usd >= 0 ? '+' : ''}
           {formatUSD(Math.abs(r.amount_usd))}
         </span>
@@ -376,7 +376,7 @@ export default function Billing() {
       dataIndex: 'amount',
       width: 130,
       render: (_: unknown, r: VoucherRecord) => (
-        <span className="wg-num" style={{ color: '#16a34a', fontWeight: 600 }}>
+        <span className="wg-num wg-amount-pos">
           +{formatUSD((r.amount ?? 0) / 1_000_000)}
         </span>
       ),

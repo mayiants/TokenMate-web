@@ -426,8 +426,12 @@ body.theme-dark .wg-hero-pill {
 }
 
 .wg-copybar-btn.wg-copied {
-  color: #16a34a;
+  color: #15803d;
   border-color: rgba(22, 163, 74, 0.5);
+}
+
+body.theme-dark .wg-copybar-btn.wg-copied {
+  color: #4ade80;
 }
 
 .wg-hero-policy {
@@ -1479,8 +1483,12 @@ body.theme-dark .wg-endpoint-method {
 }
 
 .wg-icon-btn.wg-copied {
-  color: #16a34a;
+  color: #15803d;
   opacity: 1;
+}
+
+body.theme-dark .wg-icon-btn.wg-copied {
+  color: #4ade80;
 }
 
 /* ============================================================
@@ -2070,6 +2078,27 @@ body.theme-dark .wg-tint-amber {
 
 body.theme-dark .wg-tint-red {
   background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+
+/* Money amounts in tables (Balance / Billing): AA-contrast pairs.
+   #15803d = 5.0:1 on white, #dc2626 = 4.8:1 on white;
+   #4ade80 = 5.6:1 and #f87171 = 5.5:1 on the dark surface. */
+.wg-amount-pos {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.wg-amount-neg {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+body.theme-dark .wg-amount-pos {
+  color: #4ade80;
+}
+
+body.theme-dark .wg-amount-neg {
   color: #f87171;
 }
 

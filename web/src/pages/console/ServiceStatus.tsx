@@ -113,7 +113,7 @@ export default function ServiceStatus() {
       render: (_: unknown, r: UpstreamStatusRow) => (
         <span className="wg-num">
           {r.request_count}
-          {r.failure_count > 0 && <span style={{ color: '#dc2626' }}> / {r.failure_count}</span>}
+          {r.failure_count > 0 && <span className="wg-amount-neg"> / {r.failure_count}</span>}
         </span>
       ),
     },
