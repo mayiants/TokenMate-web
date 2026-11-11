@@ -45,6 +45,8 @@ const AdminFinance = lazy(() => import('./pages/admin/Finance'));
 const AdminOps = lazy(() => import('./pages/admin/Ops'));
 const AdminSecurity = lazy(() => import('./pages/admin/Security'));
 const AdminSettings = lazy(() => import('./pages/admin/Settings'));
+const AdminUsageExplorer = lazy(() => import('./pages/admin/UsageExplorer'));
+const AdminRateLimits = lazy(() => import('./pages/admin/RateLimits'));
 
 const lazyFallback = (
   <div style={{ display: 'flex', justifyContent: 'center', padding: 96 }}>
@@ -119,6 +121,8 @@ export default function App() {
           <Route path="ops" element={<Suspense fallback={lazyFallback}><AdminOps /></Suspense>} />
           <Route path="security" element={<Suspense fallback={lazyFallback}><AdminSecurity /></Suspense>} />
           <Route path="settings" element={<Suspense fallback={lazyFallback}><AdminSettings /></Suspense>} />
+          <Route path="usage-explorer" element={<Suspense fallback={lazyFallback}><AdminUsageExplorer /></Suspense>} />
+          <Route path="rate-limits" element={<Suspense fallback={lazyFallback}><AdminRateLimits /></Suspense>} />
         </Route>
       </Route>
       <Route element={<PublicLayout />}>

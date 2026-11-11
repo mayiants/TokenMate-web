@@ -1,5 +1,4 @@
 import { request } from './client';
-
 /**
  * Profile contract of ai-portal-go (internal/routes/profile.go).
  * Mounted at /api/profile (GET/PATCH, PATCH /password).
@@ -122,4 +121,63 @@ export async function changeBackupEmail(payload: {
     method: 'PATCH',
     body: payload,
   });
+}
+
+// ---------------------------------------------------------------------------
+// Two-factor authentication (TOTP) — internal/routes/mfa.go, mounted at
+// /api/profile/mfa. Enabling/disabling bumps token_version, so the backend
+// returns a freshly issued token that must replace the stored one.
+// ---------------------------------------------------------------------------
+export interface MfaStatus {
+  enabled: boolean;
+  enabled_at?: string | null;
+  setup_pending: boolean;
+  recovery_codes_remaining: number;
+  required: boolean;
+}
+
+export interface MfaSetup {
+  secret: string;
+  otpauth_uri: string;
+  issuer: string;
+  algorithm: string;
+  digits: number;
+  period: number;
+}
+
+export async function getMfaStatus(): Promise<MfaStatus> {
+  return request<MfaStatus>('/api/profile/mfa/status');
+}
+
+export async function beginMfaSetup(): Promise<MfaSetup> {
+  return request<MfaSetup>('/api/profile/mfa/setup', { method: 'POST' });
+}
+
+/** Confirms the authenticator works; returns the one-time recovery codes + token. */
+export async function enableMfa(code: string): Promise<{ recovery_codes: string[]; token?: string }> {
+  return request<{ success: boolean; recovery_codes: string[]; token?: string }>(
+    '/api/profile/mfa/enable',
+    { method: 'POST', body: { code } }
+  );
+}
+
+export async function disableMfa(payload: {
+  password: string;
+  code?: string;
+  recovery_code?: string;
+}): Promise<{ token?: string }> {
+  return request<{ success: boolean; token?: string }>('/api/profile/mfa/disable', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+export async function regenerateRecoveryCodes(
+  password: string,
+  code: string
+): Promise<{ recovery_codes: string[] }> {
+  return request<{ success: boolean; recovery_codes: string[] }>(
+    '/api/profile/mfa/recovery-codes/regenerate',
+    { method: 'POST', body: { password, code } }
+  );
 }

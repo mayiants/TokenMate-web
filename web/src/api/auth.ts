@@ -19,14 +19,48 @@ export interface AuthResponse {
   user: AuthUser;
 }
 
+/** Second-factor challenge — the backend returns this instead of a token when
+ *  the account (or its MFA policy) requires TOTP verification. */
+export interface MfaChallenge {
+  mfa_required: true;
+  mfa_token: string;
+  expires_in?: number;
+}
+
+export type LoginResult =
+  | { status: 'ok'; user: AuthUser }
+  | { status: 'mfa'; mfaToken: string; expiresIn?: number };
+
 export interface MeResponse {
   user: AuthUser & { balance?: number; created_at?: string };
 }
 
-export async function login(email: string, password: string): Promise<AuthUser> {
-  const res = await request<AuthResponse>('/api/auth/login', {
+export async function login(email: string, password: string): Promise<LoginResult> {
+  const res = await request<AuthResponse | MfaChallenge>('/api/auth/login', {
     method: 'POST',
     body: { email, password },
+  });
+  if ((res as MfaChallenge).mfa_required) {
+    const challenge = res as MfaChallenge;
+    return { status: 'mfa', mfaToken: challenge.mfa_token, expiresIn: challenge.expires_in };
+  }
+  const ok = res as AuthResponse;
+  setToken(ok.token);
+  return { status: 'ok', user: ok.user };
+}
+
+/** Complete an MFA challenge (POST /api/auth/login/mfa). */
+export async function loginMfa(
+  mfaToken: string,
+  factor: { code?: string; recoveryCode?: string }
+): Promise<AuthUser> {
+  const res = await request<AuthResponse>('/api/auth/login/mfa', {
+    method: 'POST',
+    body: {
+      mfa_token: mfaToken,
+      code: factor.code ?? '',
+      recovery_code: factor.recoveryCode ?? '',
+    },
   });
   setToken(res.token);
   return res.user;

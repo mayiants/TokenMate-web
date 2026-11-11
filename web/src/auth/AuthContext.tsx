@@ -1,5 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { fetchMe, login as apiLogin, logout as apiLogout, register as apiRegister, type AuthUser } from '../api/auth';
+import {
+  fetchMe,
+  login as apiLogin,
+  loginMfa as apiLoginMfa,
+  logout as apiLogout,
+  register as apiRegister,
+  type AuthUser,
+  type LoginResult,
+} from '../api/auth';
 import { getToken, setToken } from '../api/client';
 import { clearAdminModeCache } from '../api/admin';
 
@@ -7,7 +15,9 @@ interface AuthState {
   user: AuthUser | null;
   /** True while the initial session probe (GET /api/auth/me) is in flight. */
   loading: boolean;
-  login: (email: string, password: string) => Promise<AuthUser>;
+  /** Returns `mfa` when a second factor is required; the caller then calls loginMfa. */
+  login: (email: string, password: string) => Promise<LoginResult>;
+  loginMfa: (mfaToken: string, factor: { code?: string; recoveryCode?: string }) => Promise<AuthUser>;
   register: (payload: { name?: string; email: string; password: string; code: string }) => Promise<AuthUser>;
   logout: () => Promise<void>;
 }
@@ -42,7 +52,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     clearAdminModeCache();
-    const u = await apiLogin(email, password);
+    const res = await apiLogin(email, password);
+    if (res.status === 'ok') setUser(res.user);
+    return res;
+  }, []);
+
+  const loginMfa = useCallback(async (mfaToken: string, factor: { code?: string; recoveryCode?: string }) => {
+    clearAdminModeCache();
+    const u = await apiLoginMfa(mfaToken, factor);
     setUser(u);
     return u;
   }, []);
@@ -61,8 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout }),
-    [user, loading, login, register, logout]
+    () => ({ user, loading, login, loginMfa, register, logout }),
+    [user, loading, login, loginMfa, register, logout]
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
