@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Card, Descriptions, Empty, Spin, Tag } from '@douyinfe/semi-ui';
+import { Card, Empty, Spin, Tag } from '@douyinfe/semi-ui';
 import { IconBriefcaseStroked, IconCreditCardStroked, IconKeyStroked, IconUserGroup } from '@douyinfe/semi-icons';
 import { useI18n } from '../../i18n';
 import { useEnterprise } from './EntLayout';
@@ -100,8 +100,16 @@ export default function EntOverview() {
       </div>
 
       <Card className="wg-chart-card" bordered title={t('ent.overview.enterpriseInfo')}>
-        <Descriptions
-          data={[
+        {/* Plain label/value grid instead of Semi Descriptions: the table-style
+            Descriptions keeps 2–3 fixed columns and overflows a 390px viewport. */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gap: 16,
+          }}
+        >
+          {[
             { key: t('ent.settings.name'), value: info.name },
             { key: t('ent.settings.contactEmail'), value: info.contact_email || '—' },
             { key: t('ent.overview.currency'), value: info.display_currency ?? 'USD' },
@@ -113,8 +121,15 @@ export default function EntOverview() {
               key: t('ent.overview.quota'),
               value: `${info.quota_used ?? 0} / ${info.quota_total ?? 0}`,
             },
-          ]}
-        />
+          ].map((row) => (
+            <div key={row.key} style={{ minWidth: 0 }}>
+              <div className="wg-stat-label">{row.key}</div>
+              <div className="wg-cell-ellipsis" style={{ fontWeight: 600 }}>
+                {row.value}
+              </div>
+            </div>
+          ))}
+        </div>
       </Card>
 
       <div className="wg-chart-grid">

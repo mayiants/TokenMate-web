@@ -101,7 +101,7 @@ export default function Landing() {
               {models === null ? (
                 <div className="wg-center"><Spin size="large" /></div>
               ) : accessModels.length === 0 ? (
-                <div className="wg-center" style={{ color: 'var(--wg-text-3)', fontSize: 13 }}>
+                <div className="wg-center" style={{ color: 'var(--wg-text-2)', fontSize: 13 }}>
                   {t('landing.access.empty')}
                 </div>
               ) : (

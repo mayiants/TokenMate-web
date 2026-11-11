@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Button,
   Card,
-  Descriptions,
   Empty,
   Progress,
   Spin,
@@ -101,14 +100,28 @@ export default function EntBilling() {
               </div>
             </div>
             <Progress percent={percent} showInfo aria-label={t('ent.billing.creditPool')} />
-            <Descriptions
-              size="small"
-              data={[
+            {/* Responsive label/value grid (Semi Descriptions keeps fixed columns
+                and overflows a 390px viewport). */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                gap: 12,
+              }}
+            >
+              {[
                 { key: t('ent.billing.cycle'), value: details?.billing_cycle ?? '—' },
                 { key: t('ent.billing.nextReset'), value: details?.next_reset_at ?? '—' },
                 { key: t('ent.overview.currency'), value: details?.display_currency ?? 'USD' },
-              ]}
-            />
+              ].map((row) => (
+                <div key={row.key} style={{ minWidth: 0 }}>
+                  <div className="wg-stat-label">{row.key}</div>
+                  <div className="wg-cell-ellipsis" style={{ fontWeight: 600 }}>
+                    {row.value}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </Card>

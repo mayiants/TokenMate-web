@@ -1,4 +1,3 @@
-import { Avatar } from '@douyinfe/semi-ui';
 import type { CSSProperties } from 'react';
 
 import anthropic from '../assets/providers/provider-anthropic.svg';
@@ -59,19 +58,28 @@ export default function ProviderIcon({ provider, manufacturer, size = 36, style 
   }
   const label = (name || manufacturer || '?').trim();
   const initial = label[0]?.toUpperCase() ?? '?';
+  // Plain span instead of Semi's Avatar: Avatar always renders role="listitem",
+  // which fails axe's aria-required-parent when used as a standalone icon.
   return (
-    <Avatar
-      size={String(size)}
+    <span
+      role="img"
+      aria-label={label}
       style={{
-        backgroundColor: 'var(--wg-text-3)',
-        color: '#fff',
-        borderRadius: size / 4,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         width: size,
         height: size,
+        borderRadius: size / 4,
+        background: 'var(--wg-text-3)',
+        color: '#fff',
+        fontSize: Math.round(size * 0.42),
+        fontWeight: 600,
+        lineHeight: 1,
         ...style,
       }}
     >
       {initial}
-    </Avatar>
+    </span>
   );
 }
