@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   Button,
   Empty,
@@ -27,6 +27,12 @@ import { useI18n } from '../i18n';
 
 type SortKey = 'newest' | 'priceAsc' | 'priceDesc';
 type ViewMode = 'grid' | 'list';
+
+// The public catalog has 160+ models. Rendering every card up front put ~6000
+// DOM nodes on the main thread (Lighthouse TBT 891ms, performance 31 vs 61 with
+// an empty catalog). Render a first batch and append more as the sentinel at
+// the end of the list scrolls into view.
+const PAGE_SIZE = 24;
 
 /* ---------- tolerant promo-field extraction (live API has none yet) ---------- */
 
@@ -179,6 +185,33 @@ export default function ModelsGallery() {
   }, [models, query, typeFilter, sortKey]);
 
   const hasFilters = query.trim() !== '' || typeFilter.length > 0;
+
+  // incremental rendering: show `limit` items, grow when the sentinel is visible
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    setLimit(PAGE_SIZE);
+  }, [query, typeFilter, sortKey, view, models]);
+  const visibleModels = useMemo(() => filtered.slice(0, limit), [filtered, limit]);
+  const hasMore = limit < filtered.length;
+  const growList = useCallback(() => setLimit((n) => n + PAGE_SIZE), []);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasMore) return;
+    // No IntersectionObserver (very old browsers / some test envs): show everything.
+    if (typeof IntersectionObserver === 'undefined') {
+      setLimit(Number.MAX_SAFE_INTEGER);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) growList();
+      },
+      { rootMargin: '600px 0px' }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, limit, growList]);
 
   const selectedNames = useMemo(
     () => (models ?? []).filter((m) => selected.has(m.api_model_name)).map((m) => m.api_model_name),
@@ -358,7 +391,7 @@ export default function ModelsGallery() {
               </Empty>
             ) : view === 'grid' ? (
               <div className="wg-grid">
-                {filtered.map((m) => (
+                {visibleModels.map((m) => (
                   <ModelCard
                     key={m.api_model_name}
                     model={m}
@@ -370,7 +403,7 @@ export default function ModelsGallery() {
               </div>
             ) : (
               <div className="wg-list">
-                {filtered.map((m) => (
+                {visibleModels.map((m) => (
                   <ModelRow
                     key={m.api_model_name}
                     model={m}
@@ -379,6 +412,16 @@ export default function ModelsGallery() {
                     onOpen={() => setDetail(m)}
                   />
                 ))}
+              </div>
+            )}
+            {hasMore && (
+              <div
+                ref={sentinelRef}
+                style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}
+              >
+                <Button theme="borderless" onClick={growList}>
+                  {t('models.loadMore', { shown: visibleModels.length, total: filtered.length })}
+                </Button>
               </div>
             )}
           </>

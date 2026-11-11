@@ -1724,5 +1724,6 @@
   "admin.ratelimit.kpi.tokensCap": "Tokens in window",
   "admin.ratelimit.kpi.costCap": "Billed in window",
   "admin.ratelimit.capacity.title": "Capacity headroom",
-  "admin.ratelimit.capacity.sub": "Downstream usage against upstream capacity limits"
+  "admin.ratelimit.capacity.sub": "Downstream usage against upstream capacity limits",
+  "models.loadMore": "Showing {shown} of {total} models — load more"
 }

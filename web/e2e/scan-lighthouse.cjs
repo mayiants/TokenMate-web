@@ -26,6 +26,8 @@ process.env.CHROME_PATH = process.env.CHROME_PATH || playwrightChrome();
 
 const BASE = process.env.CHECK_BASE || 'http://127.0.0.1:4174';
 const GATE = process.argv.includes('--gate');
+// LH_RUNS=1 restores the old single-run behaviour for quick local checks.
+const RUNS = Math.max(1, Number(process.env.LH_RUNS) || 3);
 
 // Public routes only: authenticated pages need a backend session, which
 // lighthouse cannot reuse here — axe/console/responsive cover those.
@@ -51,22 +53,48 @@ const THRESHOLDS = { performance: 0.45, accessibility: 0.9, 'best-practices': 0.
   });
   let failed = 0;
   for (const p of PAGES) {
-    const result = await lighthouse(`${BASE}${p.path}`, {
-      port: chrome.port,
-      onlyCategories: ['performance', 'accessibility', 'best-practices'],
-      formFactor: 'desktop',
-      screenEmulation: { disabled: true },
-      quiet: true,
-    });
+    // Single Lighthouse runs on a shared 2-vCPU host swing wildly (observed
+    // /models: 61 -> 34 on identical code). Run RUNS times and gate on the
+    // median per category; the raw samples and key metrics are printed so a
+    // real regression is distinguishable from scheduler noise.
+    const samples = [];
+    for (let i = 0; i < RUNS; i++) {
+      const result = await lighthouse(`${BASE}${p.path}`, {
+        port: chrome.port,
+        onlyCategories: ['performance', 'accessibility', 'best-practices'],
+        formFactor: 'desktop',
+        screenEmulation: { disabled: true },
+        quiet: true,
+      });
+      const a = result.lhr.audits;
+      const metric = (id) => a[id]?.numericValue;
+      samples.push({
+        scores: Object.fromEntries(
+          ['performance', 'accessibility', 'best-practices'].map((c) => [c, result.lhr.categories[c].score ?? 0])
+        ),
+        fcp: metric('first-contentful-paint'),
+        lcp: metric('largest-contentful-paint'),
+        tbt: metric('total-blocking-time'),
+        bytes: metric('total-byte-weight'),
+      });
+    }
+    const median = (arr) => [...arr].sort((x, y) => x - y)[Math.floor(arr.length / 2)];
     const scores = {};
     for (const cat of ['performance', 'accessibility', 'best-practices']) {
-      scores[cat] = result.lhr.categories[cat].score ?? 0;
+      scores[cat] = median(samples.map((s) => s.scores[cat]));
     }
     const misses = Object.entries(THRESHOLDS).filter(([k, min]) => scores[k] < min);
     for (const [k, v] of Object.entries(scores)) {
       const mark = v >= (THRESHOLDS[k] ?? 1) ? '✓' : '✗';
-      console.log(`${mark} ${p.name} ${k}: ${(v * 100).toFixed(0)}`);
+      const raw = samples.map((s) => (s.scores[k] * 100).toFixed(0)).join('/');
+      console.log(`${mark} ${p.name} ${k}: ${(v * 100).toFixed(0)}  (runs ${raw})`);
     }
+    const ms = (v) => (v == null ? '—' : `${Math.round(v)}ms`);
+    const m = samples[Math.floor(samples.length / 2)];
+    console.log(
+      `   ${p.name} metrics(median run): FCP ${ms(m.fcp)} · LCP ${ms(m.lcp)} · TBT ${ms(m.tbt)} · ` +
+        `transfer ${m.bytes == null ? '—' : Math.round(m.bytes / 1024) + ' KiB'}`
+    );
     if (misses.length) failed++;
   }
   await chrome.kill();

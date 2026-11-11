@@ -1724,5 +1724,6 @@
   "admin.ratelimit.kpi.tokensCap": "窗口内 Token 合计",
   "admin.ratelimit.kpi.costCap": "窗口内计费合计",
   "admin.ratelimit.capacity.title": "容量水位",
-  "admin.ratelimit.capacity.sub": "下游实际用量相对上游容量上限的占用比例"
+  "admin.ratelimit.capacity.sub": "下游实际用量相对上游容量上限的占用比例",
+  "models.loadMore": "已显示 {shown} / {total} 个模型，点击加载更多"
 }
